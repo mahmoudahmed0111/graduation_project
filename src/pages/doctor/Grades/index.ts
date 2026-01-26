@@ -1,0 +1,2 @@
+export { CalculateFinalGrades } from './CalculateFinalGrades';
+
