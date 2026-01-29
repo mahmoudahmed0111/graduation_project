@@ -138,16 +138,6 @@ export function StudentDashboard() {
     },
   ];
 
-
-  const getGPAStatus = (gpa: number) => {
-    if (gpa >= 3.5) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-100' };
-    if (gpa >= 3.0) return { label: 'Very Good', color: 'text-blue-600', bg: 'bg-blue-100' };
-    if (gpa >= 2.5) return { label: 'Good', color: 'text-yellow-600', bg: 'bg-yellow-100' };
-    return { label: 'Needs Improvement', color: 'text-red-600', bg: 'bg-red-100' };
-  };
-
-  const gpaStatus = getGPAStatus(student?.gpa || 0);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -601,7 +591,6 @@ export function StudentDashboard() {
           {(() => {
             // Calculate credits per year based on student's total credits earned
             const totalCredits = student?.creditsEarned || 0;
-            const currentYear = student?.year || 1;
             
             // Distribute credits across years (assuming 30 credits per year)
             let remaining = totalCredits;

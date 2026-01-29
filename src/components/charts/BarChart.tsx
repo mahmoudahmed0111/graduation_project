@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 
 interface BarChartProps {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, unknown>>;
   dataKey: string;
   bars: Array<{
     dataKey: string;
@@ -26,7 +26,6 @@ export function BarChart({
   data,
   dataKey,
   bars,
-  xAxisLabel,
   yAxisLabel,
   height = 300,
 }: BarChartProps) {

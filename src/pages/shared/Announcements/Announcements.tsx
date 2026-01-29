@@ -6,12 +6,7 @@ import { IAnnouncement } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { 
   Bell, 
-  Globe,
-  Building2,
-  Users,
-  BookOpen,
   Calendar,
-  Filter,
   Search
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
@@ -22,7 +17,7 @@ import { formatTimeAgo } from '@/utils/formatters';
 
 export function Announcements() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +44,7 @@ export function Announcements() {
     };
 
     fetchAnnouncements();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- showError stable, fetch once
 
   // Filter announcements
   const filteredAnnouncements = announcements.filter(announcement => {

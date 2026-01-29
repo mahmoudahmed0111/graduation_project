@@ -3,18 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { ISubmission, IAssessment, IEnrollment } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { 
   ClipboardList, 
-  CheckCircle2,
-  Clock,
   FileText,
   User,
   BookOpen,
   Search,
-  Filter,
   Eye,
   Save
 } from 'lucide-react';
@@ -25,12 +22,12 @@ import { logger } from '@/lib/logger';
 import { formatDate } from '@/utils/formatters';
 
 export function GradeSubmissions() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const [submissions, setSubmissions] = useState<ISubmission[]>([]);
   const [assessments, setAssessments] = useState<IAssessment[]>([]);
-  const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
+  const [_myCourses, setMyCourses] = useState<IEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAssessment, setSelectedAssessment] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -71,7 +68,7 @@ export function GradeSubmissions() {
     };
 
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once on mount
 
   // Filter submissions
   const filteredSubmissions = submissions.filter(submission => {
@@ -91,7 +88,7 @@ export function GradeSubmissions() {
     
     // Initialize scores from existing answers
     const initialScores: Record<string, number> = {};
-    submission.answers.forEach((answer, index) => {
+    submission.answers.forEach((_answer, index) => {
       initialScores[`answer-${index}`] = 0;
     });
     setScores(initialScores);

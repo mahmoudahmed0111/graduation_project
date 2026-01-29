@@ -26,17 +26,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (credentials: LoginCredentials) => {
-        try {
-          const response = await authApi.login(credentials);
-          inMemoryToken = response.accessToken;
-          set({
-            user: response.user,
-            accessToken: response.accessToken,
-            isAuthenticated: true,
-          });
-        } catch (error) {
-          throw error;
-        }
+        const response = await authApi.login(credentials);
+        inMemoryToken = response.accessToken;
+        set({
+          user: response.user,
+          accessToken: response.accessToken,
+          isAuthenticated: true,
+        });
       },
 
       logout: () => {

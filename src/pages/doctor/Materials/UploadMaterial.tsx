@@ -14,8 +14,7 @@ import {
   Upload, 
   FileText,
   X,
-  Link as LinkIcon,
-  BookOpen
+  Link as LinkIcon
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
@@ -33,9 +32,9 @@ const materialSchema = z.object({
 type MaterialFormData = z.infer<typeof materialSchema>;
 
 export function UploadMaterial() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +55,7 @@ export function UploadMaterial() {
     },
   });
 
-  const courseOffering = watch('courseOffering');
+  watch('courseOffering');
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -73,7 +72,7 @@ export function UploadMaterial() {
     };
 
     fetchCourses();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once, showError stable
 
   useEffect(() => {
     setValue('isExternalLink', isExternalLink);
@@ -87,7 +86,7 @@ export function UploadMaterial() {
     }
   };
 
-  const onSubmit = async (data: MaterialFormData) => {
+  const onSubmit = async (_data: MaterialFormData) => {
     try {
       setLoading(true);
       

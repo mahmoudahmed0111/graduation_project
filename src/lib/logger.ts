@@ -10,13 +10,14 @@ interface LogOptions {
   context?: string;
   error?: Error | unknown;
   data?: Record<string, unknown>;
+  id?: string;
 }
 
 class Logger {
   private isDevelopment = import.meta.env.DEV;
   private isProduction = import.meta.env.PROD;
 
-  private formatMessage(level: LogLevel, message: string, options?: LogOptions): string {
+  private formatMessage(_level: LogLevel, message: string, options?: LogOptions): string {
     const context = options?.context ? `[${options.context}]` : '';
     return `${context} ${message}`.trim();
   }

@@ -7,13 +7,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { 
   ClipboardList, 
-  BookOpen,
   Clock,
   Calendar,
   AlertCircle,
   CheckCircle2,
-  FileText,
-  Filter
+  FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
@@ -21,7 +19,7 @@ import { logger } from '@/lib/logger';
 
 export function MyAssessments() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [assessments, setAssessments] = useState<IAssessment[]>([]);
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);

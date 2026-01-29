@@ -5,12 +5,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
 interface LineChartProps {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, unknown>>;
   dataKey: string;
   lines: Array<{
     dataKey: string;
@@ -26,7 +25,6 @@ export function LineChart({
   data,
   dataKey,
   lines,
-  xAxisLabel,
   yAxisLabel,
   height = 300,
 }: LineChartProps) {

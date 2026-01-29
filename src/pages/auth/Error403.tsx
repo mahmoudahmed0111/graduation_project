@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/Button';
 import { Shield, ArrowLeft, Home, AlertTriangle } from 'lucide-react';
 
 export function Error403() {
-  const { t } = useTranslation();
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 p-4 relative overflow-hidden">
       {/* Background decoration */}

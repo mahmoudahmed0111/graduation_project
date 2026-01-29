@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -12,10 +11,7 @@ import {
   ArrowLeft, 
   User, 
   Mail, 
-  CreditCard, 
   GraduationCap,
-  Building2,
-  Calendar,
   Save,
   X
 } from 'lucide-react';
@@ -39,7 +35,6 @@ const studentSchema = z.object({
 type StudentFormData = z.infer<typeof studentSchema>;
 
 export function CreateStudent() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { success, error: showError } = useToastStore();
   const [loading, setLoading] = useState(false);
@@ -61,12 +56,13 @@ export function CreateStudent() {
       logger.info('Student created successfully', { context: 'CreateStudent', data });
       success('Student created successfully');
       navigate('/dashboard/students');
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to create student', {
         context: 'CreateStudent',
         error: err,
       });
-      showError(err.response?.data?.message || 'Failed to create student');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg || 'Failed to create student');
     } finally {
       setLoading(false);
     }

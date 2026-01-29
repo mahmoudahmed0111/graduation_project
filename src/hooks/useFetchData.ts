@@ -44,7 +44,7 @@ export function useFetchData<T>({
 
   useEffect(() => {
     fetchData();
-  }, [fetchData, ...dependencies]);
+  }, [fetchData, ...dependencies]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refetch = useCallback(() => {
     fetchData();

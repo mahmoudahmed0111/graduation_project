@@ -13,10 +13,8 @@ import {
   MapPin, 
   Calendar,
   Search,
-  GraduationCap,
   User,
-  AlertCircle,
-  CheckCircle2
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
@@ -24,7 +22,7 @@ import { logger } from '@/lib/logger';
 
 export function AllCourses() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [offerings, setOfferings] = useState<ICourseOffering[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +51,7 @@ export function AllCourses() {
     };
 
     fetchOfferings();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- showError stable, fetch once
 
   // Get unique departments for filter - ensure offerings is an array
   const departments = Array.isArray(offerings) 

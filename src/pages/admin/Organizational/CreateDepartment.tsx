@@ -30,7 +30,7 @@ export function CreateDepartment() {
   useEffect(() => {
     fetchColleges();
     fetchUsers();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount
 
   const fetchColleges = async () => {
     // Mock data
@@ -131,7 +131,7 @@ export function CreateDepartment() {
               </label>
               <Select
                 value={formData.collegeId}
-                onChange={(value) => setFormData({ ...formData, collegeId: value })}
+                onChange={(e) => setFormData({ ...formData, collegeId: e.target.value })}
                 options={[
                   { value: '', label: 'Select a college...' },
                   ...colleges.map(college => ({ value: college.id, label: college.name })),
@@ -146,7 +146,7 @@ export function CreateDepartment() {
               </label>
               <Select
                 value={formData.headId}
-                onChange={(value) => setFormData({ ...formData, headId: value })}
+                onChange={(e) => setFormData({ ...formData, headId: e.target.value })}
                 options={[
                   { value: '', label: 'Select a department head...' },
                   ...users.map(user => ({ value: user.id, label: user.name })),
@@ -155,7 +155,7 @@ export function CreateDepartment() {
             </div>
 
             <div className="flex items-center gap-2 pt-4">
-              <Button type="submit" loading={loading}>
+              <Button type="submit" isLoading={loading}>
                 <Save className="h-4 w-4 mr-2" />
                 Create Department
               </Button>

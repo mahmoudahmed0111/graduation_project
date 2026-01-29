@@ -21,6 +21,8 @@ const resources = {
         name: 'Name',
         next: 'Next',
         change: 'Change',
+        welcome: 'Welcome',
+        dashboard: 'Dashboard',
       },
       auth: {
         loginTitle: 'Login to Your Account',
@@ -87,10 +89,6 @@ const resources = {
         attendanceReports: 'Attendance Reports',
         manageSessions: 'Manage Sessions',
         calculateFinalGrades: 'Calculate Final Grades',
-      },
-      common: {
-        welcome: 'Welcome',
-        dashboard: 'Dashboard',
       },
       student: {
         dashboard: 'Student Dashboard',
@@ -278,6 +276,8 @@ const resources = {
         name: 'الاسم',
         next: 'التالي',
         change: 'تغيير',
+        welcome: 'مرحباً',
+        dashboard: 'لوحة التحكم',
       },
       auth: {
         loginTitle: 'تسجيل الدخول إلى حسابك',
@@ -344,10 +344,6 @@ const resources = {
         attendanceReports: 'تقارير الحضور',
         manageSessions: 'إدارة الجلسات',
         calculateFinalGrades: 'حساب الدرجات النهائية',
-      },
-      common: {
-        welcome: 'مرحباً',
-        dashboard: 'لوحة التحكم',
       },
       student: {
         dashboard: 'لوحة تحكم الطالب',

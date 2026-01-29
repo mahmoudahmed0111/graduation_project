@@ -7,13 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { 
   FileText, 
   BookOpen,
-  Link as LinkIcon,
   Download,
   ExternalLink,
-  File,
-  Video,
-  Image as ImageIcon,
-  Filter,
   Search
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
@@ -23,7 +18,7 @@ import { logger } from '@/lib/logger';
 
 export function Materials() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [materials, setMaterials] = useState<IMaterial[]>([]);
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
@@ -60,7 +55,7 @@ export function Materials() {
     };
 
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- showError stable, fetch once
 
   // Filter materials
   const filteredMaterials = materials.filter(material => {
@@ -99,13 +94,6 @@ export function Materials() {
     }
     
     return FileText;
-  };
-
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   if (loading) {

@@ -20,7 +20,6 @@ import { Link } from 'react-router-dom';
 import { ChartCard } from '@/components/charts';
 import { BarChart } from '@/components/charts/BarChart';
 import { PieChart } from '@/components/charts/PieChart';
-import { LineChart } from '@/components/charts/LineChart';
 import { logger } from '@/lib/logger';
 import { formatDate } from '@/utils/formatters';
 

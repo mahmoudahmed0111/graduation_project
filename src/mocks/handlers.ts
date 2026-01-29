@@ -86,10 +86,19 @@ const getMockCourses = (): ICourse[] => [
 const mockEnrollments: IEnrollment[] = [
   {
     id: '1',
-    studentId: '1',
-    courseId: '1',
+    student_id: '1',
+    courseOffering: {
+      id: '1',
+      course: { id: '1', code: 'CS101', title: 'Intro', creditHours: 3, department: { id: '1', name: 'CS' } },
+      semester: 'Fall 2025',
+      doctors: [],
+      tas: [],
+      schedule: [],
+      maxSeats: 60,
+      gradingPolicy: {},
+    },
+    semester: 'Fall 2025',
     status: 'enrolled',
-    grade: 85,
     enrolledAt: '2024-01-15',
   },
 ];
@@ -314,7 +323,7 @@ export const handlers = [
     const studentId = url.searchParams.get('studentId');
     
     const filtered = studentId
-      ? mockEnrollments.filter(e => e.studentId === studentId)
+      ? mockEnrollments.filter(e => e.student_id === studentId)
       : mockEnrollments;
 
     return HttpResponse.json(filtered);

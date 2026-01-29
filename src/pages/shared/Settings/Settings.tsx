@@ -20,16 +20,15 @@ import {
   Languages,
   User,
   Building2,
-  AlertCircle,
-  CheckCircle2
+  AlertCircle
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { useTenantStore } from '@/store/tenantStore';
 
 export function Settings() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { user } = useAuthStore();
-  const { currentUniversity } = useTenantStore();
+  useTenantStore();
   const { success, error: showError } = useToastStore();
   
   const [loading, setLoading] = useState(false);
@@ -150,7 +149,7 @@ export function Settings() {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
+                      onClick={() => setActiveTab(tab.id as 'general' | 'notifications' | 'security' | 'system')}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-primary-50 text-primary-700 font-medium'

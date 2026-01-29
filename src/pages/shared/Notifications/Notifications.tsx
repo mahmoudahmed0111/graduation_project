@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
 import { INotification } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { 
   Bell, 
@@ -20,8 +18,7 @@ import { formatTimeAgo, formatDate } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 export function Notifications() {
-  const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError, success } = useToastStore();
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [loading, setLoading] = useState(true);

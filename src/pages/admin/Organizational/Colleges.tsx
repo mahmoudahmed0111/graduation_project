@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -12,8 +11,7 @@ import {
   Edit,
   Archive,
   User,
-  School,
-  AlertCircle
+  School
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ICollege } from '@/types';
@@ -22,7 +20,6 @@ import { logger } from '@/lib/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export function Colleges() {
-  const { t, i18n } = useTranslation();
   const { success, error: showError } = useToastStore();
   const [colleges, setColleges] = useState<ICollege[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +33,7 @@ export function Colleges() {
 
   useEffect(() => {
     fetchColleges();
-  }, [page, searchTerm]);
+  }, [page, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchColleges stable
 
   const fetchColleges = async () => {
     try {
@@ -231,7 +228,7 @@ export function Colleges() {
       </Card>
 
       <ConfirmDialog
-        open={archiveDialog.open}
+        isOpen={archiveDialog.open}
         onClose={() => setArchiveDialog({ open: false, college: null })}
         onConfirm={() => archiveDialog.college && handleArchive(archiveDialog.college)}
         title="Archive College"

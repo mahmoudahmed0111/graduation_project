@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -12,8 +11,7 @@ import {
   Edit,
   Archive,
   User,
-  Building2,
-  Filter
+  Building2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { IDepartment } from '@/types';
@@ -22,7 +20,6 @@ import { logger } from '@/lib/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export function Departments() {
-  const { t, i18n } = useTranslation();
   const { success, error: showError } = useToastStore();
   const [departments, setDepartments] = useState<IDepartment[]>([]);
   const [colleges, setColleges] = useState<Array<{ id: string; name: string }>>([]);
@@ -37,7 +34,7 @@ export function Departments() {
   useEffect(() => {
     fetchColleges();
     fetchDepartments();
-  }, [selectedCollege, searchTerm]);
+  }, [selectedCollege, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchColleges/fetchDepartments stable
 
   const fetchColleges = async () => {
     // Mock colleges
@@ -244,7 +241,7 @@ export function Departments() {
       </Card>
 
       <ConfirmDialog
-        open={archiveDialog.open}
+        isOpen={archiveDialog.open}
         onClose={() => setArchiveDialog({ open: false, department: null })}
         onConfirm={() => archiveDialog.department && handleArchive(archiveDialog.department)}
         title="Archive Department"

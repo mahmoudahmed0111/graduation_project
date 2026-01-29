@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -23,8 +22,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { IStudent, IEnrollment } from '@/types';
-import { api } from '@/lib/api';
+import { IStudent } from '@/types';
 import { logger } from '@/lib/logger';
 import { getGPAColor } from '@/constants/ui';
 import { getStatusBadge } from '@/utils/status';
@@ -126,7 +124,6 @@ const mockStudents: IStudent[] = [
 ];
 
 export function Students() {
-  const { t } = useTranslation();
   const [students, setStudents] = useState<IStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,7 +152,7 @@ export function Students() {
     };
 
     fetchStudents();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetchStudents run once on mount
 
   // Get unique departments and years for filters
   const departments = Array.from(new Set(students.map(s => s.department?.name).filter(Boolean))) as string[];

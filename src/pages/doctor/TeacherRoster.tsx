@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Select2 } from '@/components/ui/Select2';
@@ -16,7 +16,6 @@ import {
   GraduationCap,
   Eye,
   Download,
-  Filter,
   User
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -39,12 +38,12 @@ interface RosterStudent {
 }
 
 export function TeacherRoster() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { user } = useAuthStore();
   const { error: showError } = useToastStore();
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<RosterStudent[]>([]);
-  const [courses, setCourses] = useState<ICourseOffering[]>([]);
+  const [_courses, setCourses] = useState<ICourseOffering[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
   const [currentPage, setCurrentPage] = useState(1);

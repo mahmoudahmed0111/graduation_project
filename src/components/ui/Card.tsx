@@ -36,11 +36,12 @@ export function CardHeader({ children, className }: CardHeaderProps) {
 interface CardTitleProps {
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function CardTitle({ children, className }: CardTitleProps) {
+export function CardTitle({ children, className, style }: CardTitleProps) {
   return (
-    <h3 className={cn('text-lg font-semibold text-gray-900', className)}>
+    <h3 className={cn('text-lg font-semibold text-gray-900', className)} style={style}>
       {children}
     </h3>
   );

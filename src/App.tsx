@@ -61,7 +61,7 @@ function App() {
     if (user?.role === 'superAdmin' || user?.role === 'admin') {
       loadUniversities();
     }
-  }, [user]);
+  }, [user, loadUniversityMeta, loadUniversities]);
 
   return (
     <BrowserRouter>

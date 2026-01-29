@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Lock as LockIcon, User, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 
@@ -19,7 +18,6 @@ const lockSchema = z.object({
 type LockFormData = z.infer<typeof lockSchema>;
 
 export function Lock() {
-  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const { error: showError, success } = useToastStore();
   const navigate = useNavigate();
@@ -47,12 +45,13 @@ export function Lock() {
       } else {
         showError('Incorrect password. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to unlock screen', {
         context: 'Lock',
         error: err,
       });
-      showError(err.response?.data?.message || 'Failed to unlock screen');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg || 'Failed to unlock screen');
     } finally {
       setIsLoading(false);
     }

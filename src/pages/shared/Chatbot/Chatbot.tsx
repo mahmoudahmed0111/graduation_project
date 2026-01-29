@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { 
-  MessageSquare, 
   Send,
   Bot,
   User,
@@ -37,7 +35,7 @@ interface ChatMessage {
 
 export function Chatbot() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {

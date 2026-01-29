@@ -6,18 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { IEnrollment, IAssessment } from '@/types';
+import { IEnrollment } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { 
-  Plus, 
   Trash2,
   Save,
-  X,
-  FileText,
-  Calendar,
-  BookOpen
+  FileText
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -44,9 +40,9 @@ const assessmentSchema = z.object({
 type AssessmentFormData = z.infer<typeof assessmentSchema>;
 
 export function CreateAssessment() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +68,7 @@ export function CreateAssessment() {
   });
 
   const questions = watch('questions');
-  const totalPoints = watch('totalPoints');
+  watch('totalPoints');
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -89,7 +85,7 @@ export function CreateAssessment() {
     };
 
     fetchCourses();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetchCourses, showError stable
 
   // Calculate total points from questions
   useEffect(() => {
@@ -129,7 +125,7 @@ export function CreateAssessment() {
     }
   };
 
-  const onSubmit = async (data: AssessmentFormData) => {
+  const onSubmit = async (_data: AssessmentFormData) => {
     try {
       setLoading(true);
       
@@ -214,9 +210,9 @@ export function CreateAssessment() {
                 {i18n.language === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date'} *
               </label>
               <DatePicker
-                value={watch('dueDate')}
-                onChange={(date) => setValue('dueDate', date)}
-                minDate={new Date().toISOString().split('T')[0]}
+                selected={watch('dueDate') ? new Date(watch('dueDate')) : null}
+                onChange={(date) => setValue('dueDate', date ? date.toISOString().split('T')[0] : '')}
+                minDate={new Date()}
               />
               {errors.dueDate && (
                 <p className="mt-1 text-sm text-red-600">{errors.dueDate.message}</p>
@@ -338,7 +334,7 @@ export function CreateAssessment() {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             {i18n.language === 'ar' ? 'الخيارات' : 'Options'} *
                           </label>
-                          {question?.options?.map((option, optIndex) => (
+                          {question?.options?.map((_option, optIndex) => (
                             <div key={optIndex} className="flex items-center gap-2">
                               <input
                                 type={questionType === 'MCQ-Multiple' ? 'checkbox' : 'radio'}

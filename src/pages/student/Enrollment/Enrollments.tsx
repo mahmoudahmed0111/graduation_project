@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { IEnrollment, IStudent } from '@/types';
+import { IEnrollment } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { 
   GraduationCap, 
@@ -12,6 +12,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
+import { logger } from '@/lib/logger';
 
 interface SemesterData {
   semester: string;
@@ -23,9 +24,8 @@ interface SemesterData {
 
 export function Enrollments() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
-  const student = user as IStudent;
   const [transcript, setTranscript] = useState<IEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [groupedBySemester, setGroupedBySemester] = useState<SemesterData[]>([]);
@@ -59,7 +59,7 @@ export function Enrollments() {
     };
 
     fetchTranscript();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- groupBySemester, showError stable
 
   // Group enrollments by semester
   const groupBySemester = (enrollments: IEnrollment[]): SemesterData[] => {

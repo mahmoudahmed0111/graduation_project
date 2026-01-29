@@ -2,14 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
 import { 
   Database, 
   Save,
   Calendar,
-  Lock,
-  GraduationCap,
-  AlertCircle
+  GraduationCap
 } from 'lucide-react';
 import { ISystemSettings } from '@/types';
 import { useToastStore } from '@/store/toastStore';
@@ -233,7 +230,7 @@ export function SystemSettings() {
           </Card>
 
           <div className="flex items-center gap-2">
-            <Button type="submit" loading={loading}>
+            <Button type="submit" isLoading={loading}>
               <Save className="h-4 w-4 mr-2" />
               Save Settings
             </Button>

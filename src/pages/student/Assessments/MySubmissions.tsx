@@ -7,14 +7,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { 
   FileText, 
-  BookOpen,
   Clock,
   Calendar,
   CheckCircle2,
   AlertCircle,
-  XCircle,
-  TrendingUp,
-  Filter
+  TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
@@ -22,7 +19,7 @@ import { logger } from '@/lib/logger';
 
 export function MySubmissions() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [submissions, setSubmissions] = useState<ISubmission[]>([]);
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);

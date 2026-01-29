@@ -3,30 +3,26 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { IMaterial, IEnrollment } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { 
   FileText, 
   BookOpen,
-  Upload,
   Trash2,
-  Edit,
   ExternalLink,
   Download,
   Plus,
-  Search,
-  Filter
+  Search
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { Input } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { categoryIcons, categoryColors } from '@/constants/ui';
 import { logger } from '@/lib/logger';
 import { Link } from 'react-router-dom';
 
 export function ManageMaterials() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const [materials, setMaterials] = useState<IMaterial[]>([]);

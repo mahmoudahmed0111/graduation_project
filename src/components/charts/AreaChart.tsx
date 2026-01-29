@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 
 interface AreaChartProps {
-  data: Array<Record<string, any>>;
+  data: Array<Record<string, unknown>>;
   dataKey: string;
   areas: Array<{
     dataKey: string;

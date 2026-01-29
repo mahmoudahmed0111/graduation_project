@@ -34,8 +34,8 @@ interface AttendanceSession {
 }
 
 export function AttendanceSessions() {
-  const { t, i18n } = useTranslation();
-  const { user } = useAuthStore();
+  const { i18n } = useTranslation();
+  useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
@@ -81,7 +81,7 @@ export function AttendanceSessions() {
     };
 
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once, showError stable
 
   const handleStartSession = async () => {
     if (!selectedCourse || !selectedLocation) {

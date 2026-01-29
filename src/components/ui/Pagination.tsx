@@ -10,7 +10,6 @@ interface PaginationProps {
 }
 
 export function Pagination({ currentPage, totalPages, onPageChange, className }: PaginationProps) {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   const visiblePages = getVisiblePages(currentPage, totalPages);
 
   return (
@@ -36,7 +35,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
         return (
           <button
             key={page}
-            onClick={() => onPageChange(page)}
+            onClick={() => onPageChange(page as number)}
             className={cn(
               'w-10 h-10 rounded-lg text-sm font-medium transition-colors',
               currentPage === page

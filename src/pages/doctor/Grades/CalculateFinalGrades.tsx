@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { IEnrollment, ICourseOffering } from '@/types';
+import { IEnrollment } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
@@ -10,7 +10,6 @@ import {
   Calculator, 
   GraduationCap,
   BookOpen,
-  CheckCircle2,
   AlertCircle,
   Download,
   Save
@@ -34,8 +33,8 @@ interface StudentGrade {
 }
 
 export function CalculateFinalGrades() {
-  const { t, i18n } = useTranslation();
-  const { user } = useAuthStore();
+  const { i18n } = useTranslation();
+  useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');

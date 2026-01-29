@@ -9,11 +9,7 @@ import {
   BookOpen, 
   GraduationCap, 
   Building2,
-  TrendingUp,
-  CheckCircle2,
-  AlertCircle,
   Calendar,
-  BarChart3,
   FileText,
   Bell,
   Clock
@@ -30,7 +26,7 @@ import { formatDate } from '@/utils/formatters';
 
 export function AdminDashboard() {
   const { user } = useAuthStore();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const admin = user as IUser;
   
   const [courses, setCourses] = useState<ICourse[]>([]);
@@ -408,7 +404,7 @@ export function AdminDashboard() {
           description="Courses by department"
         >
           {(() => {
-            const courseDistribution = courses.reduce((acc, course) => {
+            const courseDistribution = courses.reduce((acc, _course) => {
               const dept = 'General'; // In real app, get from course.department
               acc[dept] = (acc[dept] || 0) + 1;
               return acc;

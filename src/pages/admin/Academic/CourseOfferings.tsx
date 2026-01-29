@@ -9,8 +9,6 @@ import {
   Search, 
   Plus,
   Edit,
-  Users,
-  BookOpen,
   Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -27,7 +25,7 @@ export function CourseOfferings() {
 
   useEffect(() => {
     fetchOfferings();
-  }, [selectedSemester, searchTerm]);
+  }, [selectedSemester, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchOfferings stable
 
   const fetchOfferings = async () => {
     try {

@@ -3,8 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useTenantStore } from '@/store/tenantStore';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Globe, LogOut, Menu, ChevronDown, Check, Bell, Lock as LockIcon, User } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Globe, LogOut, Menu, Check, Bell, Lock as LockIcon } from 'lucide-react';
 import { Select } from '../ui/Select';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '@/lib/utils';
@@ -21,7 +20,6 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const { currentUniversity, universities, setCurrentUniversity } = useTenantStore();
   const { i18n, t } = useTranslation();
   const navigate = useNavigate();
-  const [showTenantSwitcher, setShowTenantSwitcher] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);

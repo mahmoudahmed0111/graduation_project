@@ -16,7 +16,7 @@ interface DatePickerProps {
 }
 
 export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
-  ({ label, error, helperText, selected, onChange, className, placeholderText, minDate, maxDate, disabled }, ref) => {
+  ({ label, error, helperText, selected, onChange, className, placeholderText, minDate, maxDate, disabled }, _ref) => {
     const inputId = `datepicker-${Math.random().toString(36).substr(2, 9)}`;
 
     return (

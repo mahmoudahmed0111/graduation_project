@@ -170,7 +170,7 @@ export const api = {
     courseOffering: string;
     totalPoints: number;
     dueDate: string;
-    questions: any[];
+    questions: IAssessment['questions'];
   }): Promise<IAssessment> => {
     const response = await axiosInstance.post<IAssessment>('/assessments', data);
     return response.data;
@@ -204,7 +204,7 @@ export const api = {
     courseOffering: string;
     location: string;
     rfidReaderId: string;
-  }): Promise<any> => {
+  }): Promise<unknown> => {
     const response = await axiosInstance.post('/attendance/sessions', data);
     return response.data;
   },
@@ -213,7 +213,7 @@ export const api = {
     await axiosInstance.post(`/attendance/sessions/${sessionId}/stop`);
   },
 
-  getAttendanceSessions: async (params?: { courseOffering?: string }): Promise<any[]> => {
+  getAttendanceSessions: async (params?: { courseOffering?: string }): Promise<unknown[]> => {
     const response = await axiosInstance.get('/attendance/sessions', { params });
     return response.data;
   },

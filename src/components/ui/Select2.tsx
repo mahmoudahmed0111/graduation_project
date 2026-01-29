@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronDown, Search, GraduationCap } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 
 interface Select2Option {
   value: string;

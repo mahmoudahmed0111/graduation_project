@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Link, useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { 
   ArrowLeft, 
   User, 
   Mail, 
-  CreditCard, 
+  CreditCard,
   GraduationCap,
   Building2,
   Calendar,
@@ -15,12 +14,13 @@ import {
   Award,
   Edit,
   FileText,
-  Clock,
-  CheckCircle2,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import { IStudent, IEnrollment } from '@/types';
 import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
+import { getStatusBadge } from '@/utils/status';
+import { getGPAColor } from '@/constants/ui';
 
 // Mock student data - in real app, fetch from API
 const mockStudent: IStudent = {
@@ -48,8 +48,6 @@ const mockStudent: IStudent = {
 } as IStudent;
 
 export function ShowStudent() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [student, setStudent] = useState<IStudent | null>(null);
   const [enrollments, setEnrollments] = useState<IEnrollment[]>([]);

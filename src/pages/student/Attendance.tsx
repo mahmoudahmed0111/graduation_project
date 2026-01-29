@@ -6,20 +6,17 @@ import { IAttendanceReport, IEnrollment } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { 
   Clock, 
-  BookOpen,
   TrendingUp,
-  TrendingDown,
   AlertCircle,
   CheckCircle2,
-  Calendar,
-  Filter
+  Calendar
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 
 export function Attendance() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError } = useToastStore();
   const [attendanceReports, setAttendanceReports] = useState<IAttendanceReport[]>([]);
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);

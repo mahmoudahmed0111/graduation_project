@@ -14,7 +14,6 @@ import {
   User,
   GraduationCap,
   TrendingUp,
-  AlertCircle,
   CheckCircle2,
   XCircle
 } from 'lucide-react';
@@ -24,7 +23,7 @@ import { logger } from '@/lib/logger';
 
 export function MyCourses() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  useAuthStore();
   const { error: showError, success: showSuccess } = useToastStore();
   const [enrollments, setEnrollments] = useState<IEnrollment[]>([]);
   const [loading, setLoading] = useState(true);

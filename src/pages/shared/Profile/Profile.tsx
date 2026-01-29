@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/lib/api';
@@ -8,13 +8,9 @@ import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { 
   User,
-  Mail,
   CreditCard,
   GraduationCap,
-  Building2,
-  Award,
   Edit2,
-  X,
   Lock,
   Eye,
   EyeOff
@@ -25,7 +21,7 @@ import { logger } from '@/lib/logger';
 
 export function Profile() {
   const { t } = useTranslation();
-  const { user, setUser } = useAuthStore();
+  const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const student = user as IStudent;
 
@@ -77,12 +73,13 @@ export function Profile() {
         confirmPassword: '',
       });
       success('Password changed successfully');
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to change password', {
         context: 'Profile',
         error: err,
       });
-      showError(err.response?.data?.message || 'Failed to change password');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg || 'Failed to change password');
     } finally {
       setLoading(false);
     }

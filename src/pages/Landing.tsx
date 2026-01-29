@@ -8,12 +8,11 @@ import {
   Award, 
   ArrowRight,
   CheckCircle,
-  Star,
   TrendingUp
 } from 'lucide-react';
 
 export function Landing() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isArabic = i18n.language === 'ar';
 
   const features = [

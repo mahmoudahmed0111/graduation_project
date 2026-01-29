@@ -10,8 +10,7 @@ import {
   Plus,
   Edit,
   Archive,
-  School,
-  BookOpen
+  School
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ICourseCatalog } from '@/types';
@@ -34,7 +33,7 @@ export function CourseCatalog() {
   useEffect(() => {
     fetchDepartments();
     fetchCourses();
-  }, [selectedDepartment, searchTerm]);
+  }, [selectedDepartment, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchCourses/fetchDepartments stable
 
   const fetchDepartments = async () => {
     setDepartments([
@@ -238,7 +237,7 @@ export function CourseCatalog() {
       </Card>
 
       <ConfirmDialog
-        open={archiveDialog.open}
+        isOpen={archiveDialog.open}
         onClose={() => setArchiveDialog({ open: false, course: null })}
         onConfirm={() => archiveDialog.course && handleArchive(archiveDialog.course)}
         title="Archive Course"

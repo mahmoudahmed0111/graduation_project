@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -11,10 +10,7 @@ import { Select } from '@/components/ui/Select';
 import { 
   ArrowLeft, 
   User, 
-  Mail, 
-  CreditCard, 
   GraduationCap,
-  Building2,
   Save,
   X,
   Trash2
@@ -61,7 +57,6 @@ const mockStudent: IStudent = {
 } as IStudent;
 
 export function EditStudent() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { success, error: showError } = useToastStore();
@@ -121,12 +116,13 @@ export function EditStudent() {
       logger.info('Student updated successfully', { context: 'EditStudent', id, data });
       success('Student updated successfully');
       navigate('/dashboard/students');
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to update student', {
         context: 'EditStudent',
         error: err,
       });
-      showError(err.response?.data?.message || 'Failed to update student');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg || 'Failed to update student');
     } finally {
       setLoading(false);
     }
@@ -145,12 +141,13 @@ export function EditStudent() {
       logger.info('Student deleted successfully', { context: 'EditStudent', id });
       success('Student deleted successfully');
       navigate('/dashboard/students');
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Failed to delete student', {
         context: 'EditStudent',
         error: err,
       });
-      showError(err.response?.data?.message || 'Failed to delete student');
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg || 'Failed to delete student');
     } finally {
       setLoading(false);
     }

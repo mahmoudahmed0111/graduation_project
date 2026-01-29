@@ -7,8 +7,7 @@ import { Select } from '@/components/ui/Select';
 import { 
   Building2, 
   ArrowLeft,
-  Save,
-  AlertCircle
+  Save
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
@@ -113,7 +112,7 @@ export function CreateCollege() {
               </label>
               <Select
                 value={formData.deanId}
-                onChange={(value) => setFormData({ ...formData, deanId: value })}
+                onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
                 options={[
                   { value: '', label: 'Select a dean...' },
                   ...deans.map(dean => ({ value: dean.id, label: dean.name })),
@@ -122,7 +121,7 @@ export function CreateCollege() {
             </div>
 
             <div className="flex items-center gap-2 pt-4">
-              <Button type="submit" loading={loading}>
+              <Button type="submit" isLoading={loading}>
                 <Save className="h-4 w-4 mr-2" />
                 Create College
               </Button>

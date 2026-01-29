@@ -225,7 +225,7 @@ export interface IUniversity {
   primaryColor?: string;
 }
 
-export type UserRole = 'student' | 'ta' | 'doctor' | 'collegeAdmin' | 'universityAdmin';
+export type UserRole = 'student' | 'ta' | 'doctor' | 'collegeAdmin' | 'universityAdmin' | 'superAdmin' | 'admin' | 'teacher';
 export type EnrollmentStatus = 'enrolled' | 'passed' | 'failed' | 'withdrawn';
 
 // Organizational Structure

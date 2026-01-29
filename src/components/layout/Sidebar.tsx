@@ -5,7 +5,6 @@ import {
   LayoutDashboard, 
   BookOpen, 
   Users, 
-  Settings,
   X,
   GraduationCap,
   ChevronDown,
@@ -22,7 +21,6 @@ import {
   UserCheck,
   Library,
   Calendar,
-  MapPin,
   Database
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -44,7 +42,7 @@ interface NavItem {
   children?: NavItem[];
 }
 
-export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand }: SidebarProps) {
+export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _onToggleExpand }: SidebarProps) {
   const { user } = useAuthStore();
   const location = useLocation();
   const { t, i18n } = useTranslation();
@@ -68,7 +66,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand }: 
     setOpenItems(newOpenItems);
   };
 
-  const handleMouseEnter = (path: string, event?: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseEnter = (path: string, _event?: React.MouseEvent<HTMLDivElement>) => {
     if (!isExpanded) {
       // Clear any pending leave timeout
       if (leaveTimeoutRef.current) {
@@ -172,20 +170,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand }: 
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
-  const teacherNavItems: NavItem[] = [
-    { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
-    { path: '/dashboard/roster', label: t('nav.roster'), icon: Users },
-    { 
-      path: '/dashboard/courses', 
-      label: t('nav.courses'), 
-      icon: BookOpen,
-      children: [
-        { path: '/dashboard/courses/my-courses', label: t('nav.myCourses'), icon: BookOpen },
-        { path: '/dashboard/courses/create', label: t('nav.createCourse'), icon: BookOpen },
-      ]
-    },
-  ];
-
   const adminNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { 
@@ -282,9 +266,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand }: 
     const hasChildren = item.children && item.children.length > 0;
     const isOpen = openItems.has(item.path);
     const active = isActive(item.path);
-    const isHovered = hoveredItem === (parentPath || item.path);
-    const showHoverMenu = !isExpanded && hasChildren && isHovered && level === 0;
-
     return (
       <div 
         key={item.path} 

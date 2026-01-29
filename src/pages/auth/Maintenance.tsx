@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Wrench, Mail, Clock, ArrowLeft, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Wrench, Mail, Clock, RefreshCw } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 
 export function Maintenance() {
-  const { t } = useTranslation();
   const { success } = useToastStore();
   const [email, setEmail] = useState('');
 
