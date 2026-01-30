@@ -11,21 +11,9 @@
     --color-accent: theme('colors.accent.500');
   }
 
-  html[dir='rtl'] {
-    direction: rtl;
-  }
-
-  html[dir='ltr'] {
-    direction: ltr;
-  }
-
   body {
     @apply bg-gray-50 text-gray-900;
     font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  html[dir='rtl'] body {
-    font-family: 'Cairo', 'Tajawal', 'Almarai', 'IBM Plex Sans Arabic', Arial, sans-serif;
   }
 }
 

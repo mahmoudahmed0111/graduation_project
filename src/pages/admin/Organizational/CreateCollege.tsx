@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
+import { Select2 } from '@/components/ui/Select2';
 import { 
   Building2, 
   ArrowLeft,
@@ -110,13 +110,14 @@ export function CreateCollege() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Dean
               </label>
-              <Select
+              <Select2
                 value={formData.deanId}
-                onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, deanId: value })}
                 options={[
                   { value: '', label: 'Select a dean...' },
                   ...deans.map(dean => ({ value: dean.id, label: dean.name })),
                 ]}
+                placeholder="Search and select a dean..."
               />
             </div>
 

@@ -15,9 +15,12 @@ import { useLoginAttemptsStore } from '@/store/loginAttemptsStore';
 import { Mail, Lock, Eye, EyeOff, CreditCard } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().min(1, 'Email is required'),
-  nationalId: z.string().min(1, 'National ID is required'),
+  email: z.string().optional(),
+  nationalId: z.string().optional(),
   password: z.string().min(1, 'Password is required'),
+}).refine((data) => (data.email?.trim()?.length ?? 0) > 0 || (data.nationalId?.trim()?.length ?? 0) > 0, {
+  message: 'Enter either Email or National ID',
+  path: ['email'],
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -110,8 +113,8 @@ export function Login() {
 
     setIsLoading(true);
     try {
-      // Use email or nationalId as identifier
-      const loginIdentifier = data.email || data.nationalId;
+      // Use email or nationalId as identifier (at least one is required by schema)
+      const loginIdentifier = (data.email?.trim() || data.nationalId?.trim()) as string;
       await login({ identifier: loginIdentifier, password: data.password });
       
       // Reset failed attempts on success
@@ -123,7 +126,7 @@ export function Login() {
       const errorMessage = axiosError?.response?.data?.message || t('auth.invalidCredentials') || 'Invalid credentials';
       
       // Record failed attempt
-      const loginIdentifier = data.email || data.nationalId;
+      const loginIdentifier = (data.email?.trim() || data.nationalId?.trim()) || '';
       const attemptInfo = recordFailedAttempt(loginIdentifier);
       
       if (attemptInfo.isDeactivated) {

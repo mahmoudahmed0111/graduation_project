@@ -19,8 +19,6 @@ import {
   Building2,
   School,
   UserCheck,
-  Library,
-  Calendar,
   Database
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -45,8 +43,7 @@ interface NavItem {
 export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _onToggleExpand }: SidebarProps) {
   const { user } = useAuthStore();
   const location = useLocation();
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === 'ar';
+  const { t } = useTranslation();
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [hoveredItemPosition, setHoveredItemPosition] = useState<{ top: number; left: number } | null>(null);
@@ -82,19 +79,10 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         const element = itemRefs.current.get(path);
         if (element) {
           const rect = element.getBoundingClientRect();
-          if (isRTL) {
-            // In RTL, calculate from right side
-            setHoveredItemPosition({
-              top: rect.top,
-              left: rect.left - 4, // Will be converted to right in style
-            });
-          } else {
-            // In LTR, calculate from left side
-            setHoveredItemPosition({
-              top: rect.top,
-              left: rect.right + 4,
-            });
-          }
+          setHoveredItemPosition({
+            top: rect.top,
+            left: rect.right + 4,
+          });
         }
         setHoveredItem(path);
       }, 100); // Reduced delay for faster response
@@ -173,8 +161,17 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
   const adminNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { 
+      path: '/dashboard/organizational', 
+      label: 'University Structure', 
+      icon: Building2,
+      children: [
+        { path: '/dashboard/organizational/colleges', label: t('nav.colleges'), icon: Building2 },
+        { path: '/dashboard/organizational/departments', label: t('nav.departments'), icon: School },
+      ]
+    },
+    { 
       path: '/dashboard/users', 
-      label: t('nav.users'), 
+      label: 'User Management', 
       icon: Users,
       children: [
         { path: '/dashboard/users/students', label: t('nav.students'), icon: GraduationCap },
@@ -183,29 +180,10 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         { path: '/dashboard/users/admins', label: t('nav.admins'), icon: User },
       ]
     },
-    { 
-      path: '/dashboard/organizational', 
-      label: t('nav.organizationalStructure'), 
-      icon: Building2,
-      children: [
-        { path: '/dashboard/organizational/colleges', label: t('nav.colleges'), icon: Building2 },
-        { path: '/dashboard/organizational/departments', label: t('nav.departments'), icon: School },
-      ]
-    },
-    { 
-      path: '/dashboard/academic', 
-      label: t('nav.academicStructure'), 
-      icon: BookOpen,
-      children: [
-        { path: '/dashboard/academic/catalog', label: t('nav.courseCatalog'), icon: Library },
-        { path: '/dashboard/academic/offerings', label: t('nav.courseOfferings'), icon: Calendar },
-      ]
-    },
-    { path: '/dashboard/enrollments', label: t('nav.enrollments'), icon: GraduationCap },
-    { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
-    { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
-    { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3 },
-    { path: '/dashboard/system-settings', label: t('nav.systemSettings'), icon: Database },
+    { path: '/dashboard/system-settings', label: 'System Settings', icon: Database },
+    { path: '/dashboard/announcements', label: 'Broadcast Center', icon: Bell },
+    { path: '/dashboard/chatbot', label: 'AI Assistant', icon: MessageSquare },
+    { path: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileText },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
@@ -286,50 +264,27 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
               onClick={() => toggleItem(item.path)}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative',
-                isRTL ? 'flex-row-reverse' : '',
                 active
                   ? 'bg-primary-50 text-primary-700 font-medium'
                   : 'text-gray-700 hover:bg-gray-100',
                 !isExpanded && 'lg:justify-center',
-                level > 0 && (isRTL ? 'mr-4' : 'ml-4')
+                level > 0 && 'ml-4'
               )}
               title={!isExpanded ? item.label : undefined}
             >
-              {isRTL ? (
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              {isExpanded && (
                 <>
-                  {isExpanded && (
-                    <>
-                      <div className="transition-transform duration-300 ease-in-out">
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
-                        )}
-                      </div>
-                      <span className="flex-1 text-right transition-opacity duration-300 ease-in-out">
-                        {item.label}
-                      </span>
-                    </>
-                  )}
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                </>
-              ) : (
-                <>
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {isExpanded && (
-                    <>
-                      <span className="flex-1 text-left transition-opacity duration-300 ease-in-out">
-                        {item.label}
-                      </span>
-                      <div className="transition-transform duration-300 ease-in-out">
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
-                        )}
-                      </div>
-                    </>
-                  )}
+                  <span className="flex-1 text-left transition-opacity duration-300 ease-in-out">
+                    {item.label}
+                  </span>
+                  <div className="transition-transform duration-300 ease-in-out">
+                    {isOpen ? (
+                      <ChevronDown className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
+                    )}
+                  </div>
                 </>
               )}
             </button>
@@ -365,33 +320,19 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             onClick={onClose}
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-              isRTL ? 'flex-row-reverse' : '',
               active
                 ? 'bg-primary-50 text-primary-700 font-medium'
                 : 'text-gray-700 hover:bg-gray-100',
               !isExpanded && 'lg:justify-center',
-              level > 0 && (isRTL ? 'mr-4' : 'ml-4')
+              level > 0 && 'ml-4'
             )}
             title={!isExpanded ? item.label : undefined}
           >
-            {isRTL ? (
-              <>
-                {isExpanded && (
-                  <span className="flex-1 text-right transition-opacity duration-300 ease-in-out">
-                    {item.label}
-                  </span>
-                )}
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-              </>
-            ) : (
-              <>
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {isExpanded && (
-                  <span className="flex-1 text-left transition-opacity duration-300 ease-in-out">
-                    {item.label}
-                  </span>
-                )}
-              </>
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {isExpanded && (
+              <span className="flex-1 text-left transition-opacity duration-300 ease-in-out">
+                {item.label}
+              </span>
             )}
           </Link>
         )}
@@ -419,22 +360,16 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
           style={{ 
             zIndex: 99999,
             top: `${hoveredItemPosition.top}px`,
-            ...(isRTL 
-              ? { right: `${window.innerWidth - hoveredItemPosition.left}px` }
-              : { left: `${hoveredItemPosition.left}px` }
-            ),
+            left: `${hoveredItemPosition.left}px`,
           }}
           onMouseEnter={handleDropdownMouseEnter}
           onMouseLeave={handleDropdownMouseLeave}
         >
           <div className="bg-white rounded-lg shadow-2xl py-2 min-w-[220px] animate-fade-in overflow-hidden">
             <div className="px-4 py-2.5 bg-gray-50">
-              <p className={cn(
-                'text-sm font-semibold text-gray-900 flex items-center gap-2',
-                isRTL ? 'flex-row-reverse' : ''
-              )}>
+              <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <hoveredNavItem.icon className="h-4 w-4 text-primary-600" />
-                <span className={isRTL ? 'text-right' : 'text-left'}>{hoveredNavItem.label}</span>
+                <span className="text-left">{hoveredNavItem.label}</span>
               </p>
             </div>
                   <div className="py-1.5">
@@ -447,29 +382,16 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
                           onClick={onClose}
                           className={cn(
                             'flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200',
-                            isRTL ? 'flex-row-reverse' : '',
                             childActive
                               ? 'bg-primary-50 text-primary-700 font-medium'
                               : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                           )}
                         >
-                          {isRTL ? (
-                            <>
-                              <span className={cn('flex-1', isRTL ? 'text-right' : 'text-left')}>{child.label}</span>
-                              <child.icon className={cn(
-                                'h-4 w-4 flex-shrink-0',
-                                childActive ? 'text-primary-600' : 'text-gray-500'
-                              )} />
-                            </>
-                          ) : (
-                            <>
-                              <child.icon className={cn(
-                                'h-4 w-4 flex-shrink-0',
-                                childActive ? 'text-primary-600' : 'text-gray-500'
-                              )} />
-                              <span className="flex-1">{child.label}</span>
-                            </>
-                          )}
+                          <child.icon className={cn(
+                            'h-4 w-4 flex-shrink-0',
+                            childActive ? 'text-primary-600' : 'text-gray-500'
+                          )} />
+                          <span className="flex-1">{child.label}</span>
                         </Link>
                       );
                     })}
@@ -482,14 +404,9 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 h-full bg-white z-50',
+          'fixed top-0 left-0 h-full bg-white z-50',
           'transition-all duration-300 ease-in-out',
-          isRTL 
-            ? 'right-0 lg:translate-x-0' 
-            : 'left-0 lg:translate-x-0',
-          isRTL
-            ? (isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0')
-            : (isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'),
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isExpanded ? 'lg:w-64' : 'lg:w-16'
         )}
         style={{
@@ -507,7 +424,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
               />
               {isExpanded && (
                 <span className="font-semibold text-primary-600 whitespace-nowrap transition-opacity duration-300 ease-in-out">
-                  {i18n.language === 'ar' ? 'جامعة بني سويف' : 'Beni Suef University'}
+                  Beni Suef University
                 </span>
               )}
             </div>

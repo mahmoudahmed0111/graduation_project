@@ -28,7 +28,7 @@ import { formatDate } from '@/utils/formatters';
 
 export function StudentDashboard() {
   const { user } = useAuthStore();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const student = user as IStudent;
   
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
@@ -179,14 +179,14 @@ export function StudentDashboard() {
                 <Clock className="h-5 w-5" />
                 <div className="text-2xl font-bold font-mono">
                   {currentTime.toLocaleTimeString(
-                    i18n.language === 'ar' ? 'ar-EG' : 'en-US',
+                    'en-US',
                     { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }
                   )}
                 </div>
               </div>
               <div className="text-sm text-primary-200">
                 {currentTime.toLocaleDateString(
-                  i18n.language === 'ar' ? 'ar-EG' : 'en-US',
+                  'en-US',
                   { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
                 )}
               </div>

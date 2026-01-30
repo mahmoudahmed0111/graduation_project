@@ -6,7 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
+import { Select2 } from '@/components/ui/Select2';
 import { 
   ArrowLeft, 
   User, 
@@ -43,9 +43,15 @@ export function CreateStudent() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
+    setValue,
   } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
   });
+
+  const watchYear = watch('year');
+  const watchSemester = watch('semester');
+  const watchDepartment = watch('department');
 
   const onSubmit = async (data: StudentFormData) => {
     try {
@@ -140,8 +146,10 @@ export function CreateStudent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select
+                  <Select2
                     label="Year"
+                    value={watchYear || ''}
+                    onChange={(value) => setValue('year', value)}
                     options={[
                       { value: '', label: 'Select Year' },
                       { value: '1', label: 'Year 1' },
@@ -150,27 +158,31 @@ export function CreateStudent() {
                       { value: '4', label: 'Year 4' },
                     ]}
                     error={errors.year?.message}
-                    {...register('year')}
+                    placeholder="Select Year"
                   />
-                  <Select
+                  <Select2
                     label="Semester"
+                    value={watchSemester || ''}
+                    onChange={(value) => setValue('semester', value)}
                     options={[
                       { value: '', label: 'Select Semester' },
                       { value: '1', label: 'Semester 1' },
                       { value: '2', label: 'Semester 2' },
                     ]}
                     error={errors.semester?.message}
-                    {...register('semester')}
+                    placeholder="Select Semester"
                   />
                 </div>
-                <Select
+                <Select2
                   label="Department"
+                  value={watchDepartment || ''}
+                  onChange={(value) => setValue('department', value)}
                   options={[
                     { value: '', label: 'Select Department' },
                     ...departments,
                   ]}
                   error={errors.department?.message}
-                  {...register('department')}
+                  placeholder="Select Department"
                 />
               </CardContent>
             </Card>

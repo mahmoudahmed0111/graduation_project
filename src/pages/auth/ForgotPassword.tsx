@@ -37,13 +37,13 @@ export function ForgotPassword() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       setIsSuccess(true);
-      success(t('auth.resetLinkSent') || 'تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني');
+      success(t('auth.resetLinkSent') || 'Reset link sent to your email');
     } catch (error) {
       logger.error('Failed to send reset link', {
         context: 'ForgotPassword',
         error,
       });
-      showError(t('auth.resetLinkError') || 'حدث خطأ أثناء إرسال الرابط');
+      showError(t('auth.resetLinkError') || 'Error sending reset link');
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +103,7 @@ export function ForgotPassword() {
                 {t('common.success')}
               </h3>
               <p className="text-gray-600 mb-6">
-                {t('auth.resetPassword')} - تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني
+                {t('auth.resetPassword')} - Reset link has been sent to your email
               </p>
               <Link to="/login">
                 <Button className="w-full">

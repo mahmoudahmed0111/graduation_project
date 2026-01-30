@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
@@ -38,7 +37,6 @@ interface RosterStudent {
 }
 
 export function TeacherRoster() {
-  const { i18n } = useTranslation();
   const { user } = useAuthStore();
   const { error: showError } = useToastStore();
   const [loading, setLoading] = useState(true);
@@ -271,7 +269,7 @@ export function TeacherRoster() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">
-            {i18n.language === 'ar' ? 'جاري تحميل قائمة الطلاب...' : 'Loading roster...'}
+            Loading roster...
           </p>
         </div>
       </div>
@@ -284,17 +282,15 @@ export function TeacherRoster() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {i18n.language === 'ar' ? 'قائمة الطلاب' : 'Student Roster'}
+            Student Roster
           </h1>
           <p className="text-gray-600 mt-1">
-            {i18n.language === 'ar'
-              ? 'عرض وإدارة الطلاب المسجلين في مقرراتك'
-              : 'View and manage students in your courses'}
+            View and manage students in your courses
           </p>
         </div>
         <Button variant="secondary" className="flex items-center gap-2 rounded-full px-4 py-2 shadow-sm">
           <Download className="h-4 w-4" />
-          {i18n.language === 'ar' ? 'تصدير القائمة' : 'Export Roster'}
+          Export Roster
         </Button>
       </div>
 
@@ -305,7 +301,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {i18n.language === 'ar' ? 'إجمالي الطلاب' : 'Total Students'}
+                  Total Students
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{students.length}</p>
               </div>
@@ -318,7 +314,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {i18n.language === 'ar' ? 'المقررات النشطة' : 'Active Courses'}
+                  Active Courses
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{uniqueCourses.length}</p>
               </div>
@@ -331,7 +327,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {i18n.language === 'ar' ? 'متوسط الحضور' : 'Avg. Attendance'}
+                  Avg. Attendance
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {students.length > 0 
@@ -348,7 +344,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {i18n.language === 'ar' ? 'متوسط التقدير' : 'Avg. Grade'}
+                  Avg. Grade
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {students.length > 0 
@@ -370,11 +366,7 @@ export function TeacherRoster() {
               <div className="relative flex-1 md:w-72">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder={
-                    i18n.language === 'ar'
-                      ? 'ابحث بالاسم أو الرقم الجامعي أو البريد الإلكتروني...'
-                      : 'Search by name, ID, or email...'
-                  }
+                  placeholder="Search by name, ID, or email..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -392,18 +384,14 @@ export function TeacherRoster() {
                 options={[
                   {
                     value: '',
-                    label: i18n.language === 'ar' ? 'كل المقررات' : 'All Courses',
+                    label: 'All Courses',
                   },
                   ...uniqueCourses.map((course) => ({
                     value: course.id,
                     label: `${course.course.code} - ${course.course.title}`,
                   })),
                 ]}
-                placeholder={
-                  i18n.language === 'ar'
-                    ? 'تصفية حسب المقرر...'
-                    : 'Filter by course...'
-                }
+                placeholder="Filter by course..."
                 className="w-full md:w-72"
               />
             </div>
@@ -415,31 +403,31 @@ export function TeacherRoster() {
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'الرقم الجامعي' : 'Student ID'}
+                    Student ID
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'الاسم' : 'Name'}
+                    Name
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                    Email
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'المقرر' : 'Course'}
+                    Course
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'العام والفصل' : 'Year & Semester'}
+                    Year & Semester
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'نسبة الحضور' : 'Attendance'}
+                    Attendance
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'الدرجة' : 'Grade'}
+                    Grade
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'الحالة' : 'Status'}
+                    Status
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {i18n.language === 'ar' ? 'إجراءات' : 'Actions'}
+                    Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -450,12 +438,10 @@ export function TeacherRoster() {
                       <div className="flex flex-col items-center justify-center w-full min-h-[200px]">
                         <Users className="h-16 w-16 text-gray-300 mb-4" />
                         <p className="text-lg font-semibold text-gray-900 mb-1">
-                          {i18n.language === 'ar' ? 'لم يتم العثور على طلاب' : 'No students found'}
+                          No students found
                         </p>
                         <p className="text-sm text-gray-500">
-                          {i18n.language === 'ar'
-                            ? 'جرّب تعديل البحث أو عوامل التصفية'
-                            : 'Try adjusting your search or filters'}
+                          Try adjusting your search or filters
                         </p>
                       </div>
                     </TableCell>
@@ -489,9 +475,7 @@ export function TeacherRoster() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {i18n.language === 'ar'
-                            ? `العام ${student.year} - الفصل ${student.semester}`
-                            : `Year ${student.year} - Sem ${student.semester}`}
+                          {`Year ${student.year} - Sem ${student.semester}`}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -515,15 +499,7 @@ export function TeacherRoster() {
                           student.status === 'failed' ? 'bg-red-100 text-red-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>
-                          {i18n.language === 'ar'
-                            ? (student.status === 'enrolled'
-                                ? 'مسجّل'
-                                : student.status === 'passed'
-                                  ? 'ناجح'
-                                  : student.status === 'failed'
-                                    ? 'راسب'
-                                    : student.status)
-                            : student.status}
+                          {student.status}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -533,7 +509,7 @@ export function TeacherRoster() {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              title={i18n.language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                              title="View Details"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

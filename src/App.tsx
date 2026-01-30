@@ -37,10 +37,11 @@ import { ManageMaterials, UploadMaterial } from './pages/doctor/Materials';
 import { CreateAssessment, GradeSubmissions } from './pages/doctor/Assessments';
 import { AttendanceSessions } from './pages/doctor/Attendance';
 import { CalculateFinalGrades } from './pages/doctor/Grades';
-import { Colleges, CreateCollege, EditCollege, Departments, CreateDepartment, EditDepartment } from './pages/admin/Organizational';
+import { Colleges, CreateCollege, EditCollege, CollegeDetails, Departments, CreateDepartment, EditDepartment } from './pages/admin/Organizational';
 import { CourseCatalog, CourseOfferings } from './pages/admin/Academic';
-import { AllUsers } from './pages/admin/Users';
+import { AllUsers, CreateDoctor, EditDoctor, CreateTA, EditTA, CreateAdmin, EditAdmin } from './pages/admin/Users';
 import { SystemSettings } from './pages/admin/SystemSettings';
+import { AuditLogs } from './pages/admin/AuditLogs';
 import './styles/index.css';
 import './lib/i18n';
 
@@ -215,6 +216,22 @@ function App() {
             }
           />
           <Route
+            path="users/doctors/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateDoctor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/doctors/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <EditDoctor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="users/tas"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
@@ -223,10 +240,42 @@ function App() {
             }
           />
           <Route
+            path="users/tas/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateTA />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/tas/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <EditTA />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="users/admins"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin']}>
                 <AllUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/admins/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin']}>
+                <CreateAdmin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/admins/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin']}>
+                <EditAdmin />
               </ProtectedRoute>
             }
           />
@@ -253,6 +302,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['universityAdmin']}>
                 <EditCollege />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="organizational/colleges/:id"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin']}>
+                <CollegeDetails />
               </ProtectedRoute>
             }
           />
@@ -305,6 +362,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['universityAdmin']}>
                 <SystemSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <AuditLogs />
               </ProtectedRoute>
             }
           />

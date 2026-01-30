@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { IMaterial, IEnrollment } from '@/types';
@@ -22,7 +21,6 @@ import { logger } from '@/lib/logger';
 import { Link } from 'react-router-dom';
 
 export function ManageMaterials() {
-  const { i18n } = useTranslation();
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const [materials, setMaterials] = useState<IMaterial[]>([]);
@@ -114,18 +112,16 @@ export function ManageMaterials() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {i18n.language === 'ar' ? 'إدارة المواد التعليمية' : 'Manage Materials'}
+            Manage Materials
           </h1>
           <p className="text-gray-600 mt-1">
-            {i18n.language === 'ar'
-              ? 'رفع وحذف المواد التعليمية لمقرراتك'
-              : 'Upload and delete course materials'}
+            Upload and delete course materials
           </p>
         </div>
         <Link to="/dashboard/materials/upload">
           <Button className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            {i18n.language === 'ar' ? 'رفع مادة جديدة' : 'Upload Material'}
+            Upload Material
           </Button>
         </Link>
       </div>
@@ -138,7 +134,7 @@ export function ManageMaterials() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder={i18n.language === 'ar' ? 'ابحث في المواد...' : 'Search materials...'}
+                placeholder="Search materials..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -149,7 +145,7 @@ export function ManageMaterials() {
               onChange={(e) => setSelectedCourse(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="all">{i18n.language === 'ar' ? 'كل المقررات' : 'All Courses'}</option>
+              <option value="all">All Courses</option>
               {myCourses.map(course => (
                 <option key={course.courseOffering?.id} value={course.courseOffering?.id}>
                   {course.courseOffering?.course?.code} - {course.courseOffering?.course?.title}
@@ -161,11 +157,11 @@ export function ManageMaterials() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="all">{i18n.language === 'ar' ? 'كل الفئات' : 'All Categories'}</option>
-              <option value="Lectures">{i18n.language === 'ar' ? 'محاضرات' : 'Lectures'}</option>
-              <option value="Sheets">{i18n.language === 'ar' ? 'أوراق عمل' : 'Sheets'}</option>
-              <option value="Readings">{i18n.language === 'ar' ? 'قراءات' : 'Readings'}</option>
-              <option value="Links">{i18n.language === 'ar' ? 'روابط' : 'Links'}</option>
+              <option value="all">All Categories</option>
+              <option value="Lectures">Lectures</option>
+              <option value="Sheets">Sheets</option>
+              <option value="Readings">Readings</option>
+              <option value="Links">Links</option>
             </select>
           </div>
         </CardContent>
@@ -177,12 +173,12 @@ export function ManageMaterials() {
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">
-              {i18n.language === 'ar' ? 'لا توجد مواد تعليمية' : 'No materials found'}
+              No materials found
             </p>
             <Link to="/dashboard/materials/upload">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                {i18n.language === 'ar' ? 'رفع مادة جديدة' : 'Upload First Material'}
+                Upload First Material
               </Button>
             </Link>
           </CardContent>
@@ -210,7 +206,7 @@ export function ManageMaterials() {
                         size="sm"
                         className="h-8 w-8 p-0"
                         onClick={() => openDeleteDialog(material)}
-                        title={i18n.language === 'ar' ? 'حذف' : 'Delete'}
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
@@ -238,7 +234,7 @@ export function ManageMaterials() {
                       {material.isExternalLink ? (
                         <>
                           <ExternalLink className="h-4 w-4" />
-                          <span>{i18n.language === 'ar' ? 'رابط خارجي' : 'External Link'}</span>
+                          <span>External Link</span>
                         </>
                       ) : (
                         <>
@@ -256,19 +252,19 @@ export function ManageMaterials() {
                       {material.isExternalLink ? (
                         <>
                           <ExternalLink className="h-4 w-4" />
-                          {i18n.language === 'ar' ? 'فتح' : 'Open'}
+                          Open
                         </>
                       ) : (
                         <>
                           <Download className="h-4 w-4" />
-                          {i18n.language === 'ar' ? 'تحميل' : 'Download'}
+                          Download
                         </>
                       )}
                     </a>
                   </div>
                   
                   <div className="mt-2 text-xs text-gray-400">
-                    {i18n.language === 'ar' ? 'تم الرفع في' : 'Uploaded'} {new Date(material.uploadedAt).toLocaleDateString()}
+                    Uploaded {new Date(material.uploadedAt).toLocaleDateString()}
                   </div>
                 </CardContent>
               </Card>
@@ -285,14 +281,10 @@ export function ManageMaterials() {
           setMaterialToDelete(null);
         }}
         onConfirm={handleDelete}
-        title={i18n.language === 'ar' ? 'حذف المادة التعليمية' : 'Delete Material'}
-        message={
-          i18n.language === 'ar'
-            ? `هل أنت متأكد من حذف "${materialToDelete?.title}"؟ لا يمكن التراجع عن هذا الإجراء.`
-            : `Are you sure you want to delete "${materialToDelete?.title}"? This action cannot be undone.`
-        }
-        confirmText={i18n.language === 'ar' ? 'حذف' : 'Delete'}
-        cancelText={i18n.language === 'ar' ? 'إلغاء' : 'Cancel'}
+        title="Delete Material"
+        message={`Are you sure you want to delete "${materialToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
         variant="danger"
       />
     </div>

@@ -189,7 +189,6 @@ export function Settings() {
                       onChange={(e) => setGeneralSettings({ ...generalSettings, language: e.target.value })}
                       options={[
                         { value: 'en', label: 'English' },
-                        { value: 'ar', label: 'العربية' },
                       ]}
                     />
                   </div>

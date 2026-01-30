@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { IEnrollment, ICourseOffering } from '@/types';
@@ -34,7 +33,6 @@ interface AttendanceSession {
 }
 
 export function AttendanceSessions() {
-  const { i18n } = useTranslation();
   useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
@@ -86,9 +84,7 @@ export function AttendanceSessions() {
   const handleStartSession = async () => {
     if (!selectedCourse || !selectedLocation) {
       showError(
-        i18n.language === 'ar'
-          ? 'يرجى اختيار المقرر والموقع'
-          : 'Please select a course and location'
+        'Please select a course and location'
       );
       return;
     }
@@ -117,9 +113,7 @@ export function AttendanceSessions() {
       
       setSessions([newSession, ...sessions]);
       success(
-        i18n.language === 'ar'
-          ? 'تم بدء جلسة الحضور بنجاح'
-          : 'Attendance session started successfully'
+        'Attendance session started successfully'
       );
       
       // Reset form
@@ -148,9 +142,7 @@ export function AttendanceSessions() {
       ));
       
       success(
-        i18n.language === 'ar'
-          ? 'تم إنهاء جلسة الحضور بنجاح'
-          : 'Attendance session stopped successfully'
+        'Attendance session stopped successfully'
       );
     } catch (error) {
       logger.error('Failed to stop session', {
@@ -177,12 +169,10 @@ export function AttendanceSessions() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {i18n.language === 'ar' ? 'إدارة جلسات الحضور' : 'Manage Attendance Sessions'}
+          {'Manage Attendance Sessions'}
         </h1>
         <p className="text-gray-600 mt-1">
-          {i18n.language === 'ar'
-            ? 'بدء وإيقاف جلسات الحضور باستخدام RFID'
-            : 'Start and stop RFID attendance sessions'}
+          {'Start and stop RFID attendance sessions'}
         </p>
       </div>
 
@@ -191,43 +181,43 @@ export function AttendanceSessions() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Radio className="h-5 w-5 text-primary-600" />
-            {i18n.language === 'ar' ? 'بدء جلسة حضور جديدة' : 'Start New Attendance Session'}
+            {'Start New Attendance Session'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'المقرر' : 'Course'} *
+                {'Course'} *
               </label>
               <Select2
                 value={selectedCourse}
                 onChange={setSelectedCourse}
                 options={[
-                  { value: '', label: i18n.language === 'ar' ? 'اختر المقرر...' : 'Select a course...' },
+                  { value: '', label: 'Select a course...' },
                   ...myCourses.map(course => ({
                     value: course.courseOffering?.id || '',
                     label: `${course.courseOffering?.course?.code} - ${course.courseOffering?.course?.title}`,
                   })),
                 ]}
-                placeholder={i18n.language === 'ar' ? 'اختر المقرر...' : 'Select a course...'}
+                placeholder={'Select a course...'}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'الموقع / قارئ RFID' : 'Location / RFID Reader'} *
+                {'Location / RFID Reader'} *
               </label>
               <Select2
                 value={selectedLocation}
                 onChange={setSelectedLocation}
                 options={[
-                  { value: '', label: i18n.language === 'ar' ? 'اختر الموقع...' : 'Select location...' },
+                  { value: '', label: 'Select location...' },
                   ...availableLocations.map(loc => ({
                     value: loc,
                     label: loc,
                   })),
                 ]}
-                placeholder={i18n.language === 'ar' ? 'اختر الموقع...' : 'Select location...'}
+                placeholder={'Select location...'}
               />
             </div>
           </div>
@@ -238,7 +228,7 @@ export function AttendanceSessions() {
             className="w-full md:w-auto"
           >
             <Play className="h-4 w-4 mr-2" />
-            {i18n.language === 'ar' ? 'بدء الجلسة' : 'Start Session'}
+            {'Start Session'}
           </Button>
         </CardContent>
       </Card>
@@ -248,7 +238,7 @@ export function AttendanceSessions() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-600" />
-            {i18n.language === 'ar' ? 'الجلسات النشطة' : 'Active Sessions'} ({activeSessions.length})
+            {'Active Sessions'} ({activeSessions.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeSessions.map((session) => (
@@ -260,7 +250,7 @@ export function AttendanceSessions() {
                       <span>{session.courseOffering.course?.code}</span>
                     </CardTitle>
                     <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                      {i18n.language === 'ar' ? 'نشط' : 'Active'}
+                      {'Active'}
                     </span>
                   </div>
                 </CardHeader>
@@ -280,13 +270,13 @@ export function AttendanceSessions() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {i18n.language === 'ar' ? 'بدأت في:' : 'Started:'} {formatDate(session.startTime)}
+                      {'Started:'} {formatDate(session.startTime)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4" />
                     <span>
-                      {session.attendedStudents} / {session.totalStudents} {i18n.language === 'ar' ? 'طالب' : 'students'}
+                      {session.attendedStudents} / {session.totalStudents} {'students'}
                     </span>
                   </div>
                   <div className="pt-3 border-t border-gray-200">
@@ -297,7 +287,7 @@ export function AttendanceSessions() {
                       size="sm"
                     >
                       <Square className="h-4 w-4 mr-2" />
-                      {i18n.language === 'ar' ? 'إيقاف الجلسة' : 'Stop Session'}
+                      {'Stop Session'}
                     </Button>
                   </div>
                 </CardContent>
@@ -312,7 +302,7 @@ export function AttendanceSessions() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-gray-400" />
-            {i18n.language === 'ar' ? 'الجلسات المنتهية' : 'Ended Sessions'} ({endedSessions.length})
+            {'Ended Sessions'} ({endedSessions.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {endedSessions.map((session) => (
@@ -324,7 +314,7 @@ export function AttendanceSessions() {
                       <span>{session.courseOffering.course?.code}</span>
                     </CardTitle>
                     <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                      {i18n.language === 'ar' ? 'منتهي' : 'Ended'}
+                      {'Ended'}
                     </span>
                   </div>
                 </CardHeader>
@@ -340,21 +330,21 @@ export function AttendanceSessions() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {i18n.language === 'ar' ? 'من:' : 'From:'} {formatDate(session.startTime)}
+                      {'From:'} {formatDate(session.startTime)}
                     </span>
                   </div>
                   {session.endTime && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       <span>
-                        {i18n.language === 'ar' ? 'إلى:' : 'To:'} {formatDate(session.endTime)}
+                        {'To:'} {formatDate(session.endTime)}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4" />
                     <span>
-                      {session.attendedStudents} / {session.totalStudents} {i18n.language === 'ar' ? 'طالب' : 'students'}
+                      {session.attendedStudents} / {session.totalStudents} {'students'}
                     </span>
                   </div>
                 </CardContent>
@@ -370,12 +360,10 @@ export function AttendanceSessions() {
           <CardContent className="p-12 text-center">
             <Radio className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">
-              {i18n.language === 'ar' ? 'لا توجد جلسات حضور' : 'No attendance sessions'}
+              {'No attendance sessions'}
             </p>
             <p className="text-sm text-gray-500">
-              {i18n.language === 'ar'
-                ? 'ابدأ جلسة حضور جديدة لبدء تسجيل الحضور'
-                : 'Start a new attendance session to begin recording attendance'}
+              {'Start a new attendance session to begin recording attendance'}
             </p>
           </CardContent>
         </Card>

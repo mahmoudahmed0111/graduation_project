@@ -2,31 +2,59 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useTenantStore } from '@/store/tenantStore';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { Globe, LogOut, Menu, Check, Bell, Lock as LockIcon } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Globe, LogOut, Menu, Check, Bell, Lock as LockIcon, ChevronRight } from 'lucide-react';
 import { Select } from '../ui/Select';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '@/lib/utils';
 import { INotification } from '@/types';
 import { formatTimeAgo } from '@/utils/formatters';
-import { useNavigate } from 'react-router-dom';
-
 interface NavbarProps {
   onToggleSidebar?: () => void;
 }
+
+const pathToBreadcrumb: Record<string, string> = {
+  dashboard: 'Home',
+  users: 'Users',
+  students: 'Students',
+  doctors: 'Doctors',
+  tas: 'TAs',
+  admins: 'Admins',
+  organizational: 'University Structure',
+  colleges: 'Colleges',
+  departments: 'Departments',
+  'colleges/create': 'Add College',
+  academic: 'Academic',
+  catalog: 'Course Catalog',
+  offerings: 'Course Offerings',
+  'system-settings': 'System Settings',
+  announcements: 'Broadcast Center',
+  chatbot: 'AI Assistant',
+  'audit-logs': 'Audit Logs',
+  profile: 'Profile',
+  settings: 'Settings',
+};
 
 export function Navbar({ onToggleSidebar }: NavbarProps) {
   const { user, logout } = useAuthStore();
   const { currentUniversity, universities, setCurrentUniversity } = useTenantStore();
   const { i18n, t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+
+  const isAdmin = user?.role === 'universityAdmin' || user?.role === 'collegeAdmin';
+  const pathSegments = location.pathname.replace(/^\/dashboard\/?/, '').split('/').filter(Boolean);
+  const breadcrumbs = pathSegments.map((segment, i) => ({
+    label: pathToBreadcrumb[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    path: '/dashboard/' + pathSegments.slice(0, i + 1).join('/'),
+  }));
+
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const notificationsDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
-  const isRTL = i18n.language === 'ar';
 
   // Mock notifications - in real app, fetch from API
   const [notifications] = useState<INotification[]>([
@@ -56,7 +84,6 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
 
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'ar', label: 'العربية', flag: '🇸🇦' },
   ];
 
   const handleLanguageChange = (lang: string) => {
@@ -131,6 +158,23 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               </span>
             </div>
           )}
+          {isAdmin && (
+            <>
+              <nav className="hidden lg:flex items-center gap-1 text-sm text-gray-600">
+                <Link to="/dashboard" className="hover:text-primary-600">Home</Link>
+                {breadcrumbs.map((b, i) => (
+                  <span key={b.path} className="flex items-center gap-1">
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                    {i === breadcrumbs.length - 1 ? (
+                      <span className="text-gray-900 font-medium">{b.label}</span>
+                    ) : (
+                      <Link to={b.path} className="hover:text-primary-600">{b.label}</Link>
+                    )}
+                  </span>
+                ))}
+              </nav>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -160,13 +204,14 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {showNotificationsDropdown && (
               <div className={cn(
                 'absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50',
-                'animate-fade-in w-80 max-h-96 overflow-hidden flex flex-col',
-                isRTL ? 'left-0' : 'right-0'
+                'animate-fade-in w-80 max-h-96 overflow-hidden flex flex-col right-0'
               )}>
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      {isAdmin ? 'Critical System Notifications' : 'Notifications'}
+                    </h3>
                     {unreadCount > 0 && (
                       <span className="text-xs text-gray-500">{unreadCount} unread</span>
                     )}
@@ -263,8 +308,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {showLanguageDropdown && (
               <div className={cn(
                 'absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[160px] z-50',
-                'animate-fade-in',
-                isRTL ? 'left-0' : 'right-0'
+                'animate-fade-in right-0'
               )}>
                 {languages.map((language) => (
                   <button
@@ -273,12 +317,11 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                     className={cn(
                       'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
                       'hover:bg-gray-50',
-                      i18n.language === language.code && 'bg-primary-50 text-primary-700 font-medium',
-                      isRTL ? 'flex-row-reverse' : ''
+                      i18n.language === language.code && 'bg-primary-50 text-primary-700 font-medium'
                     )}
                   >
                     <span className="text-lg">{language.flag}</span>
-                    <span className={cn('flex-1', isRTL ? 'text-right' : 'text-left')}>
+                    <span className="flex-1 text-left">
                       {language.label}
                     </span>
                     {i18n.language === language.code && (
@@ -329,8 +372,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               {showUserDropdown && (
                 <div className={cn(
                   'absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[220px] z-50',
-                  'animate-fade-in',
-                  isRTL ? 'left-0' : 'right-0'
+                  'animate-fade-in right-0'
                 )}>
                   {/* User Info */}
                   <div className="px-4 py-3 border-b border-gray-200">
@@ -355,27 +397,19 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                   <div className="py-1">
                     <button
                       onClick={handleLockScreen}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                        'hover:bg-gray-50 text-gray-700',
-                        isRTL ? 'flex-row-reverse' : ''
-                      )}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 text-gray-700"
                     >
                       <LockIcon className="h-4 w-4 text-gray-500" />
-                      <span className={cn('flex-1', isRTL ? 'text-right' : 'text-left')}>
+                      <span className="flex-1 text-left">
                         Lock Screen
                       </span>
                     </button>
                     <button
                       onClick={handleLogout}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                        'hover:bg-red-50 text-red-600 hover:text-red-700',
-                        isRTL ? 'flex-row-reverse' : ''
-                      )}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-red-50 text-red-600 hover:text-red-700"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span className={cn('flex-1', isRTL ? 'text-right' : 'text-left')}>
+                      <span className="flex-1 text-left">
                         {t('common.logout') || 'Logout'}
                       </span>
                     </button>

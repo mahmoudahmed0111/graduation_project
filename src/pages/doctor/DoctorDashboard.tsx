@@ -25,7 +25,7 @@ import { formatDate } from '@/utils/formatters';
 
 export function DoctorDashboard() {
   const { user } = useAuthStore();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const doctor = user as IUser;
   
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
@@ -103,7 +103,7 @@ export function DoctorDashboard() {
       icon: BookOpen,
       color: 'text-primary-500',
       bgColor: 'bg-primary-50',
-      description: i18n.language === 'ar' ? 'المقررات التي تدرّسها هذا الفصل' : 'Teaching this semester',
+      description: 'Teaching this semester',
     },
     {
       label: t('mock.doctor.totalStudents'),
@@ -127,7 +127,7 @@ export function DoctorDashboard() {
       icon: Calendar,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      description: i18n.language === 'ar' ? 'خلال هذا الأسبوع' : 'This week',
+      description: 'This week',
     },
   ];
 
@@ -159,7 +159,7 @@ export function DoctorDashboard() {
                 <Calendar className="h-4 w-4" />
                 <span>
                   {new Date().toLocaleDateString(
-                    i18n.language === 'ar' ? 'ar-EG' : 'en-US',
+                    'en-US',
                     { month: 'long', year: 'numeric' }
                   )}
                 </span>
@@ -172,14 +172,14 @@ export function DoctorDashboard() {
                 <Clock className="h-5 w-5" />
                 <div className="text-2xl font-bold font-mono">
                   {currentTime.toLocaleTimeString(
-                    i18n.language === 'ar' ? 'ar-EG' : 'en-US',
+                    'en-US',
                     { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }
                   )}
                 </div>
               </div>
               <div className="text-sm text-primary-200">
                 {currentTime.toLocaleDateString(
-                  i18n.language === 'ar' ? 'ar-EG' : 'en-US',
+                  'en-US',
                   { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
                 )}
               </div>
@@ -225,7 +225,7 @@ export function DoctorDashboard() {
             </CardTitle>
             <Link to="/dashboard/courses/my-courses">
               <Button variant="secondary" size="sm" className="font-medium">
-                {i18n.language === 'ar' ? 'عرض الكل' : 'View All'}
+                {'View All'}
               </Button>
             </Link>
           </CardHeader>
@@ -251,27 +251,27 @@ export function DoctorDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-900">
-                              {course?.code || (i18n.language === 'ar' ? 'غير متوفر' : 'N/A')}
+                              {course?.code || ('N/A')}
                             </h4>
                             {course?.creditHours && (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">
                                 {course.creditHours}{' '}
-                                {i18n.language === 'ar' ? 'ساعات' : 'hrs'}
+                                {'hrs'}
                               </span>
                             )}
                           </div>
                           <p className="text-sm text-gray-700 mb-2">
-                            {course?.title || (i18n.language === 'ar' ? 'اسم المقرر' : 'Course Title')}
+                            {course?.title || ('Course Title')}
                           </p>
                           <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <Users className="h-3 w-3" />
                               {courseStudents}{' '}
-                              {i18n.language === 'ar' ? 'طالب' : 'students'}
+                              {'students'}
                             </span>
                             {enrollment.courseOffering?.semester && (
                               <span>
-                                {i18n.language === 'ar' ? 'الفصل الدراسي: ' : 'Semester: '}
+                                {'Semester: '}
                                 {enrollment.courseOffering.semester}
                               </span>
                             )}
@@ -279,7 +279,7 @@ export function DoctorDashboard() {
                         </div>
                         <Link to={`/dashboard/roster?course=${enrollment.courseOffering?.id}`}>
                           <Button variant="secondary" size="sm">
-                            {i18n.language === 'ar' ? 'عرض قائمة الطلاب' : 'View Roster'}
+                            {'View Roster'}
                           </Button>
                         </Link>
                       </div>
@@ -296,7 +296,7 @@ export function DoctorDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary-600" />
-                {i18n.language === 'ar' ? 'التقييمات القادمة' : 'Upcoming Assessments'}
+                {'Upcoming Assessments'}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -306,7 +306,7 @@ export function DoctorDashboard() {
                   .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
                   .slice(0, 5);
 
-                // إذا لم توجد بيانات حقيقية، استخدم بيانات وهمية لعرض التصميم
+                // If no real data, use mock data for layout display
                 const dataToRender =
                   upcomingAssessments.length > 0
                     ? upcomingAssessments
@@ -314,16 +314,12 @@ export function DoctorDashboard() {
                         {
                           id: 'mock-1',
                           title:
-                            i18n.language === 'ar'
-                              ? 'واجب 1 - مقدمة في البرمجة'
-                              : 'Assignment 1 - Introduction to Programming',
+                            'Assignment 1 - Introduction to Programming',
                           courseOffering: {
                             course: {
                               code: 'CS101',
                               title:
-                                i18n.language === 'ar'
-                                  ? 'مقدمة في البرمجة'
-                                  : 'Introduction to Programming',
+                                'Introduction to Programming',
                             },
                           },
                           dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -332,16 +328,12 @@ export function DoctorDashboard() {
                         {
                           id: 'mock-2',
                           title:
-                            i18n.language === 'ar'
-                              ? 'اختبار قصير - هياكل البيانات'
-                              : 'Quiz - Data Structures',
+                            'Quiz - Data Structures',
                           courseOffering: {
                             course: {
                               code: 'CS201',
                               title:
-                                i18n.language === 'ar'
-                                  ? 'هياكل البيانات'
-                                  : 'Data Structures',
+                                'Data Structures',
                             },
                           },
                           dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -377,17 +369,15 @@ export function DoctorDashboard() {
                               <div className="flex items-center gap-4 text-xs text-gray-500">
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
-                                  {i18n.language === 'ar' ? 'تاريخ التسليم: ' : 'Due: '}{formatDate(assessment.dueDate)}
+                                  {'Due: '}{formatDate(assessment.dueDate)}
                                 </span>
                                 <span>
                                   {assessment.totalPoints}{' '}
-                                  {i18n.language === 'ar' ? 'درجة' : 'points'}
+                                  {'points'}
                                 </span>
                                 {isUrgent && (
                                   <span className="text-red-600 font-medium">
-                                    {i18n.language === 'ar'
-                                      ? `${daysUntilDue} أيام متبقية`
-                                      : `${daysUntilDue} days left`}
+                                    {`${daysUntilDue} days left`}
                                   </span>
                                 )}
                               </div>
@@ -412,18 +402,18 @@ export function DoctorDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary-600" />
-              {i18n.language === 'ar' ? 'الإعلانات' : 'Announcements'}
+              {'Announcements'}
             </CardTitle>
             <Link to="/dashboard/announcements">
               <Button variant="secondary" size="sm" className="font-medium">
-                {i18n.language === 'ar' ? 'عرض الكل' : 'View All'}
+                {'View All'}
               </Button>
             </Link>
           </CardHeader>
           <CardContent>
             {announcements.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">
-                {i18n.language === 'ar' ? 'لا توجد إعلانات' : 'No announcements'}
+                {'No announcements'}
               </p>
             ) : (
               <div className="space-y-3">
@@ -454,11 +444,9 @@ export function DoctorDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Student Enrollment by Course */}
         <ChartCard 
-          title={i18n.language === 'ar' ? 'الطلاب المسجلون' : 'Student Enrollment'}
+          title={'Student Enrollment'}
           description={
-            i18n.language === 'ar'
-              ? 'عدد الطلاب المسجلين في كل مقرر'
-              : 'Number of students per course'
+            'Number of students per course'
           }
         >
           {(() => {
@@ -494,11 +482,9 @@ export function DoctorDashboard() {
 
         {/* Assessment Distribution */}
         <ChartCard 
-          title={i18n.language === 'ar' ? 'نظرة عامة على التقييمات' : 'Assessments Overview'}
+          title={'Assessments Overview'}
           description={
-            i18n.language === 'ar'
-              ? 'توزيع التقييمات حسب المقرر'
-              : 'Distribution of assessments by course'
+            'Distribution of assessments by course'
           }
         >
           {(() => {

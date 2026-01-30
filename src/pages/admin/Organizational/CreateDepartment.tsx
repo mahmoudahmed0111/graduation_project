@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
+import { Select2 } from '@/components/ui/Select2';
 import { 
   School, 
   ArrowLeft,
@@ -129,14 +129,14 @@ export function CreateDepartment() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 College <span className="text-red-500">*</span>
               </label>
-              <Select
+              <Select2
                 value={formData.collegeId}
-                onChange={(e) => setFormData({ ...formData, collegeId: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, collegeId: value })}
                 options={[
                   { value: '', label: 'Select a college...' },
                   ...colleges.map(college => ({ value: college.id, label: college.name })),
                 ]}
-                required
+                placeholder="Search and select a college..."
               />
             </div>
 
@@ -144,13 +144,14 @@ export function CreateDepartment() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Department Head
               </label>
-              <Select
+              <Select2
                 value={formData.headId}
-                onChange={(e) => setFormData({ ...formData, headId: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, headId: value })}
                 options={[
                   { value: '', label: 'Select a department head...' },
                   ...users.map(user => ({ value: user.id, label: user.name })),
                 ]}
+                placeholder="Search and select a department head..."
               />
             </div>
 

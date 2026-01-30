@@ -16,8 +16,6 @@ import {
   Building2,
   Eye,
   Edit,
-  Mail,
-  Calendar,
   BookOpen,
   AlertCircle
 } from 'lucide-react';
@@ -377,10 +375,9 @@ export function Students() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Student ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Student</TableHead>
+                  <TableHead>College & Year</TableHead>
                   <TableHead>Department</TableHead>
-                  <TableHead>Year</TableHead>
                   <TableHead>Credits</TableHead>
                   <TableHead>GPA</TableHead>
                   <TableHead>Status</TableHead>
@@ -390,7 +387,7 @@ export function Students() {
               <TableBody>
                 {paginatedStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="px-0 py-16">
+                    <TableCell colSpan={8} className="px-0 py-16">
                       <div className="flex flex-col items-center justify-center w-full">
                         <Users className="h-16 w-16 text-gray-300 mb-4" />
                         <p className="text-lg font-semibold text-gray-900 mb-1">No students found</p>
@@ -405,31 +402,25 @@ export function Students() {
                         {student.nationalId?.slice(-6) || student.id.slice(0, 6)}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                            <span className="text-primary-600 font-semibold text-sm">
-                              {student.name?.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <span className="font-medium">{student.name}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900">{student.name}</span>
+                          <span className="text-sm text-gray-500 mt-0.5">{student.email}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 text-gray-600">
-                          <Mail className="h-3 w-3" />
-                          <span className="text-sm">{student.email}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900">
+                            {student.department?.college?.name || 'N/A'}
+                          </span>
+                          <span className="text-sm text-gray-500 mt-0.5">
+                            Year {student.year}, Sem {student.semester}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Building2 className="h-3 w-3 text-gray-400" />
                           <span className="text-sm">{student.department?.name || 'N/A'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-gray-400" />
-                          <span>Year {student.year}, Sem {student.semester}</span>
                         </div>
                       </TableCell>
                       <TableCell>

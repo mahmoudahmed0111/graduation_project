@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { ISubmission, IAssessment, IEnrollment } from '@/types';
@@ -22,7 +21,6 @@ import { logger } from '@/lib/logger';
 import { formatDate } from '@/utils/formatters';
 
 export function GradeSubmissions() {
-  const { i18n } = useTranslation();
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const [submissions, setSubmissions] = useState<ISubmission[]>([]);
@@ -126,9 +124,7 @@ export function GradeSubmissions() {
       ));
       
       success(
-        i18n.language === 'ar'
-          ? 'تم تقييم التقديم بنجاح'
-          : 'Submission graded successfully'
+        'Submission graded successfully'
       );
       setGradingModalOpen(false);
       setSelectedSubmission(null);
@@ -145,9 +141,9 @@ export function GradeSubmissions() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      in_progress: { label: i18n.language === 'ar' ? 'قيد التنفيذ' : 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
-      submitted: { label: i18n.language === 'ar' ? 'تم التقديم' : 'Submitted', color: 'bg-blue-100 text-blue-800' },
-      graded: { label: i18n.language === 'ar' ? 'تم التقييم' : 'Graded', color: 'bg-green-100 text-green-800' },
+      in_progress: { label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
+      submitted: { label: 'Submitted', color: 'bg-blue-100 text-blue-800' },
+      graded: { label: 'Graded', color: 'bg-green-100 text-green-800' },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.submitted;
@@ -172,12 +168,10 @@ export function GradeSubmissions() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {i18n.language === 'ar' ? 'تقييم التقديمات' : 'Grade Submissions'}
+          {'Grade Submissions'}
         </h1>
         <p className="text-gray-600 mt-1">
-          {i18n.language === 'ar'
-            ? 'عرض وتقييم تقديمات الطلاب'
-            : 'View and grade student submissions'}
+          {'View and grade student submissions'}
         </p>
       </div>
 
@@ -189,7 +183,7 @@ export function GradeSubmissions() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder={i18n.language === 'ar' ? 'ابحث برقم الطالب...' : 'Search by student ID...'}
+                placeholder={'Search by student ID...'}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -200,7 +194,7 @@ export function GradeSubmissions() {
               onChange={(e) => setSelectedAssessment(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="all">{i18n.language === 'ar' ? 'كل التقييمات' : 'All Assessments'}</option>
+              <option value="all">{'All Assessments'}</option>
               {assessments.map(assessment => (
                 <option key={assessment.id} value={assessment.id}>
                   {assessment.title} - {assessment.courseOffering.course.code}
@@ -212,10 +206,10 @@ export function GradeSubmissions() {
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="all">{i18n.language === 'ar' ? 'كل الحالات' : 'All Status'}</option>
-              <option value="submitted">{i18n.language === 'ar' ? 'تم التقديم' : 'Submitted'}</option>
-              <option value="graded">{i18n.language === 'ar' ? 'تم التقييم' : 'Graded'}</option>
-              <option value="in_progress">{i18n.language === 'ar' ? 'قيد التنفيذ' : 'In Progress'}</option>
+              <option value="all">{'All Status'}</option>
+              <option value="submitted">{'Submitted'}</option>
+              <option value="graded">{'Graded'}</option>
+              <option value="in_progress">{'In Progress'}</option>
             </select>
           </div>
         </CardContent>
@@ -227,7 +221,7 @@ export function GradeSubmissions() {
           <CardContent className="p-12 text-center">
             <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">
-              {i18n.language === 'ar' ? 'لا توجد تقديمات' : 'No submissions found'}
+              {'No submissions found'}
             </p>
           </CardContent>
         </Card>
@@ -238,13 +232,13 @@ export function GradeSubmissions() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead>{i18n.language === 'ar' ? 'الطالب' : 'Student'}</TableHead>
-                    <TableHead>{i18n.language === 'ar' ? 'التقييم' : 'Assessment'}</TableHead>
-                    <TableHead>{i18n.language === 'ar' ? 'المقرر' : 'Course'}</TableHead>
-                    <TableHead>{i18n.language === 'ar' ? 'تاريخ التقديم' : 'Submitted'}</TableHead>
-                    <TableHead>{i18n.language === 'ar' ? 'الدرجة' : 'Score'}</TableHead>
-                    <TableHead>{i18n.language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
-                    <TableHead>{i18n.language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
+                    <TableHead>{'Student'}</TableHead>
+                    <TableHead>{'Assessment'}</TableHead>
+                    <TableHead>{'Course'}</TableHead>
+                    <TableHead>{'Submitted'}</TableHead>
+                    <TableHead>{'Score'}</TableHead>
+                    <TableHead>{'Status'}</TableHead>
+                    <TableHead>{'Actions'}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -300,8 +294,8 @@ export function GradeSubmissions() {
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           {submission.status === 'graded' 
-                            ? (i18n.language === 'ar' ? 'عرض' : 'View')
-                            : (i18n.language === 'ar' ? 'تقييم' : 'Grade')
+                            ? ('View')
+                            : ('Grade')
                           }
                         </Button>
                       </TableCell>
@@ -322,15 +316,15 @@ export function GradeSubmissions() {
             setGradingModalOpen(false);
             setSelectedSubmission(null);
           }}
-          title={i18n.language === 'ar' ? 'تقييم التقديم' : 'Grade Submission'}
+          title={'Grade Submission'}
         >
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                <strong>{i18n.language === 'ar' ? 'التقييم:' : 'Assessment:'}</strong> {selectedSubmission.assessment.title}
+                <strong>{'Assessment:'}</strong> {selectedSubmission.assessment.title}
               </p>
               <p className="text-sm text-gray-600 mb-4">
-                <strong>{i18n.language === 'ar' ? 'الطالب:' : 'Student:'}</strong> {selectedSubmission.student_id}
+                <strong>{'Student:'}</strong> {selectedSubmission.student_id}
               </p>
             </div>
 
@@ -340,7 +334,7 @@ export function GradeSubmissions() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <p className="text-sm font-medium">
-                        {i18n.language === 'ar' ? 'إجابة' : 'Answer'} {index + 1}
+                        {'Answer'} {index + 1}
                       </p>
                       <div className="flex items-center gap-2">
                         <Input
@@ -359,7 +353,7 @@ export function GradeSubmissions() {
                     )}
                     {answer.selectedOptionId && (
                       <p className="text-sm text-gray-700 mb-2">
-                        {i18n.language === 'ar' ? 'الخيار المحدد:' : 'Selected Option:'} {answer.selectedOptionId}
+                        {'Selected Option:'} {answer.selectedOptionId}
                       </p>
                     )}
                     {answer.fileUrl && (
@@ -369,7 +363,7 @@ export function GradeSubmissions() {
                         rel="noopener noreferrer"
                         className="text-sm text-primary-600 hover:underline"
                       >
-                        {i18n.language === 'ar' ? 'عرض الملف' : 'View File'}
+                        {'View File'}
                       </a>
                     )}
                   </CardContent>
@@ -380,7 +374,7 @@ export function GradeSubmissions() {
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-4">
                 <span className="font-semibold">
-                  {i18n.language === 'ar' ? 'إجمالي الدرجة:' : 'Total Score:'}
+                  {'Total Score:'}
                 </span>
                 <span className="text-lg font-bold text-primary-600">
                   {totalScore} / {selectedSubmission.assessment.totalPoints}
@@ -395,7 +389,7 @@ export function GradeSubmissions() {
                   }}
                   className="flex-1"
                 >
-                  {i18n.language === 'ar' ? 'إلغاء' : 'Cancel'}
+                  {'Cancel'}
                 </Button>
                 <Button
                   onClick={handleGradeSubmission}
@@ -403,7 +397,7 @@ export function GradeSubmissions() {
                   className="flex-1"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {i18n.language === 'ar' ? 'حفظ التقييم' : 'Save Grade'}
+                  {'Save Grade'}
                 </Button>
               </div>
             </div>

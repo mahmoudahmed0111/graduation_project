@@ -13,13 +13,32 @@ import {
   User,
   Shield
 } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { IUser } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 
+/** Derive list context from URL (routes are users/doctors | users/tas | users/admins). */
+function useListRole(): 'doctors' | 'tas' | 'admins' {
+  const { pathname } = useLocation();
+  if (pathname.includes('/users/admins')) return 'admins';
+  if (pathname.includes('/users/tas')) return 'tas';
+  if (pathname.includes('/users/doctors')) return 'doctors';
+  return 'doctors';
+}
+
+function getListRoleLabel(listRole: 'doctors' | 'tas' | 'admins'): string {
+  switch (listRole) {
+    case 'doctors': return 'Doctor';
+    case 'tas': return 'Teaching Assistant';
+    case 'admins': return 'Administrator';
+    default: return listRole;
+  }
+}
+
 export function AllUsers() {
-  const { role } = useParams<{ role: string }>();
+  const listRole = useListRole();
+  const role = listRole;
   const { error: showError } = useToastStore();
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,12 +114,12 @@ export function AllUsers() {
           <h1 className="text-3xl font-bold text-gray-900">
             {role === 'doctors' ? 'Doctors' : role === 'tas' ? 'Teaching Assistants' : 'Administrators'}
           </h1>
-          <p className="text-gray-600 mt-1">Manage {getRoleLabel(role || '')} accounts</p>
+          <p className="text-gray-600 mt-1">Manage {getListRoleLabel(role)} accounts</p>
         </div>
         <Link to={`/dashboard/users/${role}/create`}>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Add {getRoleLabel(role || '')}
+            Add {getListRoleLabel(role)}
           </Button>
         </Link>
       </div>
@@ -108,7 +127,7 @@ export function AllUsers() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>All {getRoleLabel(role || '')}s</CardTitle>
+            <CardTitle>All {getListRoleLabel(role)}s</CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input

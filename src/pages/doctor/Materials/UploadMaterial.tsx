@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -32,7 +31,6 @@ const materialSchema = z.object({
 type MaterialFormData = z.infer<typeof materialSchema>;
 
 export function UploadMaterial() {
-  const { i18n } = useTranslation();
   const navigate = useNavigate();
   useAuthStore();
   const { success, error: showError } = useToastStore();
@@ -104,11 +102,7 @@ export function UploadMaterial() {
       // const response = await api.uploadMaterial(formData);
       
       // Mock success
-      success(
-        i18n.language === 'ar'
-          ? 'تم رفع المادة التعليمية بنجاح'
-          : 'Material uploaded successfully'
-      );
+      success('Material uploaded successfully');
       navigate('/dashboard/materials');
     } catch (error) {
       logger.error('Failed to upload material', {
@@ -126,12 +120,10 @@ export function UploadMaterial() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {i18n.language === 'ar' ? 'رفع مادة تعليمية جديدة' : 'Upload New Material'}
+          Upload New Material
         </h1>
         <p className="text-gray-600 mt-1">
-          {i18n.language === 'ar'
-            ? 'أضف مواد تعليمية جديدة لمقرراتك'
-            : 'Add new materials to your courses'}
+          Add new materials to your courses
         </p>
       </div>
 
@@ -139,7 +131,7 @@ export function UploadMaterial() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-primary-600" />
-            {i18n.language === 'ar' ? 'تفاصيل المادة' : 'Material Details'}
+            Material Details
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -147,14 +139,14 @@ export function UploadMaterial() {
             {/* Course Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'المقرر' : 'Course'} *
+                Course *
               </label>
               <select
                 {...register('courseOffering')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">
-                  {i18n.language === 'ar' ? 'اختر المقرر...' : 'Select a course...'}
+                  Select a course...
                 </option>
                 {myCourses.map(course => (
                   <option key={course.courseOffering?.id} value={course.courseOffering?.id}>
@@ -169,45 +161,45 @@ export function UploadMaterial() {
 
             {/* Title */}
             <Input
-              label={i18n.language === 'ar' ? 'العنوان' : 'Title'}
+              label="Title"
               {...register('title')}
               error={errors.title?.message}
-              placeholder={i18n.language === 'ar' ? 'أدخل عنوان المادة...' : 'Enter material title...'}
+              placeholder="Enter material title..."
             />
 
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'الوصف' : 'Description'}
+                Description
               </label>
               <textarea
                 {...register('description')}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder={i18n.language === 'ar' ? 'أدخل وصف المادة...' : 'Enter material description...'}
+                placeholder="Enter material description..."
               />
             </div>
 
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'الفئة' : 'Category'} *
+                Category *
               </label>
               <select
                 {...register('category')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value="Lectures">{i18n.language === 'ar' ? 'محاضرات' : 'Lectures'}</option>
-                <option value="Sheets">{i18n.language === 'ar' ? 'أوراق عمل' : 'Sheets'}</option>
-                <option value="Readings">{i18n.language === 'ar' ? 'قراءات' : 'Readings'}</option>
-                <option value="Links">{i18n.language === 'ar' ? 'روابط' : 'Links'}</option>
+                <option value="Lectures">Lectures</option>
+                <option value="Sheets">Sheets</option>
+                <option value="Readings">Readings</option>
+                <option value="Links">Links</option>
               </select>
             </div>
 
             {/* Material Type Toggle */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'نوع المادة' : 'Material Type'}
+                Material Type
               </label>
               <div className="flex gap-4">
                 <button
@@ -220,7 +212,7 @@ export function UploadMaterial() {
                   }`}
                 >
                   <FileText className="h-5 w-5 mx-auto mb-2" />
-                  {i18n.language === 'ar' ? 'ملف' : 'File Upload'}
+                  File Upload
                 </button>
                 <button
                   type="button"
@@ -232,7 +224,7 @@ export function UploadMaterial() {
                   }`}
                 >
                   <LinkIcon className="h-5 w-5 mx-auto mb-2" />
-                  {i18n.language === 'ar' ? 'رابط خارجي' : 'External Link'}
+                  External Link
                 </button>
               </div>
             </div>
@@ -241,7 +233,7 @@ export function UploadMaterial() {
             {!isExternalLink ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {i18n.language === 'ar' ? 'الملف' : 'File'} *
+                  File *
                 </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
                   <input
@@ -257,7 +249,7 @@ export function UploadMaterial() {
                   >
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600 mb-1">
-                      {i18n.language === 'ar' ? 'انقر للرفع أو اسحب الملف هنا' : 'Click to upload or drag file here'}
+                      Click to upload or drag file here
                     </p>
                     <p className="text-xs text-gray-500">
                       PDF, DOC, PPT, XLS, TXT, ZIP (Max 50MB)
@@ -286,7 +278,7 @@ export function UploadMaterial() {
               </div>
             ) : (
               <Input
-                label={i18n.language === 'ar' ? 'رابط URL' : 'URL Link'}
+                label="URL Link"
                 type="url"
                 {...register('url')}
                 error={errors.url?.message}
@@ -302,7 +294,7 @@ export function UploadMaterial() {
                 onClick={() => navigate('/dashboard/materials')}
                 className="flex-1"
               >
-                {i18n.language === 'ar' ? 'إلغاء' : 'Cancel'}
+                Cancel
               </Button>
               <Button
                 type="submit"
@@ -310,7 +302,7 @@ export function UploadMaterial() {
                 className="flex-1"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {i18n.language === 'ar' ? 'رفع المادة' : 'Upload Material'}
+                Upload Material
               </Button>
             </div>
           </form>

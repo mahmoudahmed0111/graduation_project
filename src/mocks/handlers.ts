@@ -131,40 +131,43 @@ export const handlers = [
   // Auth endpoints
   http.post(`${API_BASE_URL}/auth/login`, async ({ request }) => {
     const body = await request.json() as { identifier: string; password: string };
-    
-    // Mock validation
+    const identifier = (body.identifier || '').trim().toLowerCase();
+    const password = (body.password || '').trim();
+
     const mockUsers = getMockUsers();
-    const user = mockUsers.find(
-      u => u.nationalId === body.identifier || u.email === body.identifier
-    );
 
-    // Default credentials: student@gmail.com / student@university.edu / student@university.com / 12345678901234 with password 12345678
-    const isDefaultCredentials = 
-      (body.identifier === 'student@gmail.com' || 
-       body.identifier === 'student@university.edu' ||
-       body.identifier === 'student@university.com' ||
-       body.identifier === '12345678901234') &&
-      body.password === '12345678';
+    // Student: identifier (email or national ID) + password 12345678
+    const isStudentLogin =
+      (identifier === 'student@gmail.com' ||
+        identifier === 'student@university.edu' ||
+        identifier === 'student@university.com' ||
+        identifier === '12345678901234') &&
+      password === '12345678';
 
-    if (isDefaultCredentials) {
-      const defaultUser = mockUsers.find(u => u.email === 'student@gmail.com' || u.nationalId === '12345678901234') || mockUsers[0];
+    if (isStudentLogin) {
+      const student = mockUsers.find(u => u.role === 'student') || mockUsers[0];
       return HttpResponse.json({
-        user: defaultUser,
+        user: student,
         accessToken: 'mock-access-token-' + Date.now(),
       });
     }
 
-    if (!user || body.password !== 'password123') {
-      return HttpResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      );
+    // Admin, Doctor, College Admin: match by email + password password123
+    const user = mockUsers.find(
+      u => (u.email && u.email.toLowerCase() === identifier) || u.nationalId === body.identifier
+    );
+
+    if (user && password === 'password123') {
+      return HttpResponse.json({
+        user,
+        accessToken: 'mock-access-token-' + Date.now(),
+      });
     }
 
-    return HttpResponse.json({
-      user,
-      accessToken: 'mock-access-token-' + Date.now(),
-    });
+    return HttpResponse.json(
+      { message: 'Invalid credentials' },
+      { status: 401 }
+    );
   }),
 
   http.post(`${API_BASE_URL}/auth/register`, async ({ request }) => {

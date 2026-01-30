@@ -40,10 +40,6 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        arabic: ['Cairo', 'Tajawal', 'Almarai', 'IBM Plex Sans Arabic', 'Arial', 'sans-serif'],
-        cairo: ['Cairo', 'sans-serif'],
-        tajawal: ['Tajawal', 'sans-serif'],
-        almarai: ['Almarai', 'sans-serif'],
       },
       spacing: {
         '18': '4.5rem',

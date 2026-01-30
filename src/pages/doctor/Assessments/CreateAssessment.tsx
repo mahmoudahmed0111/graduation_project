@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -40,7 +39,6 @@ const assessmentSchema = z.object({
 type AssessmentFormData = z.infer<typeof assessmentSchema>;
 
 export function CreateAssessment() {
-  const { i18n } = useTranslation();
   const navigate = useNavigate();
   useAuthStore();
   const { success, error: showError } = useToastStore();
@@ -116,8 +114,8 @@ export function CreateAssessment() {
       append({
         ...baseQuestion,
         options: [
-          { text: i18n.language === 'ar' ? 'صحيح' : 'True', isCorrect: true },
-          { text: i18n.language === 'ar' ? 'خطأ' : 'False', isCorrect: false },
+          { text: 'True', isCorrect: true },
+          { text: 'False', isCorrect: false },
         ],
       });
     } else {
@@ -133,9 +131,7 @@ export function CreateAssessment() {
       // await api.createAssessment(data);
       
       success(
-        i18n.language === 'ar'
-          ? 'تم إنشاء التقييم بنجاح'
-          : 'Assessment created successfully'
+        'Assessment created successfully'
       );
       navigate('/dashboard/assessments/my-assessments');
     } catch (error) {
@@ -154,12 +150,10 @@ export function CreateAssessment() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {i18n.language === 'ar' ? 'إنشاء تقييم جديد' : 'Create New Assessment'}
+          {'Create New Assessment'}
         </h1>
         <p className="text-gray-600 mt-1">
-          {i18n.language === 'ar'
-            ? 'أنشئ اختبار أو واجب جديد لمقرراتك'
-            : 'Create a new test or assignment for your courses'}
+          {'Create a new test or assignment for your courses'}
         </p>
       </div>
 
@@ -169,21 +163,21 @@ export function CreateAssessment() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary-600" />
-              {i18n.language === 'ar' ? 'معلومات أساسية' : 'Basic Information'}
+              {'Basic Information'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Course Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'المقرر' : 'Course'} *
+                {'Course'} *
               </label>
               <select
                 {...register('courseOffering')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">
-                  {i18n.language === 'ar' ? 'اختر المقرر...' : 'Select a course...'}
+                  {'Select a course...'}
                 </option>
                 {myCourses.map(course => (
                   <option key={course.courseOffering?.id} value={course.courseOffering?.id}>
@@ -198,16 +192,16 @@ export function CreateAssessment() {
 
             {/* Title */}
             <Input
-              label={i18n.language === 'ar' ? 'العنوان' : 'Title'}
+              label={'Title'}
               {...register('title')}
               error={errors.title?.message}
-              placeholder={i18n.language === 'ar' ? 'مثال: اختبار منتصف الفصل - الفصل 1-5' : 'e.g., Midterm Exam - Chapters 1-5'}
+              placeholder={'e.g., Midterm Exam - Chapters 1-5'}
             />
 
             {/* Due Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'تاريخ الاستحقاق' : 'Due Date'} *
+                {'Due Date'} *
               </label>
               <DatePicker
                 selected={watch('dueDate') ? new Date(watch('dueDate')) : null}
@@ -222,7 +216,7 @@ export function CreateAssessment() {
             {/* Total Points */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {i18n.language === 'ar' ? 'إجمالي النقاط' : 'Total Points'}
+                {'Total Points'}
               </label>
               <Input
                 type="number"
@@ -232,9 +226,7 @@ export function CreateAssessment() {
                 className="bg-gray-50"
               />
               <p className="mt-1 text-xs text-gray-500">
-                {i18n.language === 'ar'
-                  ? 'يتم حسابها تلقائياً من مجموع نقاط الأسئلة'
-                  : 'Automatically calculated from question points'}
+                {'Automatically calculated from question points'}
               </p>
             </div>
           </CardContent>
@@ -245,7 +237,7 @@ export function CreateAssessment() {
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary-600" />
-              {i18n.language === 'ar' ? 'الأسئلة' : 'Questions'} ({fields.length})
+              {'Questions'} ({fields.length})
             </CardTitle>
             <div className="flex gap-2">
               <select
@@ -258,12 +250,12 @@ export function CreateAssessment() {
                 }}
                 className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">{i18n.language === 'ar' ? 'إضافة سؤال...' : 'Add Question...'}</option>
-                <option value="MCQ-Single">{i18n.language === 'ar' ? 'اختيار من متعدد (واحد)' : 'Multiple Choice (Single)'}</option>
-                <option value="MCQ-Multiple">{i18n.language === 'ar' ? 'اختيار من متعدد (متعدد)' : 'Multiple Choice (Multiple)'}</option>
-                <option value="True-False">{i18n.language === 'ar' ? 'صحيح/خطأ' : 'True/False'}</option>
-                <option value="Essay">{i18n.language === 'ar' ? 'مقال' : 'Essay'}</option>
-                <option value="File-Upload">{i18n.language === 'ar' ? 'رفع ملف' : 'File Upload'}</option>
+                <option value="">{'Add Question...'}</option>
+                <option value="MCQ-Single">{'Multiple Choice (Single)'}</option>
+                <option value="MCQ-Multiple">{'Multiple Choice (Multiple)'}</option>
+                <option value="True-False">{'True/False'}</option>
+                <option value="Essay">{'Essay'}</option>
+                <option value="File-Upload">{'File Upload'}</option>
               </select>
             </div>
           </CardHeader>
@@ -271,7 +263,7 @@ export function CreateAssessment() {
             {fields.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>{i18n.language === 'ar' ? 'لا توجد أسئلة بعد. أضف سؤالاً للبدء.' : 'No questions yet. Add a question to get started.'}</p>
+                <p>{'No questions yet. Add a question to get started.'}</p>
               </div>
             ) : (
               fields.map((field, index) => {
@@ -283,7 +275,7 @@ export function CreateAssessment() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">
-                          {i18n.language === 'ar' ? 'سؤال' : 'Question'} {index + 1}
+                          {'Question'} {index + 1}
                         </CardTitle>
                         <Button
                           type="button"
@@ -300,31 +292,31 @@ export function CreateAssessment() {
                       {/* Question Type */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {i18n.language === 'ar' ? 'نوع السؤال' : 'Question Type'}
+                          {'Question Type'}
                         </label>
                         <select
                           {...register(`questions.${index}.questionType`)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                           disabled
                         >
-                          <option value="MCQ-Single">{i18n.language === 'ar' ? 'اختيار من متعدد (واحد)' : 'Multiple Choice (Single)'}</option>
-                          <option value="MCQ-Multiple">{i18n.language === 'ar' ? 'اختيار من متعدد (متعدد)' : 'Multiple Choice (Multiple)'}</option>
-                          <option value="True-False">{i18n.language === 'ar' ? 'صحيح/خطأ' : 'True/False'}</option>
-                          <option value="Essay">{i18n.language === 'ar' ? 'مقال' : 'Essay'}</option>
-                          <option value="File-Upload">{i18n.language === 'ar' ? 'رفع ملف' : 'File Upload'}</option>
+                          <option value="MCQ-Single">{'Multiple Choice (Single)'}</option>
+                          <option value="MCQ-Multiple">{'Multiple Choice (Multiple)'}</option>
+                          <option value="True-False">{'True/False'}</option>
+                          <option value="Essay">{'Essay'}</option>
+                          <option value="File-Upload">{'File Upload'}</option>
                         </select>
                       </div>
 
                       {/* Question Text */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {i18n.language === 'ar' ? 'نص السؤال' : 'Question Text'} *
+                          {'Question Text'} *
                         </label>
                         <textarea
                           {...register(`questions.${index}.questionText`)}
                           rows={3}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                          placeholder={i18n.language === 'ar' ? 'أدخل نص السؤال...' : 'Enter question text...'}
+                          placeholder={'Enter question text...'}
                         />
                       </div>
 
@@ -332,7 +324,7 @@ export function CreateAssessment() {
                       {(questionType === 'MCQ-Single' || questionType === 'MCQ-Multiple' || questionType === 'True-False') && (
                         <div className="space-y-2">
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {i18n.language === 'ar' ? 'الخيارات' : 'Options'} *
+                            {'Options'} *
                           </label>
                           {question?.options?.map((_option, optIndex) => (
                             <div key={optIndex} className="flex items-center gap-2">
@@ -343,7 +335,7 @@ export function CreateAssessment() {
                               />
                               <Input
                                 {...register(`questions.${index}.options.${optIndex}.text`)}
-                                placeholder={i18n.language === 'ar' ? 'نص الخيار...' : 'Option text...'}
+                                placeholder={'Option text...'}
                                 className="flex-1"
                               />
                             </div>
@@ -354,7 +346,7 @@ export function CreateAssessment() {
                       {/* Points */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {i18n.language === 'ar' ? 'النقاط' : 'Points'} *
+                          {'Points'} *
                         </label>
                         <Input
                           type="number"
@@ -379,7 +371,7 @@ export function CreateAssessment() {
             onClick={() => navigate('/dashboard/assessments/my-assessments')}
             className="flex-1"
           >
-            {i18n.language === 'ar' ? 'إلغاء' : 'Cancel'}
+            {'Cancel'}
           </Button>
           <Button
             type="submit"
@@ -387,7 +379,7 @@ export function CreateAssessment() {
             className="flex-1"
           >
             <Save className="h-4 w-4 mr-2" />
-            {i18n.language === 'ar' ? 'حفظ التقييم' : 'Save Assessment'}
+            {'Save Assessment'}
           </Button>
         </div>
       </form>

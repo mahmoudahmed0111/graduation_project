@@ -1,39 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Pagination } from '@/components/ui/Pagination';
-import { 
-  Building2, 
-  Search, 
-  Plus,
-  Edit,
-  Archive,
-  User,
-  School
-} from 'lucide-react';
+import { Building2, Search, Plus, User, School } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ICollege } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-
 export function Colleges() {
-  const { success, error: showError } = useToastStore();
+  const { error: showError } = useToastStore();
   const [colleges, setColleges] = useState<ICollege[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [archiveDialog, setArchiveDialog] = useState<{ open: boolean; college: ICollege | null }>({
-    open: false,
-    college: null,
-  });
 
   useEffect(() => {
     fetchColleges();
-  }, [page, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchColleges stable
+  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchColleges stable
 
   const fetchColleges = async () => {
     try {
@@ -67,23 +49,11 @@ export function Colleges() {
         },
       ];
       setColleges(mockColleges);
-      setTotalPages(1);
     } catch (error) {
       logger.error('Failed to fetch colleges', { context: 'Colleges', error });
       showError('Failed to load colleges');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleArchive = async (college: ICollege) => {
-    try {
-      // In real app: await api.archiveCollege(college.id);
-      success(`College "${college.name}" archived successfully`);
-      fetchColleges();
-      setArchiveDialog({ open: false, college: null });
-    } catch (error) {
-      showError('Failed to archive college');
     }
   };
 
@@ -105,137 +75,78 @@ export function Colleges() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Colleges</h1>
-          <p className="text-gray-600 mt-1">Manage university colleges and faculties</p>
+          <h1 className="text-3xl font-bold text-gray-900">University Structure</h1>
+          <p className="text-gray-600 mt-1">Page for managing academic entities</p>
         </div>
-        <Link to="/dashboard/organizational/colleges/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add College
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search colleges..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+          <Link to="/dashboard/organizational/colleges/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add College
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Colleges</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search colleges..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredColleges.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No colleges found</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Dean</TableHead>
-                  <TableHead>Departments</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredColleges.map((college) => (
-                  <TableRow key={college.id}>
-                    <TableCell className="font-medium">{college.code}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{college.name}</div>
-                        {college.description && (
-                          <div className="text-sm text-gray-500">{college.description}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {college.dean ? (
+      {filteredColleges.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No colleges found</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredColleges.map((college) => (
+            <Link key={college.id} to={`/dashboard/organizational/colleges/${college.id}`}>
+              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-primary-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary-100 flex items-center justify-center">
+                      <Building2 className="h-8 w-8 text-primary-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">{college.name}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{college.code}</p>
+                      <div className="mt-3 space-y-1.5 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <School className="h-4 w-4 text-gray-400" />
+                          <span>{college.departments?.length || 0} departments</span>
+                        </div>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-400" />
-                          <span>{college.dean.name}</span>
+                          <span>{college.dean?.name || 'No dean assigned'}</span>
                         </div>
-                      ) : (
-                        <span className="text-gray-400">Not assigned</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <School className="h-4 w-4 text-gray-400" />
-                        <span>{college.departments?.length || 0} departments</span>
+                        <div className="text-gray-500">0 students</div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {college.isArchived ? (
-                        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
-                          Archived
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
-                          Active
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
-                          <Button variant="secondary" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        {!college.isArchived && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setArchiveDialog({ open: true, college })}
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
+                      <div className="mt-3 flex items-center justify-between">
+                        {college.isArchived ? (
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Archived</span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Active</span>
                         )}
+                        <span className="text-primary-600 text-sm font-medium">View details →</span>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          {totalPages > 1 && (
-            <div className="mt-4">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
 
-      <ConfirmDialog
-        isOpen={archiveDialog.open}
-        onClose={() => setArchiveDialog({ open: false, college: null })}
-        onConfirm={() => archiveDialog.college && handleArchive(archiveDialog.college)}
-        title="Archive College"
-        message={`Are you sure you want to archive "${archiveDialog.college?.name}"? This will also archive all associated departments.`}
-        confirmText="Archive"
-        variant="danger"
-      />
     </div>
   );
 }
