@@ -1,0 +1,25 @@
+name: Frontend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # خطوة تجريبية للتأكد إن الـ npm build شغال صح
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build
+          echo "Frontend Build successful!"
+
+      # ============================================================
+      # خطوات الرفع لـ Azure (معمولة Comment زى الباك إند)
+      # ============================================================
+      # - name: Build Docker Image (Frontend)
+      #   run: docker build -t frontend-test .
