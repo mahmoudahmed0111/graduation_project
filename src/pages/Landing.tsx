@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { 
@@ -7,10 +8,33 @@ import {
   Award, 
   ArrowRight,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  Wifi,
+  Loader2
 } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export function Landing() {
+  const [backendStatus, setBackendStatus] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false });
+
+  const testBackendConnection = async () => {
+    setBackendStatus({ loading: true });
+    try {
+      const res = await fetch(`${API_BASE}/api/test`);
+      const data = await res.json();
+      if (res.ok) {
+        setBackendStatus({ loading: false, message: data.message ?? 'Backend connected.' });
+      } else {
+        setBackendStatus({ loading: false, error: data.message || `HTTP ${res.status}` });
+      }
+    } catch (err) {
+      setBackendStatus({
+        loading: false,
+        error: err instanceof Error ? err.message : 'Could not reach backend. Is it running on port 5000?',
+      });
+    }
+  };
   const features = [
     {
       icon: BookOpen,
@@ -243,10 +267,35 @@ export function Landing() {
               </p>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 font-sans">
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 font-sans space-y-3">
             <p>
               © 2024 University Management System. All rights reserved.
             </p>
+            <div className="flex flex-col items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-gray-600 text-gray-400 hover:bg-gray-800 hover:text-white"
+                onClick={testBackendConnection}
+                disabled={backendStatus.loading}
+              >
+                {backendStatus.loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Wifi className="h-4 w-4 mr-2" />
+                    Test backend connection
+                  </>
+                )}
+              </Button>
+              {backendStatus.message && (
+                <span className="text-green-400 text-sm">✓ {backendStatus.message}</span>
+              )}
+              {backendStatus.error && (
+                <span className="text-red-400 text-sm">✗ {backendStatus.error}</span>
+              )}
+            </div>
           </div>
         </div>
       </footer>

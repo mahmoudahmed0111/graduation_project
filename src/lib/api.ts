@@ -1,8 +1,26 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { IUser, IStudent, LoginCredentials, AuthResponse, RefreshTokenResponse, IUniversity, ICourse, ICourseOffering, IEnrollment, PaginatedResponse, IAnnouncement, IAttendanceReport, IAssessment, IMaterial, ISubmission } from '@/types';
+import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, ForgotPasswordCredentials, AuthResponse, RefreshTokenResponse, IUniversity, ICourse, ICourseOffering, IEnrollment, PaginatedResponse, IAnnouncement, IAttendanceReport, IAssessment, IMaterial, ISubmission } from '@/types';
 import { getAccessToken } from '@/store/authStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1`;
+
+/** Map backend user (e.g. _id, photo) to frontend IUser */
+function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
+  if (!u || typeof u !== 'object') throw new Error('Invalid user');
+  const id = (u._id ?? u.id) as string;
+  const user = {
+    id: typeof id === 'string' ? id : String(id),
+    name: (u.name as string) ?? '',
+    role: (u.role as IUser['role']) ?? 'student',
+    email: (u.email as string) ?? '',
+    nationalId: u.nationalID as string | undefined,
+    universityId: (u.universityId as string) ?? '',
+    avatarUrl: (u.avatarUrl ?? u.photo) as string | undefined,
+    facultyId: u.facultyId as string | undefined,
+    ...(u.year != null && { year: u.year as number, semester: u.semester as number, creditsEarned: u.creditsEarned as number, gpa: u.gpa as number }),
+  };
+  return user as IUser | IStudent;
+}
 
 // Create axios instance
 const axiosInstance: AxiosInstance = axios.create({
@@ -25,13 +43,22 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Auth paths where 401 should not trigger refresh (avoids cascade: login 401 → refresh 401 → logout 401/429)
+const isAuthRequest = (url: string) => /\/auth\/(login|login\/verify|refresh|logout|forgotPassword|resetPassword)/.test(url || '');
+
 // Response interceptor to handle token refresh
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url ?? '';
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Do not attempt refresh for auth endpoints (e.g. failed login) to avoid refresh + logout cascade
+      if (isAuthRequest(requestUrl)) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {
@@ -41,17 +68,15 @@ axiosInstance.interceptors.response.use(
           { withCredentials: true }
         );
         
-        // Update token in store
         const { useAuthStore } = await import('@/store/authStore');
         useAuthStore.getState().setAccessToken(response.data.accessToken);
 
-        // Retry original request
         originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, logout user
+        // Clear session locally only; do not call logout API (would 401/429 without token)
         const { useAuthStore } = await import('@/store/authStore');
-        useAuthStore.getState().logout();
+        useAuthStore.getState().clearSession();
         return Promise.reject(refreshError);
       }
     }
@@ -228,36 +253,54 @@ export const api = {
   },
 };
 
-// Auth API
+// Auth API – aligned with Node backend (authRouter)
 export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+  /** Step 1: send credentials, receive 2FA email (no token yet) */
+  loginStepOne: async (credentials: LoginStepOneCredentials): Promise<{ message: string }> => {
+    const response = await axiosInstance.post<{ status: string; message: string }>('/auth/login', credentials);
+    return { message: response.data.message ?? '2FA Code sent to your email.' };
   },
 
-  register: async (data: {
-    nationalId: string;
-    email: string;
-    password: string;
-    name: string;
-  }): Promise<AuthResponse> => {
-    const response = await axiosInstance.post<AuthResponse>('/auth/register', data);
-    return response.data;
+  /** Step 2: send email + OTP, receive token and user */
+  loginStepTwo: async (credentials: LoginStepTwoCredentials): Promise<AuthResponse> => {
+    const response = await axiosInstance.post<{ status: string; token: string; data: { user: Record<string, unknown> } }>(
+      '/auth/login/verify',
+      { email: credentials.email, otp: credentials.otp }
+    );
+    const token = response.data.token;
+    const user = normalizeUser(response.data.data?.user ?? null);
+    return { user, accessToken: token };
   },
 
-  refreshToken: async (): Promise<RefreshTokenResponse> => {
-    const response = await axiosInstance.post<RefreshTokenResponse>('/auth/refresh', {});
-    return response.data;
+  forgotPassword: async (credentials: ForgotPasswordCredentials): Promise<{ message: string }> => {
+    const response = await axiosInstance.post<{ status: string; message: string }>('/auth/forgotPassword', credentials);
+    return { message: response.data.message ?? 'Token sent to email!' };
+  },
+
+  resetPassword: async (token: string, data: { password: string; passwordConfirm: string }): Promise<AuthResponse> => {
+    const response = await axiosInstance.patch<{ status: string; token: string; data: { user: Record<string, unknown> } }>(
+      `/auth/resetPassword/${encodeURIComponent(token)}`,
+      data
+    );
+    const authToken = response.data.token;
+    const user = normalizeUser(response.data.data?.user ?? null);
+    return { user, accessToken: authToken };
   },
 
   logout: async (): Promise<void> => {
     await axiosInstance.post('/auth/logout', {});
   },
 
-  // Profile endpoints
-  getProfile: async (): Promise<IUser | IStudent> => {
-    const response = await axiosInstance.get<IUser | IStudent>('/auth/profile');
+  /** Backend has no refresh; 401 will trigger logout */
+  refreshToken: async (): Promise<RefreshTokenResponse> => {
+    const response = await axiosInstance.post<RefreshTokenResponse>('/auth/refresh', {});
     return response.data;
+  },
+
+  // Profile endpoints (if backend adds them under /auth or /users)
+  getProfile: async (): Promise<IUser | IStudent> => {
+    const response = await axiosInstance.get<Record<string, unknown>>('/auth/profile');
+    return normalizeUser(response.data);
   },
 
   updateProfile: async (data: {
@@ -265,8 +308,8 @@ export const authApi = {
     email?: string;
     avatarUrl?: string;
   }): Promise<IUser | IStudent> => {
-    const response = await axiosInstance.patch<IUser | IStudent>('/auth/profile', data);
-    return response.data;
+    const response = await axiosInstance.patch<Record<string, unknown>>('/auth/profile', data);
+    return normalizeUser(response.data);
   },
 
   changePassword: async (data: {

@@ -1,21 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToastStore } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
 import { Shield, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-const STATIC_OTP = '123456';
 
 export function OTP() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { success, error: showError } = useToastStore();
+  const { loginStepTwo, getPendingLoginEmail, clearPendingLoginEmail } = useAuthStore();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const email = (location.state as { email?: string } | null)?.email ?? getPendingLoginEmail();
 
   // Focus first input on mount
   useEffect(() => {
@@ -63,20 +65,27 @@ export function OTP() {
       return;
     }
 
+    if (!email?.trim()) {
+      showError('Session expired. Please start login again.');
+      clearPendingLoginEmail();
+      navigate('/login');
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      if (otpValue === STATIC_OTP) {
-        success('OTP verified successfully');
-        navigate('/dashboard');
-      } else {
-        showError('Invalid OTP. Please try again.');
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      }
+    try {
+      await loginStepTwo({ email: email.trim(), otp: otpValue });
+      success(t('auth.loginSuccess') || 'Logged in successfully');
+      navigate('/dashboard');
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError?.response?.data?.message || t('auth.invalidOTP') || 'Invalid OTP. Please try again.';
+      showError(errorMessage);
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -139,7 +148,7 @@ export function OTP() {
 
             {/* Helper text */}
             <p className="text-center text-sm text-gray-500 animate-fade-in-up">
-              {t('auth.otpHelper') || 'For testing, use OTP: 123456'}
+              {t('auth.otpHelper') || 'Enter the 6-digit code sent to your email'}
             </p>
 
             {/* Back to login link */}

@@ -10,6 +10,7 @@ import { Landing } from './pages/Landing';
 import { Login } from './pages/auth/Login';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { OTP } from './pages/auth/OTP';
+import { ResetPassword } from './pages/auth/ResetPassword';
 import { ComingSoon } from './pages/auth/ComingSoon';
 import { Error403 } from './pages/auth/Error403';
 import { Maintenance } from './pages/auth/Maintenance';
@@ -65,7 +66,7 @@ function App() {
   }, [user, loadUniversityMeta, loadUniversities]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster />
       <Routes>
         <Route
@@ -83,6 +84,10 @@ function App() {
         <Route
           path="/otp"
           element={<OTP />}
+        />
+        <Route
+          path="/reset-password/:token"
+          element={<ResetPassword />}
         />
         <Route
           path="/coming-soon"

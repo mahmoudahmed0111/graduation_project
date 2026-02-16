@@ -286,10 +286,26 @@ export interface ISystemSettings {
   };
 }
 
-// Auth Types
-export interface LoginCredentials {
-  identifier: string; // National ID or email
+// Auth Types – aligned with backend (Node) auth API
+export interface LoginStepOneCredentials {
+  email: string;
+  nationalID: string;
   password: string;
+}
+
+export interface LoginStepTwoCredentials {
+  email: string;
+  otp: string;
+}
+
+export interface LoginCredentials {
+  identifier: string; // National ID or email (legacy)
+  password: string;
+}
+
+export interface ForgotPasswordCredentials {
+  email: string;
+  nationalID: string;
 }
 
 export interface AuthResponse {

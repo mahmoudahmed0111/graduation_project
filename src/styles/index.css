@@ -1,9 +1,9 @@
+/* React DatePicker styles – @import must come first */
+@import 'react-datepicker/dist/react-datepicker.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* React DatePicker styles */
-@import 'react-datepicker/dist/react-datepicker.css';
 
 @layer base {
   :root {

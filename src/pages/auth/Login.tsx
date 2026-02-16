@@ -15,12 +15,9 @@ import { useLoginAttemptsStore } from '@/store/loginAttemptsStore';
 import { Mail, Lock, Eye, EyeOff, CreditCard } from 'lucide-react';
 
 const loginSchema = z.object({
-  email: z.string().optional(),
-  nationalId: z.string().optional(),
+  email: z.string().min(1, 'Email is required').email('Invalid email'),
+  nationalId: z.string().min(14, 'National ID must be 14 digits').max(14, 'National ID must be 14 digits'),
   password: z.string().min(1, 'Password is required'),
-}).refine((data) => (data.email?.trim()?.length ?? 0) > 0 || (data.nationalId?.trim()?.length ?? 0) > 0, {
-  message: 'Enter either Email or National ID',
-  path: ['email'],
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -28,10 +25,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login } = useAuthStore();
+  const { loginStepOne } = useAuthStore();
   const { currentUniversity } = useTenantStore();
   const { success, error: showError } = useToastStore();
-  const { recordFailedAttempt, recordSuccessAttempt, getAttemptInfo } = useLoginAttemptsStore();
+  const { recordFailedAttempt, recordSuccessAttempt, getAttemptInfo, resetAttempts } = useLoginAttemptsStore();
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -113,20 +110,21 @@ export function Login() {
 
     setIsLoading(true);
     try {
-      // Use email or nationalId as identifier (at least one is required by schema)
-      const loginIdentifier = (data.email?.trim() || data.nationalId?.trim()) as string;
-      await login({ identifier: loginIdentifier, password: data.password });
-      
-      // Reset failed attempts on success
+      await loginStepOne({
+        email: data.email.trim(),
+        nationalID: data.nationalId.trim(),
+        password: data.password,
+      });
+
+      const loginIdentifier = data.email.trim() || data.nationalId.trim();
       recordSuccessAttempt(loginIdentifier);
       success(t('auth.otpSent') || 'OTP sent successfully');
       navigate('/otp');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
       const errorMessage = axiosError?.response?.data?.message || t('auth.invalidCredentials') || 'Invalid credentials';
-      
-      // Record failed attempt
-      const loginIdentifier = (data.email?.trim() || data.nationalId?.trim()) || '';
+
+      const loginIdentifier = data.email?.trim() || data.nationalId?.trim() || '';
       const attemptInfo = recordFailedAttempt(loginIdentifier);
       
       if (attemptInfo.isDeactivated) {
@@ -256,9 +254,24 @@ export function Login() {
 
             {/* Lockout message */}
             {lockoutSeconds !== null && lockoutSeconds > 0 && (
-              <div className="animate-fade-in-up p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="animate-fade-in-up p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
                 <p className="text-sm text-blue-800 text-center">
                   Too many failed attempts. Please wait <strong>{lockoutSeconds}</strong> seconds before trying again.
+                </p>
+                <p className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const identifier = email || nationalId;
+                      if (identifier) {
+                        resetAttempts(identifier);
+                        setLockoutSeconds(null);
+                      }
+                    }}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
+                  >
+                    Clear lockout and try again
+                  </button>
                 </p>
               </div>
             )}

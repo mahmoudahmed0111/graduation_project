@@ -7,12 +7,14 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, CreditCard } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
+import { authApi } from '@/lib/api';
 import { logger } from '@/lib/logger';
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  nationalID: z.string().min(14, 'National ID must be 14 digits').max(14, 'National ID must be 14 digits'),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
@@ -31,11 +33,13 @@ export function ForgotPassword() {
     resolver: zodResolver(forgotPasswordSchema),
   });
 
-  const onSubmit = async (_data: ForgotPasswordFormData) => {
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await authApi.forgotPassword({
+        email: data.email.trim(),
+        nationalID: data.nationalID.trim(),
+      });
       setIsSuccess(true);
       success(t('auth.resetLinkSent') || 'Reset link sent to your email');
     } catch (error) {
@@ -43,7 +47,9 @@ export function ForgotPassword() {
         context: 'ForgotPassword',
         error,
       });
-      showError(t('auth.resetLinkError') || 'Error sending reset link');
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const message = axiosError?.response?.data?.message || t('auth.resetLinkError') || 'Error sending reset link';
+      showError(message);
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +131,22 @@ export function ForgotPassword() {
                   />
                   <div className="absolute right-3 top-9 text-primary-500 bg-primary-50 p-1.5 rounded-lg">
                     <Mail className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="animate-fade-in-up" style={{ animationDelay: '0.55s' }}>
+                <div className="relative">
+                  <Input
+                    label={t('auth.nationalId') || 'National ID'}
+                    type="text"
+                    placeholder="12345678901234"
+                    error={errors.nationalID?.message}
+                    className="transition-all duration-300 hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-primary-500/30 border-2 py-3 text-base pr-12"
+                    {...register('nationalID')}
+                  />
+                  <div className="absolute right-3 top-9 text-primary-500 bg-primary-50 p-1.5 rounded-lg">
+                    <CreditCard className="h-4 w-4" />
                   </div>
                 </div>
               </div>

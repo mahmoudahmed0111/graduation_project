@@ -1,18 +1,27 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { IUser, IStudent, LoginCredentials } from '@/types';
+import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials } from '@/types';
 import { authApi } from '@/lib/api';
+
+const PENDING_LOGIN_EMAIL_KEY = 'pendingLoginEmail';
 
 interface AuthState {
   user: (IUser | IStudent) | null;
   accessToken: string | null;
   isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  /** Step 1: submit email + nationalID + password → 2FA sent (no token yet) */
+  loginStepOne: (credentials: LoginStepOneCredentials) => Promise<void>;
+  /** Step 2: submit email + OTP → sets user & token */
+  loginStepTwo: (credentials: LoginStepTwoCredentials) => Promise<void>;
   logout: () => void;
+  /** Clear user/token state only (no API call). Use when refresh fails to avoid 401/429 on logout. */
+  clearSession: () => void;
   refreshToken: () => Promise<void>;
   setUser: (user: IUser | IStudent) => void;
   setAccessToken: (token: string) => void;
   setAuthenticated: (authenticated: boolean) => void;
+  getPendingLoginEmail: () => string | null;
+  clearPendingLoginEmail: () => void;
 }
 
 // In-memory token storage (not persisted)
@@ -25,19 +34,44 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
 
-      login: async (credentials: LoginCredentials) => {
-        const response = await authApi.login(credentials);
+      loginStepOne: async (credentials: LoginStepOneCredentials) => {
+        await authApi.loginStepOne(credentials);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(PENDING_LOGIN_EMAIL_KEY, credentials.email);
+        }
+      },
+
+      loginStepTwo: async (credentials: LoginStepTwoCredentials) => {
+        const response = await authApi.loginStepTwo(credentials);
         inMemoryToken = response.accessToken;
         set({
           user: response.user,
           accessToken: response.accessToken,
           isAuthenticated: true,
         });
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(PENDING_LOGIN_EMAIL_KEY);
+        }
       },
 
       logout: () => {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(PENDING_LOGIN_EMAIL_KEY);
+        }
         inMemoryToken = null;
-        authApi.logout();
+        authApi.logout().catch(() => {}); // best-effort; do not throw if already unauthenticated
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+        });
+      },
+
+      clearSession: () => {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(PENDING_LOGIN_EMAIL_KEY);
+        }
+        inMemoryToken = null;
         set({
           user: null,
           accessToken: null,
@@ -69,6 +103,17 @@ export const useAuthStore = create<AuthState>()(
 
       setAuthenticated: (authenticated: boolean) => {
         set({ isAuthenticated: authenticated });
+      },
+
+      getPendingLoginEmail: () => {
+        if (typeof sessionStorage === 'undefined') return null;
+        return sessionStorage.getItem(PENDING_LOGIN_EMAIL_KEY);
+      },
+
+      clearPendingLoginEmail: () => {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(PENDING_LOGIN_EMAIL_KEY);
+        }
       },
     }),
     {

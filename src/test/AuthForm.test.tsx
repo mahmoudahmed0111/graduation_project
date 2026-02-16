@@ -20,13 +20,13 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('Login Form', () => {
-  const mockLogin = vi.fn();
+  const mockLoginStepOne = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuthStore).mockReturnValue({
-      login: mockLogin,
-    });
+      loginStepOne: mockLoginStepOne,
+    } as ReturnType<typeof useAuthStore>);
   });
 
   it('renders login form', () => {
@@ -37,7 +37,8 @@ describe('Login Form', () => {
     );
 
     expect(screen.getByText(/login to your account/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/national id|email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/national id/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
   });
 
@@ -59,7 +60,7 @@ describe('Login Form', () => {
 
   it('submits form with valid data', async () => {
     const user = userEvent.setup();
-    mockLogin.mockResolvedValue({});
+    mockLoginStepOne.mockResolvedValue(undefined);
 
     render(
       <BrowserRouter>
@@ -67,17 +68,20 @@ describe('Login Form', () => {
       </BrowserRouter>
     );
 
-    const identifierInput = screen.getByLabelText(/national id|email/i);
+    const emailInput = screen.getByLabelText(/email/i);
+    const nationalIdInput = screen.getByLabelText(/national id/i);
     const passwordInput = screen.getByLabelText(/password/i);
     const submitButton = screen.getByRole('button', { name: /login/i });
 
-    await user.type(identifierInput, '12345678901234');
+    await user.type(emailInput, 'student@university.edu');
+    await user.type(nationalIdInput, '12345678901234');
     await user.type(passwordInput, 'password123');
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith({
-        identifier: '12345678901234',
+      expect(mockLoginStepOne).toHaveBeenCalledWith({
+        email: 'student@university.edu',
+        nationalID: '12345678901234',
         password: 'password123',
       });
     });
