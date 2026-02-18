@@ -13,7 +13,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
 
 export function Landing() {
   const [backendStatus, setBackendStatus] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false });
@@ -31,7 +31,7 @@ export function Landing() {
     } catch (err) {
       setBackendStatus({
         loading: false,
-        error: err instanceof Error ? err.message : 'Could not reach backend. Is it running on port 5000?',
+        error: err instanceof Error ? err.message : 'Could not reach backend.',
       });
     }
   };

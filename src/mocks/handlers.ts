@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { IUser, IStudent, IUniversity, ICourse, IEnrollment } from '@/types';
 import i18n from '@/lib/i18n';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net/api/v1';
 
 // Helper function to get translation
 const t = (key: string, fallback?: string) => {

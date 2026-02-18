@@ -2,7 +2,8 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, ForgotPasswordCredentials, AuthResponse, RefreshTokenResponse, IUniversity, ICourse, ICourseOffering, IEnrollment, PaginatedResponse, IAnnouncement, IAttendanceReport, IAssessment, IMaterial, ISubmission } from '@/types';
 import { getAccessToken } from '@/store/authStore';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1`;
+const AZURE_API_BASE = 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || AZURE_API_BASE}/api/v1`;
 
 /** Map backend user (e.g. _id, photo) to frontend IUser */
 function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
