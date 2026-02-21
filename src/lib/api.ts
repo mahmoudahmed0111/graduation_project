@@ -3,7 +3,10 @@ import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, Forg
 import { getAccessToken } from '@/store/authStore';
 
 const AZURE_API_BASE = 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || AZURE_API_BASE}/api/v1`;
+// In dev: use proxy path (/api/v1) to avoid CORS – Vite proxies to Azure HTTPS. Prod: use full HTTPS URL.
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api/v1'
+  : (import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || AZURE_API_BASE}/api/v1`);
 
 /** Map backend user (e.g. _id, photo) to frontend IUser */
 function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {

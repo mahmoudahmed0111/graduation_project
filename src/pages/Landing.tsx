@@ -13,7 +13,8 @@ import {
   Loader2
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
+// In dev: use proxy (/api). Prod: use full HTTPS URL from env
+const API_BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net');
 
 export function Landing() {
   const [backendStatus, setBackendStatus] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false });
@@ -21,7 +22,7 @@ export function Landing() {
   const testBackendConnection = async () => {
     setBackendStatus({ loading: true });
     try {
-      const res = await fetch(`${API_BASE}/api/test`);
+      const res = await fetch(`${API_BASE || ''}/api/test`);
       const data = await res.json();
       if (res.ok) {
         setBackendStatus({ loading: false, message: data.message ?? 'Backend connected.' });
