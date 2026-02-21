@@ -22,6 +22,6 @@ jobs:
       - name: 'Build and Push Docker Image'
         run: |
           docker build \
-            --build-arg REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }} \
+            --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
             -t ${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:latest .
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:latest
