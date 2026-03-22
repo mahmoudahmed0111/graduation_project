@@ -13,8 +13,10 @@ import {
   Loader2
 } from 'lucide-react';
 
-// In dev: use proxy (/api). Prod: use full HTTPS URL from env
-const API_BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net');
+// Dev: VITE_USE_PRODUCTION_API=true → proxy to Azure. false → local. Prod: Azure HTTPS
+const API_BASE = import.meta.env.DEV
+  ? (import.meta.env.VITE_USE_PRODUCTION_API === 'true' ? '' : 'http://localhost:5000')
+  : (import.meta.env.VITE_API_URL || 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net');
 
 export function Landing() {
   const [backendStatus, setBackendStatus] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false });

@@ -275,7 +275,10 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
               <item.icon className="h-5 w-5 flex-shrink-0" />
               {isExpanded && (
                 <>
-                  <span className="flex-1 text-left transition-opacity duration-300 ease-in-out">
+                  <span className={cn(
+                    'flex-1 text-left transition-opacity duration-300 ease-in-out whitespace-nowrap',
+                    item.label === 'University Structure' && 'text-sm'
+                  )}>
                     {item.label}
                   </span>
                   <div className="transition-transform duration-300 ease-in-out">

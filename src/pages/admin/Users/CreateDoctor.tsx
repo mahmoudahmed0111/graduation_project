@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
@@ -93,48 +93,44 @@ export function CreateDoctor() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary-600" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    placeholder="Enter doctor's full name"
-                    error={errors.name?.message}
-                    {...register('name')}
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    placeholder="doctor@university.edu"
-                    error={errors.email?.message}
-                    {...register('email')}
-                  />
-                </div>
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <User className="h-4 w-4 text-primary-600" />
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  placeholder="Enter doctor's full name"
+                  error={errors.name?.message}
+                  {...register('name')}
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  placeholder="doctor@university.edu"
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
                 <Input
                   label="National ID (optional)"
                   placeholder="12345678901234"
                   error={errors.nationalId?.message}
                   {...register('nationalId')}
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-primary-600" />
-                  Assignment
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-primary-600" />
+                Assignment
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select2
                   label="Department"
                   value={watchDepartment || ''}
@@ -143,57 +139,48 @@ export function CreateDoctor() {
                   error={errors.department?.message}
                   placeholder="Search and select department..."
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-primary-600" />
-                  Account Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Password"
-                    type="password"
-                    placeholder="Enter password"
-                    error={errors.password?.message}
-                    {...register('password')}
-                  />
-                  <Input
-                    label="Confirm Password"
-                    type="password"
-                    placeholder="Confirm password"
-                    error={errors.confirmPassword?.message}
-                    {...register('confirmPassword')}
-                  />
-                </div>
-                <p className="text-sm text-gray-500">Password must be at least 8 characters long</p>
-              </CardContent>
-            </Card>
-          </div>
+            <hr className="border-gray-200" />
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button type="submit" variant="primary" className="w-full" isLoading={loading} disabled={loading}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Create Doctor
-                </Button>
-                <Link to="/dashboard/users/doctors">
-                  <Button type="button" variant="secondary" className="w-full" disabled={loading}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary-600" />
+                Account Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="Enter password"
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  placeholder="Confirm password"
+                  error={errors.confirmPassword?.message}
+                  {...register('confirmPassword')}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Password must be at least 8 characters long</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
+            <Save className="h-4 w-4 mr-2" />
+            Create Doctor
+          </Button>
+          <Link to="/dashboard/users/doctors">
+            <Button type="button" variant="secondary" disabled={loading}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </Link>
         </div>
       </form>
     </div>

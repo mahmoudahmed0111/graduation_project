@@ -3,9 +3,10 @@ import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, Forg
 import { getAccessToken } from '@/store/authStore';
 
 const AZURE_API_BASE = 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
-// In dev: use proxy path (/api/v1) to avoid CORS – Vite proxies to Azure HTTPS. Prod: use full HTTPS URL.
+// Dev: VITE_USE_PRODUCTION_API=true → proxy to Azure LIVE. false → local backend.
+// Prod build: always use Azure HTTPS.
 const API_BASE_URL = import.meta.env.DEV
-  ? '/api/v1'
+  ? (import.meta.env.VITE_USE_PRODUCTION_API === 'true' ? '/api/v1' : 'http://localhost:5000/api/v1')
   : (import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || AZURE_API_BASE}/api/v1`);
 
 /** Map backend user (e.g. _id, photo) to frontend IUser */
@@ -48,7 +49,8 @@ axiosInstance.interceptors.request.use(
 );
 
 // Auth paths where 401 should not trigger refresh (avoids cascade: login 401 → refresh 401 → logout 401/429)
-const isAuthRequest = (url: string) => /\/auth\/(login|login\/verify|refresh|logout|forgotPassword|resetPassword)/.test(url || '');
+// include verify-password so wrong password doesn't clear session (user stays on lock screen to retry)
+const isAuthRequest = (url: string) => /\/auth\/(login|login\/verify|refresh|logout|forgotPassword|resetPassword|verify-password)/.test(url || '');
 
 // Response interceptor to handle token refresh
 axiosInstance.interceptors.response.use(
@@ -321,6 +323,11 @@ export const authApi = {
     newPassword: string;
   }): Promise<void> => {
     await axiosInstance.post('/auth/change-password', data);
+  },
+
+  /** Verify password for lock screen unlock. Throws on incorrect password. */
+  verifyPassword: async (password: string): Promise<void> => {
+    await axiosInstance.post<{ status: string; message: string }>('/auth/verify-password', { password });
   },
 };
 

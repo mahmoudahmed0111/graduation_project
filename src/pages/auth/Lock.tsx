@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,10 +19,17 @@ const lockSchema = z.object({
 type LockFormData = z.infer<typeof lockSchema>;
 
 export function Lock() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
   const { error: showError, success } = useToastStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Lock screen only makes sense when already logged in; redirect to login otherwise
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -35,23 +43,17 @@ export function Lock() {
   const onSubmit = async (data: LockFormData) => {
     try {
       setIsLoading(true);
-      // In real app, verify password with backend
-      // For now, using a simple check (in production, this should verify against the actual user password)
-      // This is a mock - replace with actual password verification
-      if (data.password === 'password123' || data.password.length >= 6) {
-        // Password verified - unlock and redirect to dashboard
-        success('Screen unlocked successfully');
-        navigate('/dashboard');
-      } else {
-        showError('Incorrect password. Please try again.');
-      }
+      await authApi.verifyPassword(data.password);
+      success('Screen unlocked successfully');
+      navigate('/dashboard');
     } catch (err: unknown) {
       logger.error('Failed to unlock screen', {
         context: 'Lock',
         error: err,
       });
+      const status = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      showError(msg || 'Failed to unlock screen');
+      showError(status === 401 ? (msg || 'Incorrect password. Please try again.') : msg || 'Failed to unlock screen');
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +63,10 @@ export function Lock() {
     logout();
     navigate('/login');
   };
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 p-4 relative overflow-hidden">

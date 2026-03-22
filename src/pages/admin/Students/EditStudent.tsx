@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link, useParams } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
@@ -205,33 +205,27 @@ export function EditStudent() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary-600" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    placeholder="Enter student's full name"
-                    error={errors.name?.message}
-                    {...register('name')}
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    placeholder="student@university.edu"
-                    error={errors.email?.message}
-                    {...register('email')}
-                  />
-                </div>
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <User className="h-4 w-4 text-primary-600" />
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  placeholder="Enter student's full name"
+                  error={errors.name?.message}
+                  {...register('name')}
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  placeholder="student@university.edu"
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
                 <Input
                   label="National ID"
                   placeholder="12345678901234"
@@ -239,136 +233,98 @@ export function EditStudent() {
                   disabled
                   {...register('nationalId')}
                 />
-                <p className="text-xs text-gray-500">National ID cannot be changed</p>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">National ID cannot be changed</p>
+            </div>
 
-            {/* Academic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-primary-600" />
-                  Academic Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select2
-                    label="Year"
-                    value={watchYear || ''}
-                    onChange={(value) => setValue('year', value)}
-                    options={[
-                      { value: '', label: 'Select Year' },
-                      { value: '1', label: 'Year 1' },
-                      { value: '2', label: 'Year 2' },
-                      { value: '3', label: 'Year 3' },
-                      { value: '4', label: 'Year 4' },
-                    ]}
-                    error={errors.year?.message}
-                    placeholder="Select Year"
-                  />
-                  <Select2
-                    label="Semester"
-                    value={watchSemester || ''}
-                    onChange={(value) => setValue('semester', value)}
-                    options={[
-                      { value: '', label: 'Select Semester' },
-                      { value: '1', label: 'Semester 1' },
-                      { value: '2', label: 'Semester 2' },
-                    ]}
-                    error={errors.semester?.message}
-                    placeholder="Select Semester"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select2
-                    label="Department"
-                    value={watchDepartment || ''}
-                    onChange={(value) => setValue('department', value)}
-                    options={[
-                      { value: '', label: 'Select Department' },
-                      ...departments,
-                    ]}
-                    error={errors.department?.message}
-                    placeholder="Select Department"
-                  />
-                  <Select2
-                    label="Academic Status"
-                    value={watchAcademicStatus || ''}
-                    onChange={(value) => setValue('academicStatus', value)}
-                    options={[
-                      { value: '', label: 'Select Status' },
-                      { value: 'good_standing', label: 'Good Standing' },
-                      { value: 'honors', label: 'Honors' },
-                      { value: 'probation', label: 'Probation' },
-                    ]}
-                    error={errors.academicStatus?.message}
-                    placeholder="Select Status"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            <hr className="border-gray-200" />
 
-          {/* Sidebar Actions */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full"
-                  isLoading={loading}
-                  disabled={loading}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </Button>
-                <Link to="/dashboard/students">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </Link>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={handleDelete}
-                  disabled={loading}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Student
-                </Button>
-              </CardContent>
-            </Card>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary-600" />
+                Academic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select2
+                  label="Year"
+                  value={watchYear || ''}
+                  onChange={(value) => setValue('year', value)}
+                  options={[
+                    { value: '', label: 'Select Year' },
+                    { value: '1', label: 'Year 1' },
+                    { value: '2', label: 'Year 2' },
+                    { value: '3', label: 'Year 3' },
+                    { value: '4', label: 'Year 4' },
+                  ]}
+                  error={errors.year?.message}
+                  placeholder="Select Year"
+                />
+                <Select2
+                  label="Semester"
+                  value={watchSemester || ''}
+                  onChange={(value) => setValue('semester', value)}
+                  options={[
+                    { value: '', label: 'Select Semester' },
+                    { value: '1', label: 'Semester 1' },
+                    { value: '2', label: 'Semester 2' },
+                  ]}
+                  error={errors.semester?.message}
+                  placeholder="Select Semester"
+                />
+                <Select2
+                  label="Department"
+                  value={watchDepartment || ''}
+                  onChange={(value) => setValue('department', value)}
+                  options={[
+                    { value: '', label: 'Select Department' },
+                    ...departments,
+                  ]}
+                  error={errors.department?.message}
+                  placeholder="Select Department"
+                />
+                <Select2
+                  label="Academic Status"
+                  value={watchAcademicStatus || ''}
+                  onChange={(value) => setValue('academicStatus', value)}
+                  options={[
+                    { value: '', label: 'Select Status' },
+                    { value: 'good_standing', label: 'Good Standing' },
+                    { value: 'honors', label: 'Honors' },
+                    { value: 'probation', label: 'Probation' },
+                  ]}
+                  error={errors.academicStatus?.message}
+                  placeholder="Select Status"
+                />
+              </div>
+              <div className="flex gap-6 mt-2 text-sm">
+                <span className="text-gray-600">Credits Earned: <span className="font-medium">{student.creditsEarned || 0}</span></span>
+                <span className="text-gray-600">GPA: <span className="font-medium">{(student.gpa || 0).toFixed(2)}</span></span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Student Info</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Credits Earned:</span>
-                    <span className="font-medium">{student.creditsEarned || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">GPA:</span>
-                    <span className="font-medium">{(student.gpa || 0).toFixed(2)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Changes
+          </Button>
+          <Link to="/dashboard/students">
+            <Button type="button" variant="secondary" disabled={loading}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={handleDelete}
+            disabled={loading}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Student
+          </Button>
         </div>
       </form>
     </div>

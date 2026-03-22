@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
@@ -98,81 +98,70 @@ export function CreateStudent() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary-600" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    placeholder="Enter student's full name"
-                    error={errors.name?.message}
-                    {...register('name')}
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    placeholder="student@university.edu"
-                    error={errors.email?.message}
-                    {...register('email')}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="National ID"
-                    placeholder="12345678901234"
-                    error={errors.nationalId?.message}
-                    {...register('nationalId')}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <User className="h-4 w-4 text-primary-600" />
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  placeholder="Enter student's full name"
+                  error={errors.name?.message}
+                  {...register('name')}
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  placeholder="student@university.edu"
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
+                <Input
+                  label="National ID"
+                  placeholder="12345678901234"
+                  error={errors.nationalId?.message}
+                  {...register('nationalId')}
+                />
+              </div>
+            </div>
 
-            {/* Academic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-primary-600" />
-                  Academic Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Select2
-                    label="Year"
-                    value={watchYear || ''}
-                    onChange={(value) => setValue('year', value)}
-                    options={[
-                      { value: '', label: 'Select Year' },
-                      { value: '1', label: 'Year 1' },
-                      { value: '2', label: 'Year 2' },
-                      { value: '3', label: 'Year 3' },
-                      { value: '4', label: 'Year 4' },
-                    ]}
-                    error={errors.year?.message}
-                    placeholder="Select Year"
-                  />
-                  <Select2
-                    label="Semester"
-                    value={watchSemester || ''}
-                    onChange={(value) => setValue('semester', value)}
-                    options={[
-                      { value: '', label: 'Select Semester' },
-                      { value: '1', label: 'Semester 1' },
-                      { value: '2', label: 'Semester 2' },
-                    ]}
-                    error={errors.semester?.message}
-                    placeholder="Select Semester"
-                  />
-                </div>
+            <hr className="border-gray-200" />
+
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary-600" />
+                Academic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select2
+                  label="Year"
+                  value={watchYear || ''}
+                  onChange={(value) => setValue('year', value)}
+                  options={[
+                    { value: '', label: 'Select Year' },
+                    { value: '1', label: 'Year 1' },
+                    { value: '2', label: 'Year 2' },
+                    { value: '3', label: 'Year 3' },
+                    { value: '4', label: 'Year 4' },
+                  ]}
+                  error={errors.year?.message}
+                  placeholder="Select Year"
+                />
+                <Select2
+                  label="Semester"
+                  value={watchSemester || ''}
+                  onChange={(value) => setValue('semester', value)}
+                  options={[
+                    { value: '', label: 'Select Semester' },
+                    { value: '1', label: 'Semester 1' },
+                    { value: '2', label: 'Semester 2' },
+                  ]}
+                  error={errors.semester?.message}
+                  placeholder="Select Semester"
+                />
                 <Select2
                   label="Department"
                   value={watchDepartment || ''}
@@ -184,86 +173,48 @@ export function CreateStudent() {
                   error={errors.department?.message}
                   placeholder="Select Department"
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            {/* Account Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-primary-600" />
-                  Account Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Password"
-                    type="password"
-                    placeholder="Enter password"
-                    error={errors.password?.message}
-                    {...register('password')}
-                  />
-                  <Input
-                    label="Confirm Password"
-                    type="password"
-                    placeholder="Confirm password"
-                    error={errors.confirmPassword?.message}
-                    {...register('confirmPassword')}
-                  />
-                </div>
-                <p className="text-sm text-gray-500">
-                  Password must be at least 8 characters long
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+            <hr className="border-gray-200" />
 
-          {/* Sidebar Actions */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-full"
-                  isLoading={loading}
-                  disabled={loading}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Create Student
-                </Button>
-                <Link to="/dashboard/students">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary-600" />
+                Account Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="Enter password"
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  placeholder="Confirm password"
+                  error={errors.confirmPassword?.message}
+                  {...register('confirmPassword')}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Password must be at least 8 characters long. All fields are required. National ID must be 14 digits.</p>
+            </div>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>• All fields are required</p>
-                  <p>• National ID must be 14 digits</p>
-                  <p>• Email must be a valid university email</p>
-                  <p>• Password must be at least 8 characters</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
+            <Save className="h-4 w-4 mr-2" />
+            Create Student
+          </Button>
+          <Link to="/dashboard/students">
+            <Button type="button" variant="secondary" disabled={loading}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </Link>
         </div>
       </form>
     </div>

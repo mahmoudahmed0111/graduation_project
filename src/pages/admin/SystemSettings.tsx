@@ -90,109 +90,112 @@ export function SystemSettings() {
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
-          {/* Current Semester */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Academic Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Semester <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  value={settings.currentSemester}
-                  onChange={(e) => setSettings({ ...settings, currentSemester: e.target.value })}
-                  placeholder="e.g., Fall 2025"
-                  required
-                />
-              </div>
+          {/* Academic Settings + Credit Hour Limits - one row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Academic Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Academic Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Current Semester <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={settings.currentSemester}
+                    onChange={(e) => setSettings({ ...settings, currentSemester: e.target.value })}
+                    placeholder="e.g., Fall 2025"
+                    required
+                  />
+                </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="enrollmentOpen"
-                  checked={settings.isEnrollmentOpen}
-                  onChange={(e) => setSettings({ ...settings, isEnrollmentOpen: e.target.checked })}
-                  className="h-4 w-4 text-primary-600 rounded"
-                />
-                <label htmlFor="enrollmentOpen" className="text-sm font-medium text-gray-700">
-                  Enrollment Open
-                </label>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="enrollmentOpen"
+                    checked={settings.isEnrollmentOpen}
+                    onChange={(e) => setSettings({ ...settings, isEnrollmentOpen: e.target.checked })}
+                    className="h-4 w-4 text-primary-600 rounded"
+                  />
+                  <label htmlFor="enrollmentOpen" className="text-sm font-medium text-gray-700">
+                    Enrollment Open
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Credit Limits */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
-                Credit Hour Limits
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Good Standing Limit
-                </label>
-                <Input
-                  type="number"
-                  value={settings.defaultCreditLimit.good_standing}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    defaultCreditLimit: {
-                      ...settings.defaultCreditLimit,
-                      good_standing: parseInt(e.target.value) || 0,
-                    },
-                  })}
-                  min="0"
-                  max="30"
-                />
-              </div>
+            {/* Credit Hour Limits */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5" />
+                  Credit Hour Limits
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Good Standing Limit
+                  </label>
+                  <Input
+                    type="number"
+                    value={settings.defaultCreditLimit.good_standing}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      defaultCreditLimit: {
+                        ...settings.defaultCreditLimit,
+                        good_standing: parseInt(e.target.value) || 0,
+                      },
+                    })}
+                    min="0"
+                    max="30"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Probation Limit
-                </label>
-                <Input
-                  type="number"
-                  value={settings.defaultCreditLimit.probation}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    defaultCreditLimit: {
-                      ...settings.defaultCreditLimit,
-                      probation: parseInt(e.target.value) || 0,
-                    },
-                  })}
-                  min="0"
-                  max="30"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Probation Limit
+                  </label>
+                  <Input
+                    type="number"
+                    value={settings.defaultCreditLimit.probation}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      defaultCreditLimit: {
+                        ...settings.defaultCreditLimit,
+                        probation: parseInt(e.target.value) || 0,
+                      },
+                    })}
+                    min="0"
+                    max="30"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Honors Limit
-                </label>
-                <Input
-                  type="number"
-                  value={settings.defaultCreditLimit.honors}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    defaultCreditLimit: {
-                      ...settings.defaultCreditLimit,
-                      honors: parseInt(e.target.value) || 0,
-                    },
-                  })}
-                  min="0"
-                  max="30"
-                />
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Honors Limit
+                  </label>
+                  <Input
+                    type="number"
+                    value={settings.defaultCreditLimit.honors}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      defaultCreditLimit: {
+                        ...settings.defaultCreditLimit,
+                        honors: parseInt(e.target.value) || 0,
+                      },
+                    })}
+                    min="0"
+                    max="30"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Grade Points */}
           <Card>
