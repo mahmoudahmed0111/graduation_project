@@ -328,7 +328,7 @@ export function GradeSubmissions() {
               </p>
             </div>
 
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3">
               {selectedSubmission.answers.map((answer, index) => (
                 <Card key={index} className="border">
                   <CardContent className="p-4">

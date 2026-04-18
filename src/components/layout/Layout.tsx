@@ -3,6 +3,8 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { cn } from '@/lib/utils';
+import { RequiresPasswordChangeGate } from '@/components/auth/RequiresPasswordChangeGate';
+import { AuthMeSync } from '@/components/auth/AuthMeSync';
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,8 +42,11 @@ export function Layout() {
         }}
       >
         <Navbar onToggleSidebar={handleToggleSidebar} />
+        <AuthMeSync />
         <main className="p-4 lg:p-6">
-          <Outlet />
+          <RequiresPasswordChangeGate>
+            <Outlet />
+          </RequiresPasswordChangeGate>
         </main>
       </div>
     </div>

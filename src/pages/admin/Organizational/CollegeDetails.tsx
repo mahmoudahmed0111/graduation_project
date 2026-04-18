@@ -3,58 +3,146 @@ import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Building2, School, UserPlus, ArrowLeft, Plus } from 'lucide-react';
-import { ICollege } from '@/types';
+import { Building2, School, ArrowLeft, Plus, MapPin } from 'lucide-react';
+import { ICollege, ILocation } from '@/types';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
+import { logger } from '@/lib/logger';
+import { useToastStore } from '@/store/toastStore';
+
+function mapCollegeRecord(college: Record<string, unknown>): ICollege {
+  const dean = college.dean_id as Record<string, unknown> | undefined;
+
+  return {
+    id: String(college._id ?? college.id ?? ''),
+    name: String(college.name ?? ''),
+    code: String(college.code ?? '').toUpperCase(),
+    slug: typeof college.slug === 'string' ? college.slug : undefined,
+    description: typeof college.description === 'string' ? college.description : undefined,
+    establishedYear: typeof college.establishedYear === 'number' ? college.establishedYear : undefined,
+    deptCount: typeof college.deptCount === 'number' ? college.deptCount : undefined,
+    studentCount: typeof college.studentCount === 'number' ? college.studentCount : undefined,
+    archivedAt: college.archivedAt === null || college.archivedAt === undefined ? null : String(college.archivedAt),
+    createdAt: typeof college.createdAt === 'string' ? college.createdAt : undefined,
+    dean: dean
+      ? {
+          id: String(dean._id ?? dean.id ?? ''),
+          name: String(dean.name ?? '—'),
+        }
+      : undefined,
+    departments: [],
+    isArchived: Boolean(college.isArchived),
+  };
+}
+
+/** Resolve Phase 1 `college_id` (ObjectId string or populated `{ _id, name, ... }`). */
+function collegeIdFromDepartment(rec: Record<string, unknown>): string | null {
+  const c = rec.college_id;
+  if (c == null) return null;
+  if (typeof c === 'string') return c;
+  if (typeof c === 'object' && c !== null) {
+    const o = c as Record<string, unknown>;
+    const id = o._id ?? o.id;
+    return id != null ? String(id) : null;
+  }
+  return null;
+}
+
+/**
+ * When the API mistakenly returns all departments, keep only rows for this college.
+ * If no row includes `college_id`, assume the endpoint was already scoped (nested route).
+ */
+function filterDepartmentsToCollege(rows: Array<Record<string, unknown>>, collegeId: string): Array<Record<string, unknown>> {
+  const want = String(collegeId);
+  const anyCollegeId = rows.some((r) => {
+    const cid = collegeIdFromDepartment(r);
+    return cid != null && cid !== '';
+  });
+  if (!anyCollegeId) return rows;
+  return rows.filter((r) => collegeIdFromDepartment(r) === want);
+}
+
+async function fetchDepartmentsForCollegeDetail(collegeId: string): Promise<Array<Record<string, unknown>>> {
+  let rows: Array<Record<string, unknown>> = [];
+  try {
+    const byFilter = await api.getDepartments({ college_id: collegeId, isArchived: 'all', limit: 500 });
+    rows = byFilter as Array<Record<string, unknown>>;
+  } catch {
+    try {
+      const nested = await api.getCollegeDepartments(collegeId, { isArchived: 'all', limit: 500 });
+      rows = nested as Array<Record<string, unknown>>;
+    } catch (error) {
+      logger.error('Failed to load departments for college', { context: 'CollegeDetails', error });
+      throw error;
+    }
+  }
+  return filterDepartmentsToCollege(rows, collegeId);
+}
+
+function mapLocationRow(raw: Record<string, unknown>): ILocation {
+  const college = raw.college_id as Record<string, unknown> | undefined;
+  const type = String(raw.type ?? 'lecture_hall');
+  const status = String(raw.status ?? 'active');
+  return {
+    id: String(raw._id ?? raw.id ?? ''),
+    name: String(raw.name ?? ''),
+    slug: typeof raw.slug === 'string' ? raw.slug : undefined,
+    college: {
+      id: String(college?._id ?? college?.id ?? ''),
+      name: String(college?.name ?? '—'),
+    },
+    building: typeof raw.building === 'string' ? raw.building : undefined,
+    floor: typeof raw.floor === 'number' ? raw.floor : undefined,
+    roomNumber: typeof raw.roomNumber === 'string' ? raw.roomNumber : undefined,
+    capacity: typeof raw.capacity === 'number' ? raw.capacity : 0,
+    type: type as ILocation['type'],
+    status: status === 'maintenance' ? 'maintenance' : 'active',
+    readerId: typeof raw.readerId === 'string' ? raw.readerId : undefined,
+    isArchived: Boolean(raw.isArchived),
+    archivedAt: raw.archivedAt === null || raw.archivedAt === undefined ? undefined : String(raw.archivedAt),
+  };
+}
 
 export function CollegeDetails() {
   const { id } = useParams<{ id: string }>();
+  const { error: showError } = useToastStore();
   const [college, setCollege] = useState<ICollege | null>(null);
+  const [locations, setLocations] = useState<ILocation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'departments' | 'admins'>('departments');
+  const [activeTab, setActiveTab] = useState<'departments' | 'locations'>('departments');
 
   useEffect(() => {
     const fetchCollege = async () => {
       if (!id) return;
       try {
         setLoading(true);
-        // In real app: const data = await api.getCollege(id);
-        const mockColleges: ICollege[] = [
-          {
-            id: 'college-1',
-            name: 'Faculty of Engineering',
-            code: 'ENG',
-            description: 'Engineering and Technology',
-            dean: { id: 'dean-1', name: 'Dr. Mohamed Hassan' },
-            departments: [
-              { id: 'dept-1', name: 'Computer Science', code: 'CS' },
-              { id: 'dept-2', name: 'Electrical Engineering', code: 'EE' },
-            ],
-            isArchived: false,
-          },
-          {
-            id: 'college-2',
-            name: 'Faculty of Science',
-            code: 'SCI',
-            description: 'Natural Sciences',
-            dean: { id: 'dean-2', name: 'Dr. Sarah Ahmed' },
-            departments: [
-              { id: 'dept-3', name: 'Mathematics', code: 'MATH' },
-              { id: 'dept-4', name: 'Physics', code: 'PHY' },
-            ],
-            isArchived: false,
-          },
-        ];
-        const found = mockColleges.find((c) => c.id === id) || null;
-        setCollege(found);
-      } catch {
+        const [rawCollege, rawLocations] = await Promise.all([
+          api.getCollege(id),
+          api.getCollegeLocations(id, { isArchived: 'all', limit: 500 }),
+        ]);
+        const rawDepartments = await fetchDepartmentsForCollegeDetail(id);
+        const mappedCollege = mapCollegeRecord(rawCollege);
+        mappedCollege.departments = rawDepartments.map((d) => {
+          const rec = d as Record<string, unknown>;
+          return {
+            id: String(rec._id ?? rec.id ?? ''),
+            name: String(rec.name ?? ''),
+            code: String(rec.code ?? '').toUpperCase(),
+          };
+        });
+        setCollege(mappedCollege);
+        setLocations(rawLocations.map((loc) => mapLocationRow(loc as Record<string, unknown>)));
+      } catch (error) {
+        logger.error('Failed to fetch college', { context: 'CollegeDetails', error });
+        showError('Could not load college');
         setCollege(null);
+        setLocations([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchCollege();
-  }, [id]);
+    void fetchCollege();
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps -- reload on id; archived tab uses fresh getCollege
 
   if (loading) {
     return (
@@ -80,12 +168,12 @@ export function CollegeDetails() {
 
   const tabs = [
     { id: 'departments' as const, label: 'Departments', icon: School },
-    { id: 'admins' as const, label: 'College Admins', icon: UserPlus },
+    { id: 'locations' as const, label: 'Locations', icon: MapPin },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <Link to="/dashboard/organizational/colleges">
             <Button variant="ghost" size="sm">
@@ -99,7 +187,10 @@ export function CollegeDetails() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{college.name}</h1>
-              <p className="text-sm text-gray-500">{college.code}</p>
+              <p className="text-sm text-gray-500">
+                {college.code}
+                {college.slug ? ` · ${college.slug}` : ''}
+              </p>
             </div>
           </div>
         </div>
@@ -109,6 +200,43 @@ export function CollegeDetails() {
       </div>
 
       <Card>
+        <CardContent className="py-4">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div>
+              <dt className="text-gray-500">Description</dt>
+              <dd className="text-gray-900 mt-0.5">{college.description ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Established</dt>
+              <dd className="text-gray-900 mt-0.5">{college.establishedYear ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Dean (dean_id)</dt>
+              <dd className="text-gray-900 mt-0.5">{college.dean?.name ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Departments (deptCount)</dt>
+              <dd className="text-gray-900 mt-0.5">{college.deptCount ?? college.departments?.length ?? 0}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Students (studentCount)</dt>
+              <dd className="text-gray-900 mt-0.5">{college.studentCount ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Archived</dt>
+              <dd className="text-gray-900 mt-0.5">
+                {college.isArchived ? `Yes${college.archivedAt ? ` (${college.archivedAt})` : ''}` : 'No'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Created</dt>
+              <dd className="text-gray-900 mt-0.5">{college.createdAt ?? '—'}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
         <div className="border-b border-gray-200">
           <nav className="flex gap-1 p-2">
             {tabs.map((tab) => {
@@ -116,6 +244,7 @@ export function CollegeDetails() {
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -135,7 +264,7 @@ export function CollegeDetails() {
           {activeTab === 'departments' && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-600">Add and modify internal departments</p>
+                <p className="text-sm text-gray-600">GET /api/v1/colleges/:id/departments</p>
                 <Link to="/dashboard/organizational/departments/create">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
@@ -158,7 +287,9 @@ export function CollegeDetails() {
                       <TableCell>{dept.name}</TableCell>
                       <TableCell className="text-right">
                         <Link to={`/dashboard/organizational/departments/${dept.id}/edit`}>
-                          <Button variant="ghost" size="sm">Edit</Button>
+                          <Button variant="ghost" size="sm">
+                            Edit
+                          </Button>
                         </Link>
                       </TableCell>
                     </TableRow>
@@ -170,19 +301,66 @@ export function CollegeDetails() {
               )}
             </div>
           )}
-          {activeTab === 'admins' && (
+          {activeTab === 'locations' && (
             <div>
-              <p className="text-sm text-gray-600 mb-4">Assign staff responsible for this college</p>
-              <div className="flex items-center justify-center py-12 border border-dashed border-gray-200 rounded-lg">
-                <div className="text-center">
-                  <UserPlus className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">College Admins</p>
-                  <p className="text-gray-400 text-xs mt-1">Assign college admins from User Management</p>
-                  <Link to="/dashboard/users/admins">
-                    <Button variant="secondary" size="sm" className="mt-3">Go to User Management</Button>
-                  </Link>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-600">GET /api/v1/colleges/:id/locations</p>
+                <Link to="/dashboard/organizational/locations/create">
+                  <Button size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add location
+                  </Button>
+                </Link>
               </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50/80">
+                    <TableHead>Name</TableHead>
+                    <TableHead>Building</TableHead>
+                    <TableHead>Floor</TableHead>
+                    <TableHead>Room</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {locations.map((loc) => (
+                    <TableRow key={loc.id}>
+                      <TableCell className="font-medium">{loc.name}</TableCell>
+                      <TableCell>{loc.building ?? '—'}</TableCell>
+                      <TableCell>{loc.floor ?? '—'}</TableCell>
+                      <TableCell>{loc.roomNumber ?? '—'}</TableCell>
+                      <TableCell>{loc.capacity}</TableCell>
+                      <TableCell className="text-sm">{loc.type.replace(/_/g, ' ')}</TableCell>
+                      <TableCell>
+                        {loc.status === 'maintenance' ? (
+                          <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
+                            Maintenance
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+                            Active
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">{loc.slug ?? '—'}</TableCell>
+                      <TableCell className="text-right">
+                        <Link to={`/dashboard/organizational/locations/${loc.id}/edit`}>
+                          <Button variant="ghost" size="sm">
+                            Edit
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {locations.length === 0 && (
+                <p className="text-center py-8 text-gray-500 text-sm">No locations for this college</p>
+              )}
             </div>
           )}
         </CardContent>

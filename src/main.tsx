@@ -1,6 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
+import { QueryProvider } from './providers/QueryProvider'
+import { ThemeProvider } from './providers/ThemeProvider'
 
 // MSW only when VITE_USE_MSW=true (default: use real backend at VITE_API_URL)
 async function enableMocking() {
@@ -29,7 +31,11 @@ async function enableMocking() {
 enableMocking().then(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <App />
+      <ThemeProvider>
+        <QueryProvider>
+          <App />
+        </QueryProvider>
+      </ThemeProvider>
     </React.StrictMode>,
   )
 })

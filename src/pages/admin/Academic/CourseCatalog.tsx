@@ -1,166 +1,175 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
-import { 
-  Library, 
-  Search, 
-  Plus,
-  Edit,
-  Archive,
-  School
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { ICourseCatalog } from '@/types';
+import { Modal } from '@/components/ui/Modal';
+import { Pagination } from '@/components/ui/Pagination';
+import { Library, Search, Plus, Edit, Archive, RotateCcw, School } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
-import { logger } from '@/lib/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useColleges } from '@/hooks/queries/useColleges';
+import { useDepartments } from '@/hooks/queries/useDepartments';
+import {
+  useCourseCatalogs,
+  useCreateCourseCatalog,
+  useUpdateCourseCatalog,
+  useArchiveCourseCatalog,
+  useRestoreCourseCatalog,
+} from '@/hooks/queries/usePhase3CourseCatalog';
+import { getApiErrorMessage } from '@/lib/http/client';
+import { formatPrerequisites, p3Id, p3RefName } from '@/lib/phase3Ui';
+
+const ARCHIVE_FILTERS = [
+  { value: 'false', label: 'Active' },
+  { value: 'true', label: 'Archived' },
+  { value: 'all', label: 'All' },
+];
 
 export function CourseCatalog() {
+  const { user } = useAuthStore();
+  const isUA = user?.role === 'universityAdmin';
   const { success, error: showError } = useToastStore();
-  const [courses, setCourses] = useState<ICourseCatalog[]>([]);
-  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-  const [archiveDialog, setArchiveDialog] = useState<{ open: boolean; course: ICourseCatalog | null }>({
-    open: false,
-    course: null,
+
+  const [page, setPage] = useState(1);
+  const [isArchived, setIsArchived] = useState<'true' | 'false' | 'all'>('false');
+  const [departmentId, setDepartmentId] = useState('');
+  const [collegeId, setCollegeId] = useState('');
+  const [search, setSearch] = useState('');
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editRow, setEditRow] = useState<Record<string, unknown> | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<Record<string, unknown> | null>(null);
+
+  const { data: collegesData } = useColleges(
+    { limit: 100, isArchived: 'false' },
+    { enabled: isUA }
+  );
+  const collegeOptions = useMemo(() => {
+    const items = collegesData?.items ?? [];
+    return [
+      { value: '', label: 'All colleges' },
+      ...items.map((c) => {
+        const r = c as Record<string, unknown>;
+        return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
+      }),
+    ];
+  }, [collegesData?.items]);
+
+  const deptCollege = isUA ? collegeId || undefined : user?.collegeId;
+  const { data: departmentsData } = useDepartments(
+    { college_id: deptCollege, limit: 100, isArchived: 'false' },
+    { enabled: isUA ? true : Boolean(user?.collegeId) }
+  );
+  const departmentOptions = useMemo(() => {
+    const items = departmentsData?.items ?? [];
+    return [
+      { value: '', label: 'All departments' },
+      ...items.map((d) => {
+        const r = d as Record<string, unknown>;
+        return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
+      }),
+    ];
+  }, [departmentsData?.items]);
+
+  const listParams = useMemo(
+    () => ({
+      page,
+      limit: 25,
+      sort: 'code',
+      isArchived,
+      department_id: departmentId || undefined,
+      college_id: isUA ? collegeId || undefined : undefined,
+      search: search.trim() || undefined,
+    }),
+    [page, isArchived, departmentId, collegeId, isUA, search]
+  );
+
+  const { data, isLoading, isError, refetch } = useCourseCatalogs(listParams);
+  const createMut = useCreateCourseCatalog();
+  const updateMut = useUpdateCourseCatalog();
+  const archiveMut = useArchiveCourseCatalog();
+  const restoreMut = useRestoreCourseCatalog();
+
+  const items = data?.items ?? [];
+  const totalPages = Math.max(1, data?.totalPages ?? 1);
+
+  const { data: prereqPicker } = useCourseCatalogs({
+    limit: 100,
+    isArchived: 'false',
+    college_id: isUA ? collegeId || undefined : undefined,
+    department_id: departmentId || undefined,
   });
-
-  useEffect(() => {
-    fetchDepartments();
-    fetchCourses();
-  }, [selectedDepartment, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchCourses/fetchDepartments stable
-
-  const fetchDepartments = async () => {
-    setDepartments([
-      { id: 'dept-1', name: 'Computer Science' },
-      { id: 'dept-2', name: 'Electrical Engineering' },
-      { id: 'dept-3', name: 'Mathematics' },
-    ]);
-  };
-
-  const fetchCourses = async () => {
-    try {
-      setLoading(true);
-      // Mock data
-      const mockCourses: ICourseCatalog[] = [
-        {
-          id: 'catalog-1',
-          title: 'Introduction to Programming',
-          code: 'CS101',
-          creditHours: 3,
-          description: 'Fundamentals of programming',
-          department: { id: 'dept-1', name: 'Computer Science' },
-          prerequisites: [],
-        },
-        {
-          id: 'catalog-2',
-          title: 'Data Structures',
-          code: 'CS201',
-          creditHours: 4,
-          description: 'Advanced data structures and algorithms',
-          department: { id: 'dept-1', name: 'Computer Science' },
-          prerequisites: [{ id: 'catalog-1', title: 'Introduction to Programming', code: 'CS101', creditHours: 3, department: { id: 'dept-1', name: 'Computer Science' } }],
-        },
-        {
-          id: 'catalog-3',
-          title: 'Calculus I',
-          code: 'MATH101',
-          creditHours: 3,
-          description: 'Differential and integral calculus',
-          department: { id: 'dept-3', name: 'Mathematics' },
-          prerequisites: [],
-        },
-      ];
-      setCourses(mockCourses);
-    } catch (error) {
-      logger.error('Failed to fetch courses', { context: 'CourseCatalog', error });
-      showError('Failed to load courses');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleArchive = async (course: ICourseCatalog) => {
-    try {
-      // In real app: await api.archiveCourseCatalog(course.id);
-      success(`Course "${course.title}" archived successfully`);
-      fetchCourses();
-      setArchiveDialog({ open: false, course: null });
-    } catch (error) {
-      showError('Failed to archive course');
-    }
-  };
-
-  const filteredCourses = courses.filter(course => {
-    const matchesSearch = 
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = !selectedDepartment || course.department.id === selectedDepartment;
-    return matchesSearch && matchesDepartment;
-  });
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading courses...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Course Catalog</h1>
-          <p className="text-gray-600 mt-1">Manage course templates and prerequisites</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Course catalog</h1>
+          <p className="mt-1 text-gray-600 dark:text-gray-400">Phase 3 — GET/POST/PATCH /api/v1/course-catalog</p>
         </div>
-        <Link to="/dashboard/academic/catalog/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Course
+        {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
+          <Button type="button" onClick={() => setCreateOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add course
           </Button>
-        </Link>
+        )}
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Courses</CardTitle>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <CardTitle>All courses</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              {isUA && (
+                <Select2
+                  label=""
+                  options={collegeOptions}
+                  value={collegeId}
+                  onChange={setCollegeId}
+                  className="w-48"
+                  placeholder="College"
+                />
+              )}
               <Select2
-                value={selectedDepartment}
-                onChange={setSelectedDepartment}
-                options={[
-                  { value: '', label: 'All Departments' },
-                  ...departments.map(d => ({ value: d.id, label: d.name })),
-                ]}
-                className="w-64"
+                label=""
+                options={departmentOptions}
+                value={departmentId}
+                onChange={setDepartmentId}
+                className="w-56"
+                placeholder="Department"
               />
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Select2
+                label=""
+                options={ARCHIVE_FILTERS}
+                value={isArchived}
+                onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
+                searchable={false}
+                className="w-36"
+              />
+              <div className="relative min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search courses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10"
+                  placeholder="Search…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {filteredCourses.length === 0 ? (
-            <div className="text-center py-12">
-              <Library className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No courses found</p>
+          {isLoading ? (
+            <div className="py-16 text-center text-gray-500">Loading…</div>
+          ) : isError ? (
+            <div className="py-16 text-center text-red-600">Failed to load catalog. Check permissions or API URL.</div>
+          ) : items.length === 0 ? (
+            <div className="py-12 text-center text-gray-500">
+              <Library className="mx-auto mb-3 h-12 w-12 text-gray-300" />
+              No courses found
             </div>
           ) : (
             <Table>
@@ -169,79 +178,169 @@ export function CourseCatalog() {
                   <TableHead>Code</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Department</TableHead>
-                  <TableHead>Credit Hours</TableHead>
+                  <TableHead>Credits</TableHead>
                   <TableHead>Prerequisites</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCourses.map((course) => (
-                  <TableRow key={course.id}>
-                    <TableCell className="font-medium">{course.code}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{course.title}</div>
-                        {course.description && (
-                          <div className="text-sm text-gray-500">{course.description}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <School className="h-4 w-4 text-gray-400" />
-                        <span>{course.department.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{course.creditHours} hrs</TableCell>
-                    <TableCell>
-                      {course.prerequisites && course.prerequisites.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {course.prerequisites.map((prereq, idx) => (
-                            <span key={idx} className="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-700">
-                              {prereq.code}
-                            </span>
-                          ))}
+                {items.map((course) => {
+                  const id = p3Id(course);
+                  const archived = course.isArchived === true;
+                  return (
+                    <TableRow key={id}>
+                      <TableCell className="font-medium">{String(course.code ?? '')}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{String(course.title ?? '')}</div>
+                        {course.description ? (
+                          <div className="text-sm text-gray-500">{String(course.description)}</div>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <School className="h-4 w-4 text-gray-400" />
+                          {p3RefName(course.department_id)}
                         </div>
-                      ) : (
-                        <span className="text-gray-400">None</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
-                        Active
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link to={`/dashboard/academic/catalog/${course.id}/edit`}>
-                          <Button variant="secondary" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setArchiveDialog({ open: true, course })}
+                      </TableCell>
+                      <TableCell>{String(course.creditHours ?? '')}</TableCell>
+                      <TableCell className="text-sm">{formatPrerequisites(course)}</TableCell>
+                      <TableCell>
+                        <span
+                          className={
+                            archived
+                              ? 'rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700'
+                              : 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
+                          }
                         >
-                          <Archive className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {archived ? 'Archived' : 'Active'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
+                            <>
+                              <Button type="button" variant="secondary" size="sm" onClick={() => setEditRow(course)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              {!archived ? (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => setArchiveTarget(course)}
+                                >
+                                  <Archive className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    void (async () => {
+                                      try {
+                                        await restoreMut.mutateAsync(id);
+                                        success('Course restored.');
+                                        void refetch();
+                                      } catch (e) {
+                                        showError(getApiErrorMessage(e));
+                                      }
+                                    })();
+                                  }}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
+          )}
+          {!isLoading && items.length > 0 && (
+            <div className="mt-4 flex justify-center">
+              <Pagination currentPage={data?.currentPage ?? page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           )}
         </CardContent>
       </Card>
 
+      <CatalogFormModal
+        mode="create"
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        departmentOptions={departmentOptions.filter((o) => o.value)}
+        prerequisiteOptions={
+          (prereqPicker?.items ?? []).map((c) => {
+            const r = c as Record<string, unknown>;
+            return { value: p3Id(r), label: `${String(r.code ?? '')} — ${String(r.title ?? '')}` };
+          })
+        }
+        onCreate={async (payload) => {
+          try {
+            await createMut.mutateAsync(payload);
+            success('Course created.');
+            setCreateOpen(false);
+          } catch (e) {
+            showError(getApiErrorMessage(e));
+          }
+        }}
+        onUpdate={undefined}
+        loading={createMut.isPending}
+      />
+
+      {editRow && (
+        <CatalogFormModal
+          mode="edit"
+          open={!!editRow}
+          onClose={() => setEditRow(null)}
+          initial={editRow}
+          departmentOptions={departmentOptions.filter((o) => o.value)}
+          prerequisiteOptions={
+            (prereqPicker?.items ?? [])
+              .filter((c) => p3Id(c as Record<string, unknown>) !== p3Id(editRow))
+              .map((c) => {
+                const r = c as Record<string, unknown>;
+                return { value: p3Id(r), label: `${String(r.code ?? '')} — ${String(r.title ?? '')}` };
+              })
+          }
+          onCreate={undefined}
+          onUpdate={async (payload) => {
+            try {
+              await updateMut.mutateAsync({ id: p3Id(editRow), data: payload });
+              success('Course updated.');
+              setEditRow(null);
+            } catch (e) {
+              showError(getApiErrorMessage(e));
+            }
+          }}
+          loading={updateMut.isPending}
+        />
+      )}
+
       <ConfirmDialog
-        isOpen={archiveDialog.open}
-        onClose={() => setArchiveDialog({ open: false, course: null })}
-        onConfirm={() => archiveDialog.course && handleArchive(archiveDialog.course)}
-        title="Archive Course"
-        message={`Are you sure you want to archive "${archiveDialog.course?.title}"?`}
+        isOpen={!!archiveTarget}
+        onClose={() => setArchiveTarget(null)}
+        onConfirm={() => {
+          if (!archiveTarget) return;
+          void (async () => {
+            try {
+              await archiveMut.mutateAsync(p3Id(archiveTarget));
+              success('Course archived.');
+              setArchiveTarget(null);
+              void refetch();
+            } catch (e) {
+              showError(getApiErrorMessage(e));
+            }
+          })();
+        }}
+        title="Archive course"
+        message={`Archive "${String(archiveTarget?.title ?? '')}"? Active offerings must be cleared first.`}
         confirmText="Archive"
         variant="danger"
       />
@@ -249,3 +348,176 @@ export function CourseCatalog() {
   );
 }
 
+function CatalogFormModal({
+  mode,
+  open,
+  onClose,
+  initial,
+  departmentOptions,
+  prerequisiteOptions,
+  onCreate,
+  onUpdate,
+  loading,
+}: {
+  mode: 'create' | 'edit';
+  open: boolean;
+  onClose: () => void;
+  initial?: Record<string, unknown> | null;
+  departmentOptions: { value: string; label: string }[];
+  prerequisiteOptions: { value: string; label: string }[];
+  onCreate?: (data: {
+    title: string;
+    code: string;
+    description?: string;
+    creditHours: number;
+    department_id: string;
+    prerequisites_ids?: string[];
+  }) => Promise<void>;
+  onUpdate?: (data: {
+    title?: string;
+    description?: string;
+    creditHours?: number;
+    prerequisites_ids?: string[];
+  }) => Promise<void>;
+  loading: boolean;
+}) {
+  const [title, setTitle] = useState('');
+  const [code, setCode] = useState('');
+  const [description, setDescription] = useState('');
+  const [creditHours, setCreditHours] = useState('3');
+  const [department_id, setDepartment_id] = useState('');
+  const [selectedPrereq, setSelectedPrereq] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (mode === 'edit' && initial) {
+      setTitle(String(initial.title ?? ''));
+      setCode(String(initial.code ?? ''));
+      setDescription(String(initial.description ?? ''));
+      setCreditHours(String(initial.creditHours ?? 3));
+      const d = initial.department_id;
+      const deptId =
+        typeof d === 'object' && d && '_id' in d
+          ? String((d as { _id: string })._id)
+          : typeof d === 'string'
+            ? d
+            : '';
+      setDepartment_id(deptId);
+      const raw = initial.prerequisites_ids;
+      if (Array.isArray(raw)) {
+        setSelectedPrereq(
+          raw
+            .map((p) =>
+              typeof p === 'string'
+                ? p
+                : p && typeof p === 'object' && '_id' in p
+                  ? String((p as { _id: string })._id)
+                  : ''
+            )
+            .filter(Boolean)
+        );
+      } else setSelectedPrereq([]);
+      return;
+    }
+    if (mode === 'create') {
+      setTitle('');
+      setCode('');
+      setDescription('');
+      setCreditHours('3');
+      setDepartment_id(departmentOptions[0]?.value ?? '');
+      setSelectedPrereq([]);
+    }
+  }, [open, initial, mode, departmentOptions]);
+
+  const togglePrereq = (id: string) => {
+    setSelectedPrereq((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  return (
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      title={mode === 'create' ? 'Create catalog course' : 'Edit catalog course'}
+      size="lg"
+    >
+      <div className="space-y-4">
+        {mode === 'edit' && (
+          <p className="text-sm text-gray-500">
+            Code and department cannot be changed (API allowlist). Update title, description, credits, or prerequisites.
+          </p>
+        )}
+        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        {mode === 'create' ? (
+          <Input label="Code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. CS301" />
+        ) : (
+          <Input label="Code (read-only)" value={code} disabled />
+        )}
+        <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <Input
+          label="Credit hours"
+          type="number"
+          min={1}
+          value={creditHours}
+          onChange={(e) => setCreditHours(e.target.value)}
+        />
+        {mode === 'create' && (
+          <Select2 label="Department" options={departmentOptions} value={department_id} onChange={setDepartment_id} />
+        )}
+        <div>
+          <p className="mb-2 text-sm font-medium text-gray-700">Prerequisites</p>
+          <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-2">
+            {prerequisiteOptions.length === 0 ? (
+              <p className="text-sm text-gray-500">No other courses loaded for selection.</p>
+            ) : (
+              prerequisiteOptions.map((o) => (
+                <label key={o.value} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedPrereq.includes(o.value)}
+                    onChange={() => togglePrereq(o.value)}
+                  />
+                  {o.label}
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={loading}
+            onClick={() => {
+              const ch = Number(creditHours);
+              if (!title.trim() || !Number.isFinite(ch) || ch < 1) return;
+              if (mode === 'create' && onCreate) {
+                if (!code.trim() || !department_id) return;
+                void onCreate({
+                  title: title.trim(),
+                  code: code.trim(),
+                  description: description.trim() || undefined,
+                  creditHours: ch,
+                  department_id,
+                  prerequisites_ids: selectedPrereq.length ? selectedPrereq : undefined,
+                });
+              }
+              if (mode === 'edit' && onUpdate) {
+                void onUpdate({
+                  title: title.trim(),
+                  description: description.trim() || undefined,
+                  creditHours: ch,
+                  prerequisites_ids: selectedPrereq,
+                });
+              }
+            }}
+          >
+            {loading ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

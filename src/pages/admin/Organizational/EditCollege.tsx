@@ -3,16 +3,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select2 } from '@/components/ui/Select2';
 import { 
   Building2, 
   ArrowLeft,
   Save
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ICollege } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
+import { api, getApiErrorMessage } from '@/lib/api';
 
 export function EditCollege() {
   const { id } = useParams<{ id: string }>();
@@ -23,58 +22,59 @@ export function EditCollege() {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    slug: '',
     description: '',
     deanId: '',
+    establishedYear: '' as string,
   });
 
-  // Mock deans list
-  const deans = [
-    { id: 'dean-1', name: 'Dr. Mohamed Hassan' },
-    { id: 'dean-2', name: 'Dr. Sarah Ahmed' },
-  ];
-
   useEffect(() => {
-    fetchCollege();
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchCollege depends on id
-
-  const fetchCollege = async () => {
-    try {
-      setFetching(true);
-      // In real app: const college = await api.getCollege(id);
-      const mockCollege: ICollege = {
-        id: id || '',
-        name: 'Faculty of Engineering',
-        code: 'ENG',
-        description: 'Engineering and Technology',
-        dean: { id: 'dean-1', name: 'Dr. Mohamed Hassan' },
-        departments: [],
-        isArchived: false,
-      };
-      setFormData({
-        name: mockCollege.name,
-        code: mockCollege.code,
-        description: mockCollege.description || '',
-        deanId: mockCollege.dean?.id || '',
-      });
-    } catch (error) {
-      logger.error('Failed to fetch college', { context: 'EditCollege', error });
-      showError('Failed to load college');
-    } finally {
-      setFetching(false);
-    }
-  };
+    const fetchCollege = async () => {
+      if (!id) return;
+      try {
+        setFetching(true);
+        const raw = await api.getCollege(id);
+        const dean = raw.dean_id as Record<string, unknown> | undefined;
+        const deanId = dean && typeof dean === 'object' ? String(dean._id ?? dean.id ?? '') : '';
+        const year =
+          typeof raw.establishedYear === 'number'
+            ? String(raw.establishedYear)
+            : '';
+        setFormData({
+          name: String(raw.name ?? ''),
+          code: String(raw.code ?? '').toUpperCase(),
+          slug: typeof raw.slug === 'string' ? raw.slug : '',
+          description: typeof raw.description === 'string' ? raw.description : '',
+          deanId,
+          establishedYear: year,
+        });
+      } catch (error) {
+        logger.error('Failed to fetch college', { context: 'EditCollege', error });
+        showError(getApiErrorMessage(error, 'Failed to load college'));
+      } finally {
+        setFetching(false);
+      }
+    };
+    void fetchCollege();
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     try {
       setLoading(true);
-      // In real app: await api.updateCollege(id, formData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const year = formData.establishedYear.trim() ? parseInt(formData.establishedYear, 10) : undefined;
+      await api.updateCollege(id, {
+        name: formData.name.trim(),
+        ...(formData.description.trim() && { description: formData.description.trim() }),
+        dean_id: formData.deanId.trim() || null,
+        ...(year != null && !Number.isNaN(year) ? { establishedYear: year } : {}),
+      });
       success('College updated successfully');
       navigate('/dashboard/organizational/colleges');
     } catch (error) {
       logger.error('Failed to update college', { context: 'EditCollege', error });
-      showError('Failed to update college');
+      showError(getApiErrorMessage(error, 'Failed to update college'));
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export function EditCollege() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Edit College</h1>
-          <p className="text-gray-600 mt-1">Update college information</p>
+          <p className="text-gray-600 mt-1">PATCH /api/v1/colleges/:id — code cannot be changed</p>
         </div>
       </div>
 
@@ -129,14 +129,25 @@ export function EditCollege() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                College Code <span className="text-red-500">*</span>
+                College Code
               </label>
               <Input
                 value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                placeholder="e.g., ENG"
-                required
-                maxLength={10}
+                readOnly
+                className="bg-gray-50 text-gray-600"
+                title="Code is set at creation and cannot be changed via PATCH"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Slug <span className="text-gray-400 font-normal">(read-only)</span>
+              </label>
+              <Input
+                value={formData.slug}
+                readOnly
+                className="bg-gray-50 text-gray-600"
+                title="From Phase 1 API response"
               />
             </div>
 
@@ -153,16 +164,26 @@ export function EditCollege() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dean
+                Established year
               </label>
-              <Select2
+              <Input
+                type="number"
+                value={formData.establishedYear}
+                onChange={(e) => setFormData({ ...formData, establishedYear: e.target.value })}
+                placeholder="e.g. 1985"
+                min={1800}
+                max={2100}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Dean user ID <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <Input
                 value={formData.deanId}
-                onChange={(value) => setFormData({ ...formData, deanId: value })}
-                options={[
-                  { value: '', label: 'Select a dean...' },
-                  ...deans.map(dean => ({ value: dean.id, label: dean.name })),
-                ]}
-                placeholder="Search and select a dean..."
+                onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
+                placeholder="MongoDB ObjectId — field dean_id"
               />
             </div>
 
@@ -183,4 +204,3 @@ export function EditCollege() {
     </div>
   );
 }
-

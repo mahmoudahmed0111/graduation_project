@@ -8,8 +8,8 @@ interface TableProps {
 
 export function Table({ children, className }: TableProps) {
   return (
-    <div className="overflow-x-auto">
-      <table className={cn('w-full border-collapse', className)}>
+    <div className="w-full min-w-0 overflow-x-auto">
+      <table className={cn('w-full min-w-max table-auto border-collapse', className)}>
         {children}
       </table>
     </div>
@@ -23,7 +23,7 @@ interface TableHeaderProps {
 
 export function TableHeader({ children, className }: TableHeaderProps) {
   return (
-    <thead className={cn('bg-gray-50', className)}>
+    <thead className={cn('bg-gray-50 dark:bg-gray-800/70', className)}>
       {children}
     </thead>
   );
@@ -39,7 +39,7 @@ export function TableRow({ children, className, onClick }: TableRowProps) {
   return (
     <tr
       className={cn(
-        'border-b border-gray-200 hover:bg-gray-50 transition-colors',
+        'border-b border-gray-200 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800/50',
         onClick && 'cursor-pointer',
         className
       )}
@@ -57,7 +57,12 @@ interface TableHeadProps {
 
 export function TableHead({ children, className }: TableHeadProps) {
   return (
-    <th className={cn('px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider', className)}>
+    <th
+      className={cn(
+        'px-4 py-3 text-left align-top text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300',
+        className
+      )}
+    >
       {children}
     </th>
   );
@@ -70,7 +75,7 @@ interface TableBodyProps {
 
 export function TableBody({ children, className }: TableBodyProps) {
   return (
-    <tbody className={cn('bg-white divide-y divide-gray-200', className)}>
+    <tbody className={cn('divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-950/50', className)}>
       {children}
     </tbody>
   );
@@ -84,7 +89,13 @@ interface TableCellProps {
 
 export function TableCell({ children, className, colSpan }: TableCellProps) {
   return (
-    <td colSpan={colSpan} className={cn('px-4 py-3 text-sm text-gray-900', className)}>
+    <td
+      colSpan={colSpan}
+      className={cn(
+        'px-4 py-3 align-top text-sm text-gray-900 break-words whitespace-normal dark:text-gray-100',
+        className
+      )}
+    >
       {children}
     </td>
   );

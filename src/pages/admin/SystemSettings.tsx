@@ -1,98 +1,82 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { 
-  Database, 
-  Save,
-  Calendar,
-  GraduationCap
-} from 'lucide-react';
-import { ISystemSettings } from '@/types';
+import { Database, Save, Calendar, GraduationCap } from 'lucide-react';
+import type { ISystemSettings } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
+import { getApiErrorMessage } from '@/lib/api';
+import { AdminPageShell } from '@/components/admin';
+import { usePatchSettings, useSettings } from '@/hooks/queries/useSettings';
+import { FALLBACK_SYSTEM_SETTINGS } from '@/lib/mapSystemSettings';
 
 export function SystemSettings() {
   const { success, error: showError } = useToastStore();
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  const [settings, setSettings] = useState<ISystemSettings>({
-    id: 'settings-1',
-    currentSemester: 'Fall 2025',
-    isEnrollmentOpen: false,
-    gradePoints: {
-      'A+': 4.0,
-      'A': 3.7,
-      'B+': 3.3,
-      'B': 3.0,
-      'C+': 2.7,
-      'C': 2.3,
-      'D+': 2.0,
-      'D': 1.7,
-      'F': 0.0,
-    },
-    defaultCreditLimit: {
-      good_standing: 18,
-      probation: 12,
-      honors: 21,
-    },
-  });
+  const { data, isLoading, isError, error, refetch } = useSettings();
+  const patchSettings = usePatchSettings();
+  const [settings, setSettings] = useState<ISystemSettings>(FALLBACK_SYSTEM_SETTINGS);
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setFetching(true);
-      // In real app: const data = await api.getSettings();
-      // Using mock data for now
-      setFetching(false);
-    } catch (error) {
-      logger.error('Failed to fetch settings', { context: 'SystemSettings', error });
-      showError('Failed to load settings');
-      setFetching(false);
-    }
-  };
+    if (data) setSettings(data);
+  }, [data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setLoading(true);
-      // In real app: await api.updateSettings(settings);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await patchSettings.mutateAsync({
+        currentAcademicYear: settings.currentAcademicYear,
+        currentSemester: settings.currentSemester,
+        isEnrollmentOpen: settings.isEnrollmentOpen,
+        gradePoints: settings.gradePoints,
+        defaultCreditLimit: settings.defaultCreditLimit,
+      });
       success('System settings updated successfully');
-    } catch (error) {
-      logger.error('Failed to update settings', { context: 'SystemSettings', error });
-      showError('Failed to update settings');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      logger.error('Failed to update settings', { context: 'SystemSettings', error: err });
+      showError(getApiErrorMessage(err, 'Failed to update settings'));
     }
   };
 
-  if (fetching) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading settings...</p>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>
-        <p className="text-gray-600 mt-1">Configure global system parameters</p>
-      </div>
+  if (isError) {
+    return (
+      <AdminPageShell
+        title="System Settings"
+        subtitle="Configure global parameters (Phase 1: GET/PATCH /api/v1/settings)"
+      >
+        <Card>
+          <CardContent className="p-6 text-sm text-red-600 dark:text-red-400">
+            {getApiErrorMessage(error, 'Failed to load settings')}
+            <div className="mt-4">
+              <Button type="button" variant="secondary" size="sm" onClick={() => void refetch()}>
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </AdminPageShell>
+    );
+  }
 
+  return (
+    <AdminPageShell
+      title="System Settings"
+      subtitle="Configure global system parameters (Phase 1 API: GET/PATCH /settings). University admin only for updates."
+    >
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
-          {/* Academic Settings + Credit Hour Limits - one row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Academic Settings */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -102,15 +86,40 @@ export function SystemSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Semester <span className="text-red-500">*</span>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Current academic year <span className="text-red-500">*</span>
                   </label>
                   <Input
-                    value={settings.currentSemester}
-                    onChange={(e) => setSettings({ ...settings, currentSemester: e.target.value })}
-                    placeholder="e.g., Fall 2025"
+                    value={settings.currentAcademicYear}
+                    onChange={(e) => setSettings({ ...settings, currentAcademicYear: e.target.value })}
+                    placeholder="e.g. 2025-2026"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Current semester <span className="text-red-500">*</span>
+                  </label>
+                  <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">API values: fall or spring</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={settings.currentSemester === 'fall' ? 'primary' : 'secondary'}
+                      size="sm"
+                      onClick={() => setSettings({ ...settings, currentSemester: 'fall' })}
+                    >
+                      Fall
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={settings.currentSemester === 'spring' ? 'primary' : 'secondary'}
+                      size="sm"
+                      onClick={() => setSettings({ ...settings, currentSemester: 'spring' })}
+                    >
+                      Spring
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -119,16 +128,15 @@ export function SystemSettings() {
                     id="enrollmentOpen"
                     checked={settings.isEnrollmentOpen}
                     onChange={(e) => setSettings({ ...settings, isEnrollmentOpen: e.target.checked })}
-                    className="h-4 w-4 text-primary-600 rounded"
+                    className="h-4 w-4 rounded text-primary-600"
                   />
-                  <label htmlFor="enrollmentOpen" className="text-sm font-medium text-gray-700">
-                    Enrollment Open
+                  <label htmlFor="enrollmentOpen" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Enrollment open
                   </label>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Credit Hour Limits */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -138,66 +146,71 @@ export function SystemSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Good Standing Limit
                   </label>
                   <Input
                     type="number"
                     value={settings.defaultCreditLimit.good_standing}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      defaultCreditLimit: {
-                        ...settings.defaultCreditLimit,
-                        good_standing: parseInt(e.target.value) || 0,
-                      },
-                    })}
-                    min="0"
-                    max="30"
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        defaultCreditLimit: {
+                          ...settings.defaultCreditLimit,
+                          good_standing: parseInt(e.target.value, 10) || 0,
+                        },
+                      })
+                    }
+                    min={0}
+                    max={30}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Probation Limit
                   </label>
                   <Input
                     type="number"
                     value={settings.defaultCreditLimit.probation}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      defaultCreditLimit: {
-                        ...settings.defaultCreditLimit,
-                        probation: parseInt(e.target.value) || 0,
-                      },
-                    })}
-                    min="0"
-                    max="30"
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        defaultCreditLimit: {
+                          ...settings.defaultCreditLimit,
+                          probation: parseInt(e.target.value, 10) || 0,
+                        },
+                      })
+                    }
+                    min={0}
+                    max={30}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Honors Limit
                   </label>
                   <Input
                     type="number"
                     value={settings.defaultCreditLimit.honors}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      defaultCreditLimit: {
-                        ...settings.defaultCreditLimit,
-                        honors: parseInt(e.target.value) || 0,
-                      },
-                    })}
-                    min="0"
-                    max="30"
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        defaultCreditLimit: {
+                          ...settings.defaultCreditLimit,
+                          honors: parseInt(e.target.value, 10) || 0,
+                        },
+                      })
+                    }
+                    min={0}
+                    max={30}
                   />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Grade Points */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -206,25 +219,27 @@ export function SystemSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 {Object.entries(settings.gradePoints).map(([grade, points]) => (
                   <div key={grade}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       {grade}
                     </label>
                     <Input
                       type="number"
                       step="0.1"
                       value={points}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        gradePoints: {
-                          ...settings.gradePoints,
-                          [grade]: parseFloat(e.target.value) || 0,
-                        },
-                      })}
-                      min="0"
-                      max="4"
+                      onChange={(e) =>
+                        setSettings({
+                          ...settings,
+                          gradePoints: {
+                            ...settings.gradePoints,
+                            [grade]: parseFloat(e.target.value) || 0,
+                          },
+                        })
+                      }
+                      min={0}
+                      max={4}
                     />
                   </div>
                 ))}
@@ -233,14 +248,13 @@ export function SystemSettings() {
           </Card>
 
           <div className="flex items-center gap-2">
-            <Button type="submit" isLoading={loading}>
-              <Save className="h-4 w-4 mr-2" />
+            <Button type="submit" isLoading={patchSettings.isPending}>
+              <Save className="mr-2 h-4 w-4" />
               Save Settings
             </Button>
           </div>
         </div>
       </form>
-    </div>
+    </AdminPageShell>
   );
 }
-

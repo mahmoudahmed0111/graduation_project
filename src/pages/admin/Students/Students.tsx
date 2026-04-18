@@ -1,210 +1,94 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
-import { Select2 } from '@/components/ui/Select2';
 import { Button } from '@/components/ui/Button';
-import { Pagination } from '@/components/ui/Pagination';
-import { 
-  Users, 
-  Search, 
-  Filter,
-  Download,
-  UserPlus,
-  GraduationCap,
-  Award,
-  Building2,
-  Eye,
-  Edit,
-  BookOpen,
-  AlertCircle
-} from 'lucide-react';
+import { Users, Search, UserPlus, GraduationCap, Mail, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { IStudent } from '@/types';
 import { logger } from '@/lib/logger';
-import { getGPAColor } from '@/constants/ui';
-import { getStatusBadge } from '@/utils/status';
+import { api } from '@/lib/api';
+import { useToastStore } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
 
-// Mock students data - in real app, this would come from API
-const mockStudents: IStudent[] = [
-  {
-    id: '1',
-    name: 'Mahmoud Ahmed',
-    email: 'mahmoud.ahmed@university.edu',
-    role: 'student',
-    universityId: 'university-1',
-    nationalId: '12345678901234',
-    year: 3,
-    semester: 1,
-    creditsEarned: 90,
-    gpa: 3.75,
-    department: {
-      id: 'dept-1',
-      name: 'Computer Science',
-      code: 'CS',
-      college: {
-        id: 'college-1',
-        name: 'Faculty of Engineering',
-        code: 'ENG',
-      },
-    },
-    academicStatus: 'good_standing',
-  } as IStudent,
-  {
-    id: '2',
-    name: 'Fatima Ali',
-    email: 'fatima.ali@university.edu',
-    role: 'student',
-    universityId: 'university-1',
-    nationalId: '12345678901235',
-    year: 2,
-    semester: 2,
-    creditsEarned: 60,
-    gpa: 3.9,
-    department: {
-      id: 'dept-1',
-      name: 'Computer Science',
-      code: 'CS',
-      college: {
-        id: 'college-1',
-        name: 'Faculty of Engineering',
-        code: 'ENG',
-      },
-    },
-    academicStatus: 'honors',
-  } as IStudent,
-  {
-    id: '3',
-    name: 'Ahmed Mohamed',
-    email: 'ahmed.mohamed@university.edu',
-    role: 'student',
-    universityId: 'university-1',
-    nationalId: '12345678901236',
-    year: 4,
-    semester: 1,
-    creditsEarned: 120,
-    gpa: 3.2,
-    department: {
-      id: 'dept-2',
-      name: 'Mathematics',
-      code: 'MATH',
-      college: {
-        id: 'college-2',
-        name: 'Faculty of Science',
-        code: 'SCI',
-      },
-    },
-    academicStatus: 'good_standing',
-  } as IStudent,
-  {
-    id: '4',
-    name: 'Sara Hassan',
-    email: 'sara.hassan@university.edu',
-    role: 'student',
-    universityId: 'university-1',
-    nationalId: '12345678901237',
-    year: 1,
-    semester: 1,
-    creditsEarned: 15,
-    gpa: 2.8,
-    department: {
-      id: 'dept-1',
-      name: 'Computer Science',
-      code: 'CS',
-      college: {
-        id: 'college-1',
-        name: 'Faculty of Engineering',
-        code: 'ENG',
-      },
-    },
-    academicStatus: 'probation',
-  } as IStudent,
-];
+export interface StudentListRow {
+  id: string;
+  name: string;
+  email: string;
+  nationalId: string;
+  collegeName: string;
+  departmentName: string;
+  active: boolean;
+}
+
+function mapUserToRow(u: Record<string, unknown>): StudentListRow {
+  const college = u.college_id as Record<string, unknown> | string | undefined;
+  const dept = u.department_id as Record<string, unknown> | string | undefined;
+  const collegeName =
+    college && typeof college === 'object' && college !== null && 'name' in college
+      ? String((college as { name?: string }).name ?? '—')
+      : '—';
+  const departmentName =
+    dept && typeof dept === 'object' && dept !== null && 'name' in dept
+      ? String((dept as { name?: string }).name ?? '—')
+      : '—';
+  return {
+    id: String(u._id ?? u.id ?? ''),
+    name: String(u.name ?? ''),
+    email: String(u.email ?? ''),
+    nationalId: String(u.nationalID ?? u.nationalId ?? ''),
+    collegeName,
+    departmentName,
+    active: u.active !== false,
+  };
+}
 
 export function Students() {
-  const [students, setStudents] = useState<IStudent[]>([]);
+  const { user } = useAuthStore();
+  const { error: showError } = useToastStore();
+  const canManage = user?.role === 'universityAdmin' || user?.role === 'collegeAdmin';
+  const [rows, setRows] = useState<StudentListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedYear, setSelectedYear] = useState<string>('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const load = async () => {
       try {
         setLoading(true);
-        // In real app, fetch from API: await api.getStudents()
-        // For now, using mock data
-        setStudents(mockStudents);
-      } catch (error) {
-        logger.error('Failed to fetch students', {
-          context: 'Students',
-          error,
+        const list = await api.getAllUsers({
+          role: 'student',
+          isArchived: 'false',
         });
-        setStudents([]);
+        setRows(list.map((u) => mapUserToRow(u as Record<string, unknown>)));
+      } catch (error) {
+        logger.error('Failed to fetch students', { context: 'Students', error });
+        showError('Failed to load students');
+        setRows([]);
       } finally {
         setLoading(false);
       }
     };
+    void load();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    fetchStudents();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetchStudents run once on mount
-
-  // Get unique departments and years for filters
-  const departments = Array.from(new Set(students.map(s => s.department?.name).filter(Boolean))) as string[];
-  const years = Array.from(new Set(students.map(s => s.year).filter(Boolean))).sort();
-
-  // Filter students
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = 
-      student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.nationalId?.includes(searchQuery);
-    const matchesYear = !selectedYear || student.year === parseInt(selectedYear);
-    const matchesDepartment = !selectedDepartment || student.department?.name === selectedDepartment;
-    const matchesStatus = !selectedStatus || student.academicStatus === selectedStatus;
-    
-    return matchesSearch && matchesYear && matchesDepartment && matchesStatus;
-  });
-
-  // Calculate statistics
-  const stats = {
-    total: students.length,
-    byYear: years.reduce((acc, year) => {
-      acc[year] = students.filter(s => s.year === year).length;
-      return acc;
-    }, {} as Record<number, number>),
-    honors: students.filter(s => s.academicStatus === 'honors').length,
-    probation: students.filter(s => s.academicStatus === 'probation').length,
-    averageGPA: students.length > 0
-      ? (students.reduce((sum, s) => sum + (s.gpa || 0), 0) / students.length).toFixed(2)
-      : '0.00',
-  };
-
-  // Pagination
-  const totalPages = Math.ceil(filteredStudents.length / pageSize);
-  const paginatedStudents = filteredStudents.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const renderStatusBadge = (status?: string) => {
-    const badge = getStatusBadge(status);
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full font-medium ${badge.className}`}>
-        {badge.label}
-      </span>
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        r.nationalId.includes(q) ||
+        r.collegeName.toLowerCase().includes(q) ||
+        r.departmentName.toLowerCase().includes(q)
     );
-  };
+  }, [rows, searchQuery]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading students...</p>
+          <p className="mt-4 text-gray-600">Loading students…</p>
         </div>
       </div>
     );
@@ -212,253 +96,121 @@ export function Students() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Students Management</h1>
-          <p className="text-gray-600 mt-1">View and manage all registered students</p>
+          <h1 className="text-3xl font-bold text-gray-900">Students</h1>
+          <p className="text-gray-600 mt-1 max-w-2xl">
+            Directory from <code className="bg-gray-100 px-1 rounded text-sm">GET /api/v1/users?role=student</code>
+            (scoped for college admins). Aggregated college totals remain on the{' '}
+            <Link to="/dashboard/organizational/colleges" className="text-primary-600 hover:underline">
+              Colleges
+            </Link>{' '}
+            screen (Phase 1).
+          </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="secondary" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+        {canManage && (
           <Link to="/dashboard/students/create">
             <Button variant="primary" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Add Student
+              Add student
             </Button>
           </Link>
-        </div>
+        )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover:shadow-md transition-shadow">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
           <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-1">Total Students</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-xs text-gray-500 mt-1">Registered students</p>
-              </div>
-              <div className="p-3 rounded-lg bg-blue-50">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
+            <p className="text-sm text-gray-600 mb-1">Students listed</p>
+            <p className="text-3xl font-bold text-gray-900">{rows.length}</p>
           </CardContent>
         </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
+        <Card>
           <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-1">Average GPA</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.averageGPA}</p>
-                <p className="text-xs text-gray-500 mt-1">Overall performance</p>
-              </div>
-              <div className="p-3 rounded-lg bg-green-50">
-                <Award className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-1">Honors Students</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.honors}</p>
-                <p className="text-xs text-gray-500 mt-1">High achievers</p>
-              </div>
-              <div className="p-3 rounded-lg bg-accent-50">
-                <GraduationCap className="h-6 w-6 text-accent-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-1">On Probation</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.probation}</p>
-                <p className="text-xs text-gray-500 mt-1">Need attention</p>
-              </div>
-              <div className="p-3 rounded-lg bg-red-50">
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
+            <p className="text-sm text-gray-600 mb-1">Matching search</p>
+            <p className="text-3xl font-bold text-gray-900">{filtered.length}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
-      <Card className="rounded-2xl border border-gray-100 shadow-sm">
+      <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-primary-600" />
-              Filters & Search
-            </CardTitle>
-            <div className="text-sm text-gray-600">
-              Showing {filteredStudents.length} of {students.length} students
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            All students
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <CardContent className="p-0">
+          <div className="p-4 border-b border-gray-100">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search by name, email, or ID..."
+                placeholder="Search name, email, national ID, college, department…"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select2
-              value={selectedYear}
-              onChange={(value) => {
-                setSelectedYear(value);
-                setCurrentPage(1);
-              }}
-              options={[
-                { value: '', label: 'All Years' },
-                ...years.map((year) => ({ value: year.toString(), label: `Year ${year}` })),
-              ]}
-              placeholder="Filter by year..."
-            />
-            <Select2
-              value={selectedDepartment}
-              onChange={(value) => {
-                setSelectedDepartment(value);
-                setCurrentPage(1);
-              }}
-              options={[
-                { value: '', label: 'All Departments' },
-                ...departments.map((dept) => ({ value: dept, label: dept })),
-              ]}
-              placeholder="Filter by department..."
-            />
-            <Select2
-              value={selectedStatus}
-              onChange={(value) => {
-                setSelectedStatus(value);
-                setCurrentPage(1);
-              }}
-              options={[
-                { value: '', label: 'All Status' },
-                { value: 'good_standing', label: 'Good Standing' },
-                { value: 'honors', label: 'Honors' },
-                { value: 'probation', label: 'Probation' },
-              ]}
-              placeholder="Filter by status..."
-            />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Students Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Students List</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Student ID</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>College & Year</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>National ID</TableHead>
+                  <TableHead>College</TableHead>
                   <TableHead>Department</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>GPA</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedStudents.length === 0 ? (
+                {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="px-0 py-16">
-                      <div className="flex flex-col items-center justify-center w-full">
-                        <Users className="h-16 w-16 text-gray-300 mb-4" />
-                        <p className="text-lg font-semibold text-gray-900 mb-1">No students found</p>
-                        <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
-                      </div>
+                    <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                      {rows.length === 0 ? 'No students found.' : 'No students match your search.'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedStudents.map((student) => (
-                    <TableRow key={student.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium text-primary-600">
-                        {student.nationalId?.slice(-6) || student.id.slice(0, 6)}
-                      </TableCell>
+                  filtered.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">{r.name}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">{student.name}</span>
-                          <span className="text-sm text-gray-500 mt-0.5">{student.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">
-                            {student.department?.college?.name || 'N/A'}
-                          </span>
-                          <span className="text-sm text-gray-500 mt-0.5">
-                            Year {student.year}, Sem {student.semester}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-gray-400" />
-                          <span className="text-sm">{student.department?.name || 'N/A'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="h-3 w-3 text-gray-400" />
-                          <span>{student.creditsEarned || 0}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={getGPAColor(student.gpa || 0)}>
-                          {(student.gpa || 0).toFixed(2)}
+                        <span className="inline-flex items-center gap-1.5 text-sm">
+                          <Mail className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          {r.email || '—'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        {renderStatusBadge(student.academicStatus)}
+                        <span className="inline-flex items-center gap-1.5 text-sm font-mono">
+                          <CreditCard className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          {r.nationalId || '—'}
+                        </span>
                       </TableCell>
+                      <TableCell className="text-sm">{r.collegeName}</TableCell>
+                      <TableCell className="text-sm">{r.departmentName}</TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end gap-2">
-                          <Link to={`/dashboard/students/${student.id}`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              title="View Details"
-                            >
-                              <Eye className="h-4 w-4" />
+                        {r.active ? (
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Active</span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Inactive</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link to={`/dashboard/students/${r.id}`}>
+                            <Button variant="ghost" size="sm">
+                              View
                             </Button>
                           </Link>
-                          <Link to={`/dashboard/students/${student.id}/edit`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              title="Edit Student"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
+                          {canManage && (
+                            <Link to={`/dashboard/students/${r.id}/edit`}>
+                              <Button variant="secondary" size="sm">
+                                Edit
+                              </Button>
+                            </Link>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -467,20 +219,18 @@ export function Students() {
               </TableBody>
             </Table>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-gray-200">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
+      <Card className="border-dashed border-gray-200 bg-gray-50/50">
+        <CardContent className="p-5 flex gap-3">
+          <GraduationCap className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
+          <p className="text-sm text-gray-600">
+            Phase 1 organizational APIs expose <strong>studentCount</strong> per college, not individual accounts. This
+            table uses the user directory API so admins can manage students.
+          </p>
         </CardContent>
       </Card>
     </div>
   );
 }
-

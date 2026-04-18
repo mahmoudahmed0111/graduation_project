@@ -3,16 +3,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select2 } from '@/components/ui/Select2';
 import { 
   School, 
   ArrowLeft,
   Save
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { IDepartment } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
+import { api, getApiErrorMessage } from '@/lib/api';
 
 export function EditDepartment() {
   const { id } = useParams<{ id: string }>();
@@ -20,76 +19,57 @@ export function EditDepartment() {
   const { success, error: showError } = useToastStore();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [colleges, setColleges] = useState<Array<{ id: string; name: string }>>([]);
-  const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
+  const [collegeLabel, setCollegeLabel] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     code: '',
     description: '',
-    collegeId: '',
     headId: '',
   });
 
   useEffect(() => {
-    fetchColleges();
-    fetchUsers();
-    fetchDepartment();
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchDepartment depends on id
-
-  const fetchColleges = async () => {
-    setColleges([
-      { id: 'college-1', name: 'Faculty of Engineering' },
-      { id: 'college-2', name: 'Faculty of Science' },
-    ]);
-  };
-
-  const fetchUsers = async () => {
-    setUsers([
-      { id: 'user-1', name: 'Dr. Ahmed Toba' },
-      { id: 'user-2', name: 'Dr. Mohamed Ali' },
-      { id: 'user-3', name: 'Dr. Fatima Hassan' },
-    ]);
-  };
-
-  const fetchDepartment = async () => {
-    try {
-      setFetching(true);
-      // In real app: const dept = await api.getDepartment(id);
-      const mockDept: IDepartment = {
-        id: id || '',
-        name: 'Computer Science',
-        code: 'CS',
-        description: 'Computer Science and Software Engineering',
-        head: { id: 'user-1', name: 'Dr. Ahmed Toba' },
-        college: { id: 'college-1', name: 'Faculty of Engineering', code: 'ENG' },
-        isArchived: false,
-      };
-      setFormData({
-        name: mockDept.name,
-        code: mockDept.code,
-        description: mockDept.description || '',
-        collegeId: mockDept.college.id,
-        headId: mockDept.head?.id || '',
-      });
-    } catch (error) {
-      logger.error('Failed to fetch department', { context: 'EditDepartment', error });
-      showError('Failed to load department');
-    } finally {
-      setFetching(false);
-    }
-  };
+    const fetchDepartment = async () => {
+      if (!id) return;
+      try {
+        setFetching(true);
+        const raw = await api.getDepartment(id);
+        const college = raw.college_id as Record<string, unknown> | undefined;
+        const collegeName = String(college?.name ?? '');
+        const collegeCode = String(college?.code ?? '');
+        setCollegeLabel(collegeCode ? `${collegeName} (${collegeCode})` : collegeName);
+        const head = raw.head_id as Record<string, unknown> | undefined;
+        setFormData({
+          name: String(raw.name ?? ''),
+          code: String(raw.code ?? '').toUpperCase(),
+          description: typeof raw.description === 'string' ? raw.description : '',
+          headId: head && typeof head === 'object' ? String(head._id ?? head.id ?? '') : '',
+        });
+      } catch (error) {
+        logger.error('Failed to fetch department', { context: 'EditDepartment', error });
+        showError(getApiErrorMessage(error, 'Failed to load department'));
+      } finally {
+        setFetching(false);
+      }
+    };
+    void fetchDepartment();
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     try {
       setLoading(true);
-      // In real app: await api.updateDepartment(id, formData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.updateDepartment(id, {
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        ...(formData.description.trim() && { description: formData.description.trim() }),
+        head_id: formData.headId.trim() || null,
+      });
       success('Department updated successfully');
       navigate('/dashboard/organizational/departments');
     } catch (error) {
       logger.error('Failed to update department', { context: 'EditDepartment', error });
-      showError('Failed to update department');
+      showError(getApiErrorMessage(error, 'Failed to update department'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +97,7 @@ export function EditDepartment() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Edit Department</h1>
-          <p className="text-gray-600 mt-1">Update department information</p>
+          <p className="text-gray-600 mt-1">PATCH /api/v1/departments/:id — college_id is not mutable</p>
         </div>
       </div>
 
@@ -130,6 +110,13 @@ export function EditDepartment() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                College
+              </label>
+              <Input value={collegeLabel} readOnly className="bg-gray-50 text-gray-700" />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Department Name <span className="text-red-500">*</span>
@@ -168,31 +155,12 @@ export function EditDepartment() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                College <span className="text-red-500">*</span>
+                Head user ID <span className="text-gray-400 font-normal">(optional)</span>
               </label>
-              <Select2
-                value={formData.collegeId}
-                onChange={(value) => setFormData({ ...formData, collegeId: value })}
-                options={[
-                  { value: '', label: 'Select a college...' },
-                  ...colleges.map(college => ({ value: college.id, label: college.name })),
-                ]}
-                placeholder="Search and select a college..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department Head
-              </label>
-              <Select2
+              <Input
                 value={formData.headId}
-                onChange={(value) => setFormData({ ...formData, headId: value })}
-                options={[
-                  { value: '', label: 'Select a department head...' },
-                  ...users.map(user => ({ value: user.id, label: user.name })),
-                ]}
-                placeholder="Search and select a department head..."
+                onChange={(e) => setFormData({ ...formData, headId: e.target.value })}
+                placeholder="MongoDB ObjectId — field head_id"
               />
             </div>
 
@@ -213,4 +181,3 @@ export function EditDepartment() {
     </div>
   );
 }
-

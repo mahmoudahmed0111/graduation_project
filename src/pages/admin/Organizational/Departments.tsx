@@ -1,85 +1,79 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Select2 } from '@/components/ui/Select2';
-import { 
-  School, 
-  Search, 
+import {
+  School,
+  Search,
   Plus,
   Edit,
   Archive,
   User,
-  Building2
+  Building2,
+  RotateCcw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { IDepartment } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { AdminPageShell, AdminDataTableShell } from '@/components/admin';
+import { api, getApiErrorMessage } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
+
+function mapDepartment(department: Record<string, unknown>): IDepartment {
+  const college = department.college_id as Record<string, unknown> | undefined;
+  const head = department.head_id as Record<string, unknown> | undefined;
+
+  return {
+    id: String(department._id ?? department.id ?? ''),
+    name: String(department.name ?? ''),
+    code: String(department.code ?? '').toUpperCase(),
+    description: typeof department.description === 'string' ? department.description : undefined,
+    head: head
+      ? {
+          id: String(head._id ?? head.id ?? ''),
+          name: String(head.name ?? 'Unknown'),
+        }
+      : undefined,
+    college: {
+      id: String(college?._id ?? college?.id ?? ''),
+      name: String(college?.name ?? 'Unknown College'),
+      code: String(college?.code ?? '').toUpperCase(),
+    },
+    isArchived: Boolean(department.isArchived),
+  };
+}
 
 export function Departments() {
+  const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
-  const [departments, setDepartments] = useState<IDepartment[]>([]);
-  const [colleges, setColleges] = useState<Array<{ id: string; name: string }>>([]);
+  const isUniversityAdmin = user?.role === 'universityAdmin';
+  /** All departments (incl. archived); filter by search in UI */
+  const [allDepartments, setAllDepartments] = useState<IDepartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCollege, setSelectedCollege] = useState<string>('');
   const [archiveDialog, setArchiveDialog] = useState<{ open: boolean; department: IDepartment | null }>({
+    open: false,
+    department: null,
+  });
+  const [restoreDialog, setRestoreDialog] = useState<{ open: boolean; department: IDepartment | null }>({
     open: false,
     department: null,
   });
 
   useEffect(() => {
-    fetchColleges();
-    fetchDepartments();
-  }, [selectedCollege, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchColleges/fetchDepartments stable
+    void loadPage();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchColleges = async () => {
-    // Mock colleges
-    setColleges([
-      { id: 'college-1', name: 'Faculty of Engineering' },
-      { id: 'college-2', name: 'Faculty of Science' },
-    ]);
-  };
-
-  const fetchDepartments = async () => {
+  const loadPage = async () => {
     try {
       setLoading(true);
-      // Mock data
-      const mockDepartments: IDepartment[] = [
-        {
-          id: 'dept-1',
-          name: 'Computer Science',
-          code: 'CS',
-          description: 'Computer Science and Software Engineering',
-          head: { id: 'head-1', name: 'Dr. Ahmed Toba' },
-          college: { id: 'college-1', name: 'Faculty of Engineering', code: 'ENG' },
-          isArchived: false,
-        },
-        {
-          id: 'dept-2',
-          name: 'Electrical Engineering',
-          code: 'EE',
-          description: 'Electrical and Electronics Engineering',
-          head: { id: 'head-2', name: 'Dr. Mohamed Ali' },
-          college: { id: 'college-1', name: 'Faculty of Engineering', code: 'ENG' },
-          isArchived: false,
-        },
-        {
-          id: 'dept-3',
-          name: 'Mathematics',
-          code: 'MATH',
-          description: 'Pure and Applied Mathematics',
-          head: { id: 'head-3', name: 'Dr. Fatima Hassan' },
-          college: { id: 'college-2', name: 'Faculty of Science', code: 'SCI' },
-          isArchived: false,
-        },
-      ];
-      setDepartments(mockDepartments);
+      const deptRes = await api.getDepartments({ isArchived: 'all' });
+      setAllDepartments(deptRes.map(mapDepartment));
     } catch (error) {
-      logger.error('Failed to fetch departments', { context: 'Departments', error });
+      logger.error('Failed to load departments page', { context: 'Departments', error });
       showError('Failed to load departments');
     } finally {
       setLoading(false);
@@ -88,87 +82,106 @@ export function Departments() {
 
   const handleArchive = async (department: IDepartment) => {
     try {
-      // In real app: await api.archiveDepartment(department.id);
+      await api.archiveDepartment(department.id);
       success(`Department "${department.name}" archived successfully`);
-      fetchDepartments();
+      void loadPage();
       setArchiveDialog({ open: false, department: null });
     } catch (error) {
-      showError('Failed to archive department');
+      showError(getApiErrorMessage(error, 'Failed to archive department'));
     }
   };
 
-  const filteredDepartments = departments.filter(dept => {
-    const matchesSearch = 
-      dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dept.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCollege = !selectedCollege || dept.college.id === selectedCollege;
-    return matchesSearch && matchesCollege;
-  });
+  const handleRestore = async (department: IDepartment) => {
+    try {
+      await api.restoreDepartment(department.id);
+      success(`Department "${department.name}" restored`);
+      void loadPage();
+      setRestoreDialog({ open: false, department: null });
+    } catch (error) {
+      showError(getApiErrorMessage(error, 'Failed to restore department'));
+    }
+  };
+
+  const filteredDepartments = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return allDepartments;
+    return allDepartments.filter(
+      (dept) =>
+        dept.name.toLowerCase().includes(q) ||
+        dept.code.toLowerCase().includes(q)
+    );
+  }, [allDepartments, searchTerm]);
+
+  const visibleCount = filteredDepartments.length;
+  const totalCount = allDepartments.length;
+
+  const subtitleParts = `${totalCount} departments${
+    searchTerm.trim() ? ` · ${visibleCount} match search` : ''
+  }`;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading departments...</p>
+      <AdminPageShell title="Departments" subtitle="Loading…">
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading departments...</p>
+          </div>
         </div>
-      </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Departments</h1>
-          <p className="text-gray-600 mt-1">Manage academic departments</p>
-        </div>
+    <AdminPageShell
+      title="Departments"
+      subtitle={subtitleParts}
+      breadcrumbs={[{ label: 'University Structure' }, { label: 'Departments' }]}
+      actions={
         <Link to="/dashboard/organizational/departments/create">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button className="inline-flex items-center gap-2 rounded-xl">
+            <Plus className="h-4 w-4" />
             Add Department
           </Button>
         </Link>
-      </div>
+      }
+    >
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>All Departments</CardTitle>
-            <div className="flex items-center gap-2">
-              <Select2
-                value={selectedCollege}
-                onChange={setSelectedCollege}
-                options={[
-                  { value: '', label: 'All Colleges' },
-                  ...colleges.map(c => ({ value: c.id, label: c.name })),
-                ]}
-                className="w-64"
-              />
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <CardHeader>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>All departments</CardTitle>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Showing <span className="font-medium text-gray-700 dark:text-gray-200">{visibleCount}</span>
+                  {searchTerm.trim() ? ' matching search' : ''}
+                </p>
+              </div>
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search departments..."
+                  placeholder="Search by name or code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10"
                 />
               </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
+          </CardHeader>
+          <CardContent>
           {filteredDepartments.length === 0 ? (
             <div className="text-center py-12">
               <School className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">No departments found</p>
             </div>
           ) : (
+            <AdminDataTableShell>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
                   <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>College</TableHead>
                   <TableHead>Head</TableHead>
                   <TableHead>Status</TableHead>
@@ -179,13 +192,9 @@ export function Departments() {
                 {filteredDepartments.map((dept) => (
                   <TableRow key={dept.id}>
                     <TableCell className="font-medium">{dept.code}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{dept.name}</div>
-                        {dept.description && (
-                          <div className="text-sm text-gray-500">{dept.description}</div>
-                        )}
-                      </div>
+                    <TableCell className="font-medium">{dept.name}</TableCell>
+                    <TableCell className="max-w-md text-sm text-gray-600 break-words dark:text-gray-400">
+                      <span title={dept.description}>{dept.description ?? '—'}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -230,15 +239,26 @@ export function Departments() {
                             <Archive className="h-4 w-4" />
                           </Button>
                         )}
+                        {dept.isArchived && isUniversityAdmin && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            title="Restore (UA only)"
+                            onClick={() => setRestoreDialog({ open: true, department: dept })}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </AdminDataTableShell>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       <ConfirmDialog
         isOpen={archiveDialog.open}
@@ -249,7 +269,16 @@ export function Departments() {
         confirmText="Archive"
         variant="danger"
       />
-    </div>
+      <ConfirmDialog
+        isOpen={restoreDialog.open}
+        onClose={() => setRestoreDialog({ open: false, department: null })}
+        onConfirm={() => restoreDialog.department && handleRestore(restoreDialog.department)}
+        title="Restore Department"
+        message={`Restore "${restoreDialog.department?.name}"? (PATCH /departments/:id/restore — UA only)`}
+        confirmText="Restore"
+        variant="info"
+      />
+    </AdminPageShell>
   );
 }
 

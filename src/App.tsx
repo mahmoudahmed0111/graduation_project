@@ -38,9 +38,33 @@ import { ManageMaterials, UploadMaterial } from './pages/doctor/Materials';
 import { CreateAssessment, GradeSubmissions } from './pages/doctor/Assessments';
 import { AttendanceSessions } from './pages/doctor/Attendance';
 import { CalculateFinalGrades } from './pages/doctor/Grades';
-import { Colleges, CreateCollege, EditCollege, CollegeDetails, Departments, CreateDepartment, EditDepartment } from './pages/admin/Organizational';
-import { CourseCatalog, CourseOfferings } from './pages/admin/Academic';
-import { AllUsers, CreateDoctor, EditDoctor, CreateTA, EditTA, CreateAdmin, EditAdmin } from './pages/admin/Users';
+import {
+  Colleges,
+  CreateCollege,
+  EditCollege,
+  CollegeDetails,
+  Departments,
+  CreateDepartment,
+  EditDepartment,
+  Locations,
+  CreateLocation,
+  EditLocation,
+} from './pages/admin/Organizational';
+import { CourseCatalog, CourseOfferings, AdminEnrollments } from './pages/admin/Academic';
+import {
+  AllUsers,
+  UsersDirectory,
+  UserDetailsPage,
+  CreateUserPage,
+  BulkImportUsersPage,
+  CreateDoctor,
+  EditDoctor,
+  CreateTA,
+  EditTA,
+  CreateAdmin,
+  EditAdmin,
+} from './pages/admin/Users';
+import { ChangePasswordPage } from './pages/shared/Account/ChangePasswordPage';
 import { SystemSettings } from './pages/admin/SystemSettings';
 import { AuditLogs } from './pages/admin/AuditLogs';
 import './styles/index.css';
@@ -198,12 +222,45 @@ function App() {
           <Route path="chatbot" element={<Chatbot />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="account/change-password" element={<ChangePasswordPage />} />
           <Route path="students" element={<Students />} />
           <Route path="students/create" element={<CreateStudent />} />
           <Route path="students/:id" element={<ShowStudent />} />
           <Route path="students/:id/edit" element={<EditStudent />} />
           
-          {/* User Management */}
+          {/* User Management — Phase 2 */}
+          <Route
+            path="users/directory"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UsersDirectory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/directory/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateUserPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/directory/bulk-import"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <BulkImportUsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/directory/:id"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UserDetailsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="users/students"
             element={
@@ -342,7 +399,31 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+          <Route
+            path="organizational/locations"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin', 'doctor', 'ta', 'teacher']}>
+                <Locations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="organizational/locations/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateLocation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="organizational/locations/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <EditLocation />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Academic Structure */}
           <Route
             path="academic/catalog"
@@ -360,7 +441,15 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+          <Route
+            path="academic/enrollments"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <AdminEnrollments />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="settings" element={<Settings />} />
           <Route
             path="system-settings"

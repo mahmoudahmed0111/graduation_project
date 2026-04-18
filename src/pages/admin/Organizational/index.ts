@@ -5,4 +5,7 @@ export { EditCollege } from './EditCollege';
 export { Departments } from './Departments';
 export { CreateDepartment } from './CreateDepartment';
 export { EditDepartment } from './EditDepartment';
+export { Locations } from './Locations';
+export { CreateLocation } from './CreateLocation';
+export { EditLocation } from './EditLocation';
 

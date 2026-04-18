@@ -19,7 +19,10 @@ import {
   Building2,
   School,
   UserCheck,
-  Database
+  Database,
+  MapPin,
+  Settings,
+  Library,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -155,6 +158,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
     { path: '/dashboard/attendance', label: t('nav.attendance'), icon: Clock },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
+    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
@@ -167,6 +171,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       children: [
         { path: '/dashboard/organizational/colleges', label: t('nav.colleges'), icon: Building2 },
         { path: '/dashboard/organizational/departments', label: t('nav.departments'), icon: School },
+        { path: '/dashboard/organizational/locations', label: 'Locations', icon: MapPin },
       ]
     },
     { 
@@ -174,13 +179,25 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       label: 'User Management', 
       icon: Users,
       children: [
+        { path: '/dashboard/users/directory', label: 'All users', icon: Users },
         { path: '/dashboard/users/students', label: t('nav.students'), icon: GraduationCap },
         { path: '/dashboard/users/doctors', label: t('nav.doctors'), icon: UserCheck },
         { path: '/dashboard/users/tas', label: t('nav.tas'), icon: Users },
         { path: '/dashboard/users/admins', label: t('nav.admins'), icon: User },
       ]
     },
+    {
+      path: '/dashboard/academic',
+      label: 'Academic',
+      icon: Library,
+      children: [
+        { path: '/dashboard/academic/catalog', label: 'Course catalog', icon: Library },
+        { path: '/dashboard/academic/offerings', label: 'Course offerings', icon: BookOpen },
+        { path: '/dashboard/academic/enrollments', label: 'Enrollments', icon: GraduationCap },
+      ],
+    },
     { path: '/dashboard/system-settings', label: 'System Settings', icon: Database },
+    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/announcements', label: 'Broadcast Center', icon: Bell },
     { path: '/dashboard/chatbot', label: 'AI Assistant', icon: MessageSquare },
     { path: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileText },
@@ -231,6 +248,8 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
     { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3 },
+    { path: '/dashboard/organizational/locations', label: 'Locations', icon: MapPin },
+    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 

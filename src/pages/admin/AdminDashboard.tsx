@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import {
   Users,
   GraduationCap,
-  UserCheck,
   Building2,
   Calendar,
   Clock,
@@ -15,73 +14,92 @@ import {
   RotateCcw,
   AlertTriangle,
   Lock,
-  Unlock,
 } from 'lucide-react';
-import { IUser, IEnrollment } from '@/types';
-import { api } from '@/lib/api';
+import { IUser } from '@/types';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { useToastStore } from '@/store/toastStore';
 import { PieChart } from '@/components/charts/PieChart';
 import { logger } from '@/lib/logger';
+import { AdminPageShell } from '@/components/admin';
 
 export function AdminDashboard() {
   const { user } = useAuthStore();
   const admin = user as IUser;
   const { success, error: showError } = useToastStore();
 
-  const [, setEnrollments] = useState<IEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // System Config
+  // System Config (Phase 1: GET/PATCH /api/v1/settings)
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [academicYear, setAcademicYear] = useState('2025-2026');
-  const [currentTerm, setCurrentTerm] = useState<'First' | 'Second'>('First');
+  /** API: fall | spring */
+  const [currentSemester, setCurrentSemester] = useState<'fall' | 'spring'>('fall');
   const [systemConfigModalOpen, setSystemConfigModalOpen] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Quick Restore
   const [restoreNationalId, setRestoreNationalId] = useState('');
   const [restoring, setRestoring] = useState(false);
 
-  // Live Statistics (mock: students, doctors, TAs + by college)
+  /** Phase 1 only: GET /colleges, GET /departments — see phase1_api_docs.md */
   const [stats, setStats] = useState({
     totalStudents: 0,
-    totalDoctors: 0,
-    totalTAs: 0,
+    totalColleges: 0,
+    totalDepartments: 0,
     byCollege: [] as { name: string; value: number }[],
   });
-
-  // Security Alerts - locked-out accounts (mock count; in real app from API)
-  const [lockedOutCount, setLockedOutCount] = useState(0);
-  const [unlocking, setUnlocking] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [enrollmentsData] = await Promise.all([
-          api.getEnrollments().catch(() => []),
-          api.getCourses().catch(() => ({ data: [], total: 0, page: 1, pageSize: 10, totalPages: 0 })),
+        const [collegesData, departmentsData] = await Promise.all([
+          api.getColleges({ isArchived: 'false' }).catch(() => []),
+          api.getDepartments({ isArchived: 'false' }).catch(() => []),
         ]);
-        setEnrollments(enrollmentsData);
-        const uniqueStudents = new Set(enrollmentsData.map((e: IEnrollment) => e.student_id)).size;
+        const totalStudents = collegesData.reduce(
+          (sum, c) => sum + (typeof c.studentCount === 'number' ? c.studentCount : 0),
+          0
+        );
+        const byCollege =
+          collegesData.length > 0
+            ? collegesData.map((c) => ({
+                name: String(c.name ?? 'College'),
+                value: typeof c.studentCount === 'number' ? c.studentCount : 0,
+              }))
+            : [{ name: 'No data', value: 1 }];
+
         setStats({
-          totalStudents: uniqueStudents,
-          totalDoctors: 12,
-          totalTAs: 8,
-          byCollege: [
-            { name: 'Faculty of Engineering', value: Math.floor(uniqueStudents * 0.5) || 5 },
-            { name: 'Faculty of Science', value: Math.floor(uniqueStudents * 0.3) || 3 },
-            { name: 'Other', value: Math.floor(uniqueStudents * 0.2) || 2 },
-          ],
+          totalStudents,
+          totalColleges: collegesData.length,
+          totalDepartments: departmentsData.length,
+          byCollege,
         });
-        setLockedOutCount(0);
       } catch (error) {
         logger.error('Failed to fetch dashboard data', { context: 'AdminDashboard', error });
       } finally {
         setLoading(false);
       }
     };
-    fetchDashboardData();
+    const loadSettings = async () => {
+      try {
+        setSettingsLoading(true);
+        const s = await api.getSettings();
+        if (typeof s.currentAcademicYear === 'string') setAcademicYear(s.currentAcademicYear);
+        if (s.currentSemester === 'spring' || s.currentSemester === 'fall') {
+          setCurrentSemester(s.currentSemester);
+        }
+        if (typeof s.isEnrollmentOpen === 'boolean') setRegistrationOpen(s.isEnrollmentOpen);
+      } catch {
+        // Non-blocking: widget keeps defaults
+      } finally {
+        setSettingsLoading(false);
+      }
+    };
+    void fetchDashboardData();
+    void loadSettings();
   }, []);
 
   useEffect(() => {
@@ -89,9 +107,25 @@ export function AdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleQuickActionSave = () => {
-    setSystemConfigModalOpen(false);
-    success('System config updated');
+  const handleQuickActionSave = async () => {
+    if (admin?.role !== 'universityAdmin') {
+      showError('Only a university administrator can save system settings (PATCH /settings).');
+      return;
+    }
+    try {
+      setSavingSettings(true);
+      await api.patchSettings({
+        currentAcademicYear: academicYear.trim(),
+        currentSemester,
+        isEnrollmentOpen: registrationOpen,
+      });
+      setSystemConfigModalOpen(false);
+      success('System config updated');
+    } catch (error) {
+      showError(getApiErrorMessage(error, 'Failed to save system config'));
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   const handleRestoreUser = async () => {
@@ -112,32 +146,25 @@ export function AdminDashboard() {
     }
   };
 
-  const handleUnlockAccounts = async () => {
-    setUnlocking(true);
-    try {
-      // In real app: await api.unlockAllLockedAccounts();
-      await new Promise((r) => setTimeout(r, 600));
-      setLockedOutCount(0);
-      success('Locked accounts have been unlocked');
-    } catch {
-      showError('Failed to unlock accounts');
-    } finally {
-      setUnlocking(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
-      </div>
+      <AdminPageShell title="Operations Room" subtitle="Loading…">
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+        </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <AdminPageShell
+      title="Operations Room"
+      subtitle="Overview and control"
+      badge={{ label: 'Phase 1', variant: 'neutral' }}
+    >
+    <div className="animate-fade-in-up space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-6 text-white shadow-lg">
+      <div className="rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 p-6 text-white shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">Operations Room</h1>
@@ -184,16 +211,18 @@ export function AdminDashboard() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Registration status</span>
               <span className={registrationOpen ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                {registrationOpen ? 'Open' : 'Closed'}
+                {settingsLoading ? '…' : registrationOpen ? 'Open' : 'Closed'}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Academic year</span>
-              <span className="font-medium">{academicYear}</span>
+              <span className="font-medium">{settingsLoading ? '…' : academicYear}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Current term</span>
-              <span className="font-medium">{currentTerm}</span>
+              <span className="text-gray-600">Current semester</span>
+              <span className="font-medium">
+                {settingsLoading ? '…' : currentSemester === 'spring' ? 'Spring' : 'Fall'}
+              </span>
             </div>
             <Button onClick={() => setSystemConfigModalOpen(true)} className="w-full mt-2">
               Quick Action
@@ -237,57 +266,49 @@ export function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="text-xs text-gray-500 mb-3">
+              Student totals use each college&apos;s <code className="bg-gray-100 px-0.5 rounded">studentCount</code> from Phase 1 GET /colleges.
+            </p>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center p-3 rounded-lg bg-blue-50">
                 <GraduationCap className="h-6 w-6 mx-auto text-blue-600 mb-1" />
                 <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
-                <p className="text-xs text-gray-600">Students</p>
+                <p className="text-xs text-gray-600">Students (sum)</p>
               </div>
               <div className="text-center p-3 rounded-lg bg-green-50">
-                <UserCheck className="h-6 w-6 mx-auto text-green-600 mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{stats.totalDoctors}</p>
-                <p className="text-xs text-gray-600">Doctors</p>
+                <Building2 className="h-6 w-6 mx-auto text-green-600 mb-1" />
+                <p className="text-2xl font-bold text-gray-900">{stats.totalColleges}</p>
+                <p className="text-xs text-gray-600">Colleges</p>
               </div>
               <div className="text-center p-3 rounded-lg bg-purple-50">
                 <Users className="h-6 w-6 mx-auto text-purple-600 mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{stats.totalTAs}</p>
-                <p className="text-xs text-gray-600">TAs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalDepartments}</p>
+                <p className="text-xs text-gray-600">Departments</p>
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Distribution by College</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Students by college (Phase 1)</p>
               <PieChart data={stats.byCollege} height={200} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Security Alerts Widget */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
-              Security Alerts
+              Phase 1 scope
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Accounts locked due to failed login attempts</p>
+            <p className="text-sm text-gray-600 mt-1">
+              This dashboard slice uses only Phase 1 endpoints: Colleges, Departments, Settings. User accounts and security metrics are not part of that specification.
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between p-4 rounded-lg bg-red-50 border border-red-100">
-              <div className="flex items-center gap-3">
-                <Lock className="h-8 w-8 text-red-500" />
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{lockedOutCount}</p>
-                  <p className="text-sm text-gray-600">Locked out accounts</p>
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={handleUnlockAccounts}
-                disabled={lockedOutCount === 0 || unlocking}
-                className="flex items-center gap-2"
-              >
-                <Unlock className="h-4 w-4" />
-                {unlocking ? 'Unlocking...' : 'Unlock'}
-              </Button>
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50/80 border border-amber-100 text-sm text-gray-700">
+              <Lock className="h-8 w-8 text-amber-600 shrink-0" />
+              <p>
+                See <code className="bg-white px-1 rounded">phase1_api_docs.md</code> for Modules 1–4 (Colleges, Departments, Settings, Locations).
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -328,32 +349,35 @@ export function AdminDashboard() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current term</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Current semester (API)</label>
             <div className="flex gap-2">
               <Button
-                variant={currentTerm === 'First' ? 'primary' : 'secondary'}
+                variant={currentSemester === 'fall' ? 'primary' : 'secondary'}
                 size="sm"
-                onClick={() => setCurrentTerm('First')}
+                onClick={() => setCurrentSemester('fall')}
               >
-                First
+                Fall
               </Button>
               <Button
-                variant={currentTerm === 'Second' ? 'primary' : 'secondary'}
+                variant={currentSemester === 'spring' ? 'primary' : 'secondary'}
                 size="sm"
-                onClick={() => setCurrentTerm('Second')}
+                onClick={() => setCurrentSemester('spring')}
               >
-                Second
+                Spring
               </Button>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="secondary" onClick={() => setSystemConfigModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setSystemConfigModalOpen(false)} disabled={savingSettings}>
               Cancel
             </Button>
-            <Button onClick={handleQuickActionSave}>Save</Button>
+            <Button onClick={() => void handleQuickActionSave()} isLoading={savingSettings}>
+              Save
+            </Button>
           </div>
         </div>
       </Modal>
     </div>
+    </AdminPageShell>
   );
 }

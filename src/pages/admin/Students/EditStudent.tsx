@@ -7,54 +7,21 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
-import { 
-  ArrowLeft, 
-  User, 
-  GraduationCap,
-  Save,
-  X,
-  Trash2
-} from 'lucide-react';
+import { ArrowLeft, User, GraduationCap, Save, X, Trash2 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
-import { IStudent } from '@/types';
+import type { IStudent } from '@/types';
 import { logger } from '@/lib/logger';
+import { api, getApiErrorMessage } from '@/lib/api';
+import { mapUserRecordToStudent } from '@/lib/mapUserRecord';
 
-const studentSchema = z.object({
+const studentEditSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  nationalId: z.string().length(14, 'National ID must be exactly 14 digits'),
-  year: z.string().min(1, 'Year is required'),
-  semester: z.string().min(1, 'Semester is required'),
+  phoneNumber: z.string().max(30).optional(),
   department: z.string().min(1, 'Department is required'),
-  academicStatus: z.string().min(1, 'Academic status is required'),
 });
 
-type StudentFormData = z.infer<typeof studentSchema>;
-
-// Mock student data - in real app, fetch from API
-const mockStudent: IStudent = {
-  id: '1',
-  name: 'Mahmoud Ahmed',
-  email: 'mahmoud.ahmed@university.edu',
-  role: 'student',
-  universityId: 'university-1',
-  nationalId: '12345678901234',
-  year: 3,
-  semester: 1,
-  creditsEarned: 90,
-  gpa: 3.75,
-  department: {
-    id: 'dept-1',
-    name: 'Computer Science',
-    code: 'CS',
-    college: {
-      id: 'college-1',
-      name: 'Faculty of Engineering',
-      code: 'ENG',
-    },
-  },
-  academicStatus: 'good_standing',
-} as IStudent;
+type StudentEditForm = z.infer<typeof studentEditSchema>;
 
 export function EditStudent() {
   const navigate = useNavigate();
@@ -63,6 +30,7 @@ export function EditStudent() {
   const [loading, setLoading] = useState(false);
   const [student, setStudent] = useState<IStudent | null>(null);
   const [loadingStudent, setLoadingStudent] = useState(true);
+  const [departmentOptions, setDepartmentOptions] = useState<Array<{ value: string; label: string }>>([]);
 
   const {
     register,
@@ -70,108 +38,111 @@ export function EditStudent() {
     formState: { errors },
     setValue,
     watch,
-  } = useForm<StudentFormData>({
-    resolver: zodResolver(studentSchema),
+  } = useForm<StudentEditForm>({
+    resolver: zodResolver(studentEditSchema),
   });
 
-  const watchYear = watch('year');
-  const watchSemester = watch('semester');
   const watchDepartment = watch('department');
-  const watchAcademicStatus = watch('academicStatus');
 
   useEffect(() => {
     const fetchStudent = async () => {
+      if (!id) return;
       try {
         setLoadingStudent(true);
-        // In real app: const studentData = await api.getStudent(id)
-        // For now, using mock data
-        setStudent(mockStudent);
-        
-        // Set form values
-        if (mockStudent) {
-          setValue('name', mockStudent.name);
-          setValue('email', mockStudent.email);
-          setValue('nationalId', mockStudent.nationalId || '');
-          setValue('year', mockStudent.year.toString());
-          setValue('semester', mockStudent.semester.toString());
-          setValue('department', mockStudent.department?.id || '');
-          setValue('academicStatus', mockStudent.academicStatus || 'good_standing');
+        const raw = await api.getUser(id);
+        if (String(raw.role ?? '') !== 'student') {
+          showError('This account is not a student.');
+          setStudent(null);
+          return;
         }
+        const mapped = mapUserRecordToStudent(raw);
+        setStudent(mapped);
+
+        setValue('name', mapped.name);
+        setValue('email', mapped.email);
+        setValue('phoneNumber', mapped.phoneNumber ?? '');
+        setValue('department', mapped.department?.id ?? '');
+
+        const collegeId = mapped.department?.college?.id;
+        const deptList = await api.getDepartments({
+          ...(collegeId ? { college_id: collegeId } : {}),
+          isArchived: 'false',
+          limit: 500,
+        });
+        setDepartmentOptions(
+          deptList.map((d) => {
+            const r = d as Record<string, unknown>;
+            return {
+              value: String(r._id ?? r.id ?? ''),
+              label: String(r.name ?? ''),
+            };
+          })
+        );
       } catch (err) {
         logger.error('Failed to fetch student', {
           context: 'EditStudent',
           error: err,
         });
-        showError('Failed to load student data');
+        showError(getApiErrorMessage(err, 'Failed to load student'));
+        setStudent(null);
       } finally {
         setLoadingStudent(false);
       }
     };
 
-    if (id) {
-      fetchStudent();
-    }
+    void fetchStudent();
   }, [id, setValue, showError]);
 
-  const onSubmit = async (data: StudentFormData) => {
+  const onSubmit = async (data: StudentEditForm) => {
+    if (!id) return;
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // await api.updateStudent(id, data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      logger.info('Student updated successfully', { context: 'EditStudent', id, data });
+      await api.patchUser(id, {
+        name: data.name.trim(),
+        email: data.email.trim(),
+        phoneNumber: data.phoneNumber?.trim() || undefined,
+        department_id: data.department,
+      });
       success('Student updated successfully');
-      navigate('/dashboard/students');
+      navigate(`/dashboard/students/${id}`);
     } catch (err: unknown) {
       logger.error('Failed to update student', {
         context: 'EditStudent',
         error: err,
       });
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      showError(msg || 'Failed to update student');
+      showError(getApiErrorMessage(err, 'Failed to update student'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
+    if (!id) return;
+    if (!confirm('Deactivate this student account? They will no longer be able to sign in.')) {
       return;
     }
 
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // await api.deleteStudent(id);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      logger.info('Student deleted successfully', { context: 'EditStudent', id });
-      success('Student deleted successfully');
+      await api.deactivateUser(id);
+      success('Student deactivated');
       navigate('/dashboard/students');
     } catch (err: unknown) {
-      logger.error('Failed to delete student', {
+      logger.error('Failed to deactivate student', {
         context: 'EditStudent',
         error: err,
       });
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      showError(msg || 'Failed to delete student');
+      showError(getApiErrorMessage(err, 'Failed to deactivate student'));
     } finally {
       setLoading(false);
     }
   };
 
-  // Mock departments - in real app, fetch from API
-  const departments = [
-    { value: 'dept-1', label: 'Computer Science' },
-    { value: 'dept-2', label: 'Mathematics' },
-    { value: 'dept-3', label: 'Physics' },
-    { value: 'dept-4', label: 'Chemistry' },
-  ];
-
   if (loadingStudent) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500" />
           <p className="mt-4 text-gray-600">Loading student data...</p>
         </div>
       </div>
@@ -180,8 +151,8 @@ export function EditStudent() {
 
   if (!student) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">Student not found</p>
+      <div className="py-12 text-center">
+        <p className="mb-4 text-gray-600">Student not found</p>
         <Link to="/dashboard/students">
           <Button variant="primary">Back to Students</Button>
         </Link>
@@ -190,32 +161,33 @@ export function EditStudent() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
+    <div className="animate-fade-in-up space-y-6">
       <div className="flex items-center gap-4">
-        <Link to="/dashboard/students">
+        <Link to={`/dashboard/students/${id}`}>
           <Button variant="ghost" size="sm" className="h-10 w-10 p-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Edit Student</h1>
-          <p className="text-gray-600 mt-1">Update student information</p>
+          <p className="mt-1 text-gray-600">
+            Updates use PATCH /api/v1/users/:id (name, email, phone, department)
+          </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
-          <CardContent className="pt-6 space-y-6">
+          <CardContent className="space-y-6 pt-6">
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <User className="h-4 w-4 text-primary-600" />
                 Personal Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Input
                   label="Full Name"
-                  placeholder="Enter student's full name"
+                  placeholder="Student name"
                   error={errors.name?.message}
                   {...register('name')}
                 />
@@ -226,108 +198,83 @@ export function EditStudent() {
                   error={errors.email?.message}
                   {...register('email')}
                 />
+                <Input label="National ID" value={student.nationalId ?? '—'} disabled readOnly />
                 <Input
-                  label="National ID"
-                  placeholder="12345678901234"
-                  error={errors.nationalId?.message}
-                  disabled
-                  {...register('nationalId')}
+                  label="Phone"
+                  placeholder="Optional"
+                  error={errors.phoneNumber?.message}
+                  {...register('phoneNumber')}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-2">National ID cannot be changed</p>
+              <p className="mt-2 text-xs text-gray-500">National ID cannot be changed via this form.</p>
             </div>
 
             <hr className="border-gray-200" />
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <GraduationCap className="h-4 w-4 text-primary-600" />
-                Academic Information
+                Academic (read-only) + department
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Select2
-                  label="Year"
-                  value={watchYear || ''}
-                  onChange={(value) => setValue('year', value)}
-                  options={[
-                    { value: '', label: 'Select Year' },
-                    { value: '1', label: 'Year 1' },
-                    { value: '2', label: 'Year 2' },
-                    { value: '3', label: 'Year 3' },
-                    { value: '4', label: 'Year 4' },
-                  ]}
-                  error={errors.year?.message}
-                  placeholder="Select Year"
-                />
-                <Select2
-                  label="Semester"
-                  value={watchSemester || ''}
-                  onChange={(value) => setValue('semester', value)}
-                  options={[
-                    { value: '', label: 'Select Semester' },
-                    { value: '1', label: 'Semester 1' },
-                    { value: '2', label: 'Semester 2' },
-                  ]}
-                  error={errors.semester?.message}
-                  placeholder="Select Semester"
-                />
-                <Select2
-                  label="Department"
-                  value={watchDepartment || ''}
-                  onChange={(value) => setValue('department', value)}
-                  options={[
-                    { value: '', label: 'Select Department' },
-                    ...departments,
-                  ]}
-                  error={errors.department?.message}
-                  placeholder="Select Department"
-                />
-                <Select2
-                  label="Academic Status"
-                  value={watchAcademicStatus || ''}
-                  onChange={(value) => setValue('academicStatus', value)}
-                  options={[
-                    { value: '', label: 'Select Status' },
-                    { value: 'good_standing', label: 'Good Standing' },
-                    { value: 'honors', label: 'Honors' },
-                    { value: 'probation', label: 'Probation' },
-                  ]}
-                  error={errors.academicStatus?.message}
-                  placeholder="Select Status"
-                />
+              <p className="mb-4 text-sm text-gray-500">
+                Level, GPA, and credits are managed by the registrar system. You can change department when allowed by
+                policy.
+              </p>
+              <div className="mb-4 grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+                <p>
+                  <span className="text-gray-500">Level / semester: </span>
+                  <span className="font-medium">
+                    {student.year} / {student.semester}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-gray-500">GPA: </span>
+                  <span className="font-medium">{(student.gpa ?? 0).toFixed(2)}</span>
+                </p>
+                <p>
+                  <span className="text-gray-500">Credits: </span>
+                  <span className="font-medium">{student.creditsEarned ?? 0}</span>
+                </p>
+                <p>
+                  <span className="text-gray-500">Status: </span>
+                  <span className="font-medium">{student.academicStatus ?? '—'}</span>
+                </p>
               </div>
-              <div className="flex gap-6 mt-2 text-sm">
-                <span className="text-gray-600">Credits Earned: <span className="font-medium">{student.creditsEarned || 0}</span></span>
-                <span className="text-gray-600">GPA: <span className="font-medium">{(student.gpa || 0).toFixed(2)}</span></span>
-              </div>
+              <Select2
+                label="Department"
+                value={watchDepartment || ''}
+                onChange={(value) => setValue('department', value)}
+                options={[{ value: '', label: 'Select department' }, ...departmentOptions]}
+                error={errors.department?.message}
+                placeholder="Select department"
+              />
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-end gap-3 mt-6">
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
+            <Save className="mr-2 h-4 w-4" />
+            Save changes
           </Button>
-          <Link to="/dashboard/students">
+          <Link to={`/dashboard/students/${id}`}>
             <Button type="button" variant="secondary" disabled={loading}>
-              <X className="h-4 w-4 mr-2" />
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
           </Link>
           <Button
             type="button"
             variant="ghost"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleDelete}
+            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => void handleDelete()}
             disabled={loading}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Student
+            <Trash2 className="mr-2 h-4 w-4" />
+            Deactivate student
           </Button>
         </div>
       </form>
     </div>
   );
 }
-

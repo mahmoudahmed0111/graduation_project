@@ -23,6 +23,7 @@ const pathToBreadcrumb: Record<string, string> = {
   organizational: 'University Structure',
   colleges: 'Colleges',
   departments: 'Departments',
+  locations: 'Locations',
   'colleges/create': 'Add College',
   academic: 'Academic',
   catalog: 'Course Catalog',

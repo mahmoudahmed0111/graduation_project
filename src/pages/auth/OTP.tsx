@@ -61,12 +61,12 @@ export function OTP() {
     const otpValue = otp.join('');
 
     if (otpValue.length !== 6) {
-      showError('Please enter the complete 6-digit OTP');
+      showError(t('auth.otpIncomplete'));
       return;
     }
 
     if (!email?.trim()) {
-      showError('Session expired. Please start login again.');
+      showError(t('auth.otpSessionExpired'));
       clearPendingLoginEmail();
       navigate('/login');
       return;
@@ -75,11 +75,11 @@ export function OTP() {
     setIsLoading(true);
     try {
       await loginStepTwo({ email: email.trim(), otp: otpValue });
-      success(t('auth.loginSuccess') || 'Logged in successfully');
+      success(t('auth.loginSuccess'));
       navigate('/dashboard');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      const errorMessage = axiosError?.response?.data?.message || t('auth.invalidOTP') || 'Invalid OTP. Please try again.';
+      const errorMessage = axiosError?.response?.data?.message || t('auth.invalidOTP');
       showError(errorMessage);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -89,7 +89,7 @@ export function OTP() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 px-3 py-6 sm:p-4 relative overflow-hidden">
       {/* Clean professional background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Subtle pattern */}
@@ -108,47 +108,48 @@ export function OTP() {
         {/* Elegant top border */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary-500 to-transparent"></div>
         
-        <CardHeader className="pb-4">
-          <div className="flex justify-center mb-4 animate-scale-in">
+        <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
+          <div className="flex justify-center mb-3 sm:mb-4 animate-scale-in">
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-accent-400 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-200"></div>
-              <div className="h-20 w-20 relative z-10 transition-transform duration-200 group-hover:scale-105 flex items-center justify-center bg-gradient-to-br from-primary-500 to-accent-500 rounded-full">
-                <Shield className="h-10 w-10 text-white" />
+              <div className="h-16 w-16 sm:h-20 sm:w-20 relative z-10 transition-transform duration-200 group-hover:scale-105 flex items-center justify-center bg-gradient-to-br from-primary-500 to-accent-500 rounded-full">
+                <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
               </div>
             </div>
           </div>
-          <CardTitle className="text-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent animate-fade-in font-cairo">
-            {t('auth.verifyOTP') || 'Verify OTP'}
+          <CardTitle className="text-center text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent animate-fade-in font-cairo">
+            {t('auth.verifyOTP')}
           </CardTitle>
-          <p className="text-center text-sm text-gray-500 mt-2 animate-fade-in">
-            {t('auth.otpDescription') || 'Enter the 6-digit code sent to your email'}
+          <p className="text-center text-xs sm:text-sm text-gray-500 mt-2 animate-fade-in px-1">
+            {t('auth.otpDescription')}
           </p>
         </CardHeader>
-        <CardContent className="pt-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="pt-2 px-4 sm:px-6 pb-5 sm:pb-6">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             {/* OTP Input Fields */}
-            <div className="flex justify-center gap-3 animate-fade-in-up">
+            <div className="grid grid-cols-6 justify-center gap-2 sm:gap-3 animate-fade-in-up">
               {otp.map((digit, index) => (
                 <input
                   key={index}
                   ref={(el) => (inputRefs.current[index] = el)}
                   type="text"
                   inputMode="numeric"
+                  autoComplete={index === 0 ? 'one-time-code' : 'off'}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={index === 0 ? handlePaste : undefined}
                   disabled={isLoading}
-                  className="w-16 h-16 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 transition-all duration-200 hover:border-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label={`OTP digit ${index + 1}`}
+                  className="w-full aspect-square max-w-14 sm:max-w-16 text-center text-xl sm:text-2xl font-bold border-2 border-gray-300 rounded-lg sm:rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 transition-all duration-200 hover:border-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label={t('auth.otpDigitAria', { number: index + 1 })}
                 />
               ))}
             </div>
 
             {/* Helper text */}
-            <p className="text-center text-sm text-gray-500 animate-fade-in-up">
-              {t('auth.otpHelper') || 'Enter the 6-digit code sent to your email'}
+            <p className="text-center text-xs sm:text-sm text-gray-500 animate-fade-in-up">
+              {t('auth.otpHelper')}
             </p>
 
             {/* Back to login link */}
@@ -158,7 +159,7 @@ export function OTP() {
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors hover:underline flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                {t('auth.backToLogin') || 'Back to Login'}
+                {t('auth.backToLogin')}
               </Link>
             </div>
 
@@ -166,10 +167,10 @@ export function OTP() {
               <Button
                 type="submit"
                 disabled={isLoading || otp.join('').length !== 6}
-                className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-3.5 text-base transition-all duration-200 hover:shadow-lg rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-3 sm:py-3.5 text-sm sm:text-base transition-all duration-200 hover:shadow-lg rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 isLoading={isLoading}
               >
-                {t('auth.verify') || 'Verify OTP'}
+                {t('auth.verify')}
               </Button>
             </div>
           </form>

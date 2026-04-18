@@ -6,14 +6,23 @@ export interface IUser {
   role: UserRole;
   email: string;
   nationalId?: string;
+  /** Phase 2 API */
+  phoneNumber?: string;
+  /** Populated from `college_id` on login / `GET /users/me` when present */
+  collegeId?: string;
+  /** Phase 2: when true, user must change password before other actions succeed */
+  requiresPasswordChange?: boolean;
   universityId: string;
   avatarUrl?: string;
   facultyId?: string;
 }
 
 export interface IStudent extends IUser {
+  /** Legacy UI; API may send `level` (1–5) instead */
   year: number;
   semester: number;
+  /** From API `level` when present */
+  level?: number;
   creditsEarned: number;
   gpa: number;
   graduationProject?: IGraduationProject;
@@ -27,7 +36,7 @@ export interface IStudent extends IUser {
       code: string;
     };
   };
-  academicStatus?: 'good_standing' | 'probation' | 'honors';
+  academicStatus?: 'active' | 'good_standing' | 'probation' | 'honors' | 'graduated';
 }
 
 export interface IGraduationProject {
@@ -229,11 +238,36 @@ export type UserRole = 'student' | 'ta' | 'doctor' | 'collegeAdmin' | 'universit
 export type EnrollmentStatus = 'enrolled' | 'passed' | 'failed' | 'withdrawn';
 
 // Organizational Structure
+/** Phase 1 Module 4 — GET /locations (phase1_api_docs.md) */
+export interface ILocation {
+  id: string;
+  name: string;
+  slug?: string;
+  college: { id: string; name: string };
+  building?: string;
+  floor?: number;
+  roomNumber?: string;
+  capacity: number;
+  type: 'lecture_hall' | 'lab' | 'section_room' | 'auditorium';
+  status: 'active' | 'maintenance';
+  readerId?: string;
+  isArchived: boolean;
+  archivedAt?: string | null;
+}
+
 export interface ICollege {
   id: string;
   name: string;
   code: string;
+  /** Phase 1 API (`phase1_api_docs.md`) */
+  slug?: string;
   description?: string;
+  /** Phase 1 API: UA/CA list responses */
+  studentCount?: number;
+  deptCount?: number;
+  establishedYear?: number;
+  archivedAt?: string | null;
+  createdAt?: string;
   dean?: {
     id: string;
     name: string;
@@ -263,11 +297,14 @@ export interface IDepartment {
   isArchived: boolean;
 }
 
-// System Settings
+// System Settings (Phase 1: GET/PATCH /api/v1/settings)
 export interface ISystemSettings {
   id: string;
-  currentSemester: string;
+  currentAcademicYear: string;
+  /** API values: fall | spring */
+  currentSemester: 'fall' | 'spring';
   isEnrollmentOpen: boolean;
+  /** Phase 1 doc: A+, A, B+, B, C+, C, D, F */
   gradePoints: {
     'A+': number;
     'A': number;
@@ -275,7 +312,6 @@ export interface ISystemSettings {
     'B': number;
     'C+': number;
     'C': number;
-    'D+': number;
     'D': number;
     'F': number;
   };

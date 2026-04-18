@@ -15,6 +15,21 @@ export const getStatusBadge = (status?: string) => {
         label: 'Probation',
         className: statusColors.probation,
       };
+    case 'good_standing':
+      return {
+        label: 'Good Standing',
+        className: statusColors.good_standing,
+      };
+    case 'active':
+      return {
+        label: 'Active',
+        className: statusColors.good_standing,
+      };
+    case 'graduated':
+      return {
+        label: 'Graduated',
+        className: 'bg-slate-100 text-slate-800',
+      };
     default:
       return {
         label: 'Good Standing',

@@ -1,153 +1,201 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/Card';
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Building2, Search, Plus, User, School } from 'lucide-react';
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
+import { Building2, Search, Plus, User, School, Edit } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ICollege } from '@/types';
-import { useToastStore } from '@/store/toastStore';
-import { logger } from '@/lib/logger';
-export function Colleges() {
-  const { error: showError } = useToastStore();
-  const [colleges, setColleges] = useState<ICollege[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+import { useColleges } from '@/hooks/queries';
+import { AdminPageShell, AdminDataTableShell } from '@/components/admin';
 
-  useEffect(() => {
-    fetchColleges();
-  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps -- fetchColleges stable
+function mapCollege(college: Record<string, unknown>): ICollege {
+  const dean = college.dean_id as Record<string, unknown> | undefined;
 
-  const fetchColleges = async () => {
-    try {
-      setLoading(true);
-      // In real app: const data = await api.getColleges({ page, search: searchTerm });
-      // Mock data for now
-      const mockColleges: ICollege[] = [
-        {
-          id: 'college-1',
-          name: 'Faculty of Engineering',
-          code: 'ENG',
-          description: 'Engineering and Technology',
-          dean: { id: 'dean-1', name: 'Dr. Mohamed Hassan' },
-          departments: [
-            { id: 'dept-1', name: 'Computer Science', code: 'CS' },
-            { id: 'dept-2', name: 'Electrical Engineering', code: 'EE' },
-          ],
-          isArchived: false,
-        },
-        {
-          id: 'college-2',
-          name: 'Faculty of Science',
-          code: 'SCI',
-          description: 'Natural Sciences',
-          dean: { id: 'dean-2', name: 'Dr. Sarah Ahmed' },
-          departments: [
-            { id: 'dept-3', name: 'Mathematics', code: 'MATH' },
-            { id: 'dept-4', name: 'Physics', code: 'PHY' },
-          ],
-          isArchived: false,
-        },
-      ];
-      setColleges(mockColleges);
-    } catch (error) {
-      logger.error('Failed to fetch colleges', { context: 'Colleges', error });
-      showError('Failed to load colleges');
-    } finally {
-      setLoading(false);
-    }
+  return {
+    id: String(college._id ?? college.id ?? ''),
+    name: String(college.name ?? ''),
+    code: String(college.code ?? '').toUpperCase(),
+    slug: typeof college.slug === 'string' ? college.slug : undefined,
+    description: typeof college.description === 'string' ? college.description : undefined,
+    studentCount: typeof college.studentCount === 'number' ? college.studentCount : undefined,
+    deptCount: typeof college.deptCount === 'number' ? college.deptCount : undefined,
+    establishedYear: typeof college.establishedYear === 'number' ? college.establishedYear : undefined,
+    dean: dean
+      ? {
+          id: String(dean._id ?? dean.id ?? ''),
+          name: String(dean.name ?? ''),
+        }
+      : undefined,
+    departments: [],
+    isArchived: Boolean(college.isArchived),
   };
+}
 
-  const filteredColleges = colleges.filter(college =>
-    college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    college.code.toLowerCase().includes(searchTerm.toLowerCase())
+export function Colleges() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data, isLoading, isError, error, refetch } = useColleges({ isArchived: 'all' });
+
+  const colleges = useMemo(
+    () => (data?.items ?? []).map((c) => mapCollege(c as Record<string, unknown>)),
+    [data]
   );
 
-  if (loading) {
+  const filteredColleges = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return colleges;
+    return colleges.filter(
+      (college) =>
+        college.name.toLowerCase().includes(q) ||
+        college.code.toLowerCase().includes(q) ||
+        (college.slug?.toLowerCase().includes(q) ?? false)
+    );
+  }, [colleges, searchTerm]);
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading colleges...</p>
+      <AdminPageShell title="Colleges" subtitle="Loading…">
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading colleges...</p>
+          </div>
         </div>
-      </div>
+      </AdminPageShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AdminPageShell title="Colleges" subtitle="Could not load data">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
+          <p className="font-medium text-red-800 dark:text-red-200">Could not load colleges</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-300">
+            {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+          <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">University Structure</h1>
-          <p className="text-gray-600 mt-1">Page for managing academic entities</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <AdminPageShell
+      title="Colleges"
+      subtitle={`${colleges.length} colleges${searchTerm.trim() ? ` · ${filteredColleges.length} match search` : ''} — GET /api/v1/colleges`}
+      breadcrumbs={[{ label: 'University Structure' }, { label: 'Colleges' }]}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="Search colleges..."
+              placeholder="Search name, code, slug…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="w-64 pl-10"
             />
           </div>
           <Link to="/dashboard/organizational/colleges/create">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button className="inline-flex items-center gap-2 rounded-xl">
+              <Plus className="h-4 w-4" />
               Add College
             </Button>
           </Link>
         </div>
-      </div>
-
+      }
+    >
       {filteredColleges.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No colleges found</p>
+            <Building2 className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+            <p className="text-gray-500 dark:text-gray-400">
+              {colleges.length === 0 ? 'No colleges found' : 'No colleges match your search'}
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredColleges.map((college) => (
-            <Link key={college.id} to={`/dashboard/organizational/colleges/${college.id}`}>
-              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-primary-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary-100 flex items-center justify-center">
-                      <Building2 className="h-8 w-8 text-primary-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 truncate">{college.name}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{college.code}</p>
-                      <div className="mt-3 space-y-1.5 text-sm text-gray-600">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-accent" />
+              All colleges
+            </CardTitle>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Showing <span className="font-medium text-gray-800 dark:text-gray-200">{filteredColleges.length}</span>
+              {searchTerm.trim() ? ' matching search' : ''}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <AdminDataTableShell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Dean</TableHead>
+                    <TableHead className="text-end tabular-nums">Depts</TableHead>
+                    <TableHead className="text-end tabular-nums">Students</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-end">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredColleges.map((college) => (
+                    <TableRow key={college.id}>
+                      <TableCell className="font-medium">{college.code}</TableCell>
+                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">{college.name}</TableCell>
+                      <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                        {college.slug ?? '—'}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
-                          <School className="h-4 w-4 text-gray-400" />
-                          <span>{college.departments?.length || 0} departments</span>
+                          <User className="h-4 w-4 shrink-0 text-gray-400" />
+                          <span>{college.dean?.name ?? '—'}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span>{college.dean?.name || 'No dean assigned'}</span>
-                        </div>
-                        <div className="text-gray-500">0 students</div>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
+                      </TableCell>
+                      <TableCell className="text-end tabular-nums">
+                        <span className="inline-flex items-center justify-end gap-1">
+                          <School className="h-3.5 w-3.5 text-gray-400" />
+                          {college.deptCount ?? 0}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-end tabular-nums">{college.studentCount ?? 0}</TableCell>
+                      <TableCell>
                         {college.isArchived ? (
-                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Archived</span>
+                          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                            Archived
+                          </span>
                         ) : (
-                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Active</span>
+                          <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            Active
+                          </span>
                         )}
-                        <span className="text-primary-600 text-sm font-medium">View details →</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                      </TableCell>
+                      <TableCell className="text-end">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link to={`/dashboard/organizational/colleges/${college.id}`}>
+                            <Button variant="secondary" size="sm">
+                              View
+                            </Button>
+                          </Link>
+                          <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
+                            <Button variant="secondary" size="sm" title="Edit">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </AdminDataTableShell>
+          </CardContent>
+        </Card>
       )}
-
-    </div>
+    </AdminPageShell>
   );
 }
-

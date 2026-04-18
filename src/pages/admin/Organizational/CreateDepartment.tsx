@@ -12,13 +12,15 @@ import {
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
+import { api, getApiErrorMessage } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 export function CreateDepartment() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const [loading, setLoading] = useState(false);
   const [colleges, setColleges] = useState<Array<{ id: string; name: string }>>([]);
-  const [users, setUsers] = useState<Array<{ id: string; name: string }>>([]);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -27,39 +29,52 @@ export function CreateDepartment() {
     headId: '',
   });
 
+  const isUniversityAdmin = user?.role === 'universityAdmin';
+
   useEffect(() => {
-    fetchColleges();
-    fetchUsers();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount
-
-  const fetchColleges = async () => {
-    // Mock data
-    setColleges([
-      { id: 'college-1', name: 'Faculty of Engineering' },
-      { id: 'college-2', name: 'Faculty of Science' },
-    ]);
-  };
-
-  const fetchUsers = async () => {
-    // Mock users (doctors/admins who can be department heads)
-    setUsers([
-      { id: 'user-1', name: 'Dr. Ahmed Toba' },
-      { id: 'user-2', name: 'Dr. Mohamed Ali' },
-      { id: 'user-3', name: 'Dr. Fatima Hassan' },
-    ]);
-  };
+    const fetchColleges = async () => {
+      try {
+        const list = await api.getColleges({ isArchived: 'false' });
+        const rows = list.map((c) => ({
+          id: String(c._id ?? c.id ?? ''),
+          name: String(c.name ?? ''),
+        }));
+        setColleges(rows);
+        if (user?.role === 'collegeAdmin' && rows.length >= 1) {
+          setFormData((prev) => ({ ...prev, collegeId: rows[0].id }));
+        }
+      } catch (error) {
+        logger.error('Failed to load colleges', { context: 'CreateDepartment', error });
+        showError('Failed to load colleges');
+      }
+    };
+    void fetchColleges();
+  }, [user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUniversityAdmin && !formData.collegeId.trim()) {
+      showError('Select a college');
+      return;
+    }
+    if (!isUniversityAdmin && !formData.collegeId) {
+      showError('College could not be determined');
+      return;
+    }
     try {
       setLoading(true);
-      // In real app: await api.createDepartment(formData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.createDepartment({
+        name: formData.name.trim(),
+        code: formData.code.trim().toUpperCase(),
+        ...(formData.description.trim() && { description: formData.description.trim() }),
+        ...(isUniversityAdmin && formData.collegeId ? { college_id: formData.collegeId } : {}),
+        ...(formData.headId.trim() && { head_id: formData.headId.trim() }),
+      });
       success('Department created successfully');
       navigate('/dashboard/organizational/departments');
     } catch (error) {
       logger.error('Failed to create department', { context: 'CreateDepartment', error });
-      showError('Failed to create department');
+      showError(getApiErrorMessage(error, 'Failed to create department'));
     } finally {
       setLoading(false);
     }
@@ -76,7 +91,7 @@ export function CreateDepartment() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Create Department</h1>
-          <p className="text-gray-600 mt-1">Add a new academic department</p>
+          <p className="text-gray-600 mt-1">POST /api/v1/departments — fields per phase1_api_docs.md</p>
         </div>
       </div>
 
@@ -125,33 +140,31 @@ export function CreateDepartment() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                College <span className="text-red-500">*</span>
-              </label>
-              <Select2
-                value={formData.collegeId}
-                onChange={(value) => setFormData({ ...formData, collegeId: value })}
-                options={[
-                  { value: '', label: 'Select a college...' },
-                  ...colleges.map(college => ({ value: college.id, label: college.name })),
-                ]}
-                placeholder="Search and select a college..."
-              />
-            </div>
+            {isUniversityAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  College <span className="text-red-500">*</span>
+                </label>
+                <Select2
+                  value={formData.collegeId}
+                  onChange={(value) => setFormData({ ...formData, collegeId: value })}
+                  options={[
+                    { value: '', label: 'Select a college...' },
+                    ...colleges.map(college => ({ value: college.id, label: college.name })),
+                  ]}
+                  placeholder="Search and select a college..."
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department Head
+                Head user ID <span className="text-gray-400 font-normal">(optional)</span>
               </label>
-              <Select2
+              <Input
                 value={formData.headId}
-                onChange={(value) => setFormData({ ...formData, headId: value })}
-                options={[
-                  { value: '', label: 'Select a department head...' },
-                  ...users.map(user => ({ value: user.id, label: user.name })),
-                ]}
-                placeholder="Search and select a department head..."
+                onChange={(e) => setFormData({ ...formData, headId: e.target.value })}
+                placeholder="MongoDB ObjectId — field head_id (active user in same college)"
               />
             </div>
 
@@ -172,4 +185,3 @@ export function CreateDepartment() {
     </div>
   );
 }
-

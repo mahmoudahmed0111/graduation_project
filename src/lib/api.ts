@@ -1,13 +1,20 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, ForgotPasswordCredentials, AuthResponse, RefreshTokenResponse, IUniversity, ICourse, ICourseOffering, IEnrollment, PaginatedResponse, IAnnouncement, IAttendanceReport, IAssessment, IMaterial, ISubmission } from '@/types';
-import { getAccessToken } from '@/store/authStore';
+import { apiClient as axiosInstance } from '@/lib/http/client';
+import * as collegesService from '@/services/colleges.service';
+import * as departmentsService from '@/services/departments.service';
+import * as settingsService from '@/services/settings.service';
+import * as locationsService from '@/services/locations.service';
 
-const AZURE_API_BASE = 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
-// Dev: VITE_USE_PRODUCTION_API=true → proxy to Azure LIVE. false → local backend.
-// Prod build: always use Azure HTTPS.
-const API_BASE_URL = import.meta.env.DEV
-  ? (import.meta.env.VITE_USE_PRODUCTION_API === 'true' ? '/api/v1' : 'http://localhost:5000/api/v1')
-  : (import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_URL || AZURE_API_BASE}/api/v1`);
+/** Re-export for callers that import from `@/lib/api`. */
+export { getApiErrorMessage } from '@/lib/http/client';
+
+function extractCollegeId(u: Record<string, unknown>): string | undefined {
+  const c = u.college_id;
+  if (c == null) return undefined;
+  if (typeof c === 'string') return c;
+  if (typeof c === 'object' && '_id' in c) return String((c as { _id: unknown })._id);
+  return undefined;
+}
 
 /** Map backend user (e.g. _id, photo) to frontend IUser */
 function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
@@ -18,81 +25,310 @@ function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
     name: (u.name as string) ?? '',
     role: (u.role as IUser['role']) ?? 'student',
     email: (u.email as string) ?? '',
-    nationalId: u.nationalID as string | undefined,
+    nationalId: (u.nationalID ?? u.nationalId) as string | undefined,
     universityId: (u.universityId as string) ?? '',
     avatarUrl: (u.avatarUrl ?? u.photo) as string | undefined,
     facultyId: u.facultyId as string | undefined,
+    collegeId: extractCollegeId(u),
+    requiresPasswordChange: u.requiresPasswordChange === true,
+    phoneNumber: typeof u.phoneNumber === 'string' ? u.phoneNumber : undefined,
     ...(u.year != null && { year: u.year as number, semester: u.semester as number, creditsEarned: u.creditsEarned as number, gpa: u.gpa as number }),
   };
   return user as IUser | IStudent;
 }
 
-// Create axios instance
-const axiosInstance: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true, // Important for httpOnly cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Request interceptor to add access token from memory
-axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Auth paths where 401 should not trigger refresh (avoids cascade: login 401 → refresh 401 → logout 401/429)
-// include verify-password so wrong password doesn't clear session (user stays on lock screen to retry)
-const isAuthRequest = (url: string) => /\/auth\/(login|login\/verify|refresh|logout|forgotPassword|resetPassword|verify-password)/.test(url || '');
-
-// Response interceptor to handle token refresh
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    const requestUrl = originalRequest?.url ?? '';
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      // Do not attempt refresh for auth endpoints (e.g. failed login) to avoid refresh + logout cascade
-      if (isAuthRequest(requestUrl)) {
-        return Promise.reject(error);
-      }
-
-      originalRequest._retry = true;
-
-      try {
-        const response = await axios.post<RefreshTokenResponse>(
-          `${API_BASE_URL}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        
-        const { useAuthStore } = await import('@/store/authStore');
-        useAuthStore.getState().setAccessToken(response.data.accessToken);
-
-        originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        // Clear session locally only; do not call logout API (would 401/429 without token)
-        const { useAuthStore } = await import('@/store/authStore');
-        useAuthStore.getState().clearSession();
-        return Promise.reject(refreshError);
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-// API client functions
+/**
+ * API client. **Phase 1** delegates to `@/services/*` (normalized list/single). Flat array helpers below match legacy UI.
+ * See `phase1_api_docs.md`.
+ */
 export const api = {
+  // --- Legacy (not specified in Phase 1 doc) ---
+  getUsers: async (params?: {
+    role?: 'student' | 'ta' | 'doctor' | 'collegeAdmin' | 'universityAdmin';
+    college_id?: string;
+    department_id?: string;
+    includeDeleted?: 'true' | 'false';
+    isArchived?: 'true' | 'false' | 'all';
+    page?: number;
+    limit?: number;
+  }): Promise<Array<Record<string, unknown>>> => {
+    const response = await axiosInstance.get<{
+      status: string;
+      data?: { users?: Array<Record<string, unknown>> };
+    }>('/users', { params });
+    return response.data?.data?.users ?? [];
+  },
+
+  /**
+   * Same filters as getUsers, but follows `totalPages` until all users are loaded (max 100 per page).
+   */
+  getAllUsers: async (params?: {
+    role?: 'student' | 'ta' | 'doctor' | 'collegeAdmin' | 'universityAdmin';
+    college_id?: string;
+    department_id?: string;
+    includeDeleted?: 'true' | 'false';
+    isArchived?: 'true' | 'false' | 'all';
+  }): Promise<Array<Record<string, unknown>>> => {
+    const merged: Array<Record<string, unknown>> = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const response = await axiosInstance.get<{
+        status: string;
+        currentPage?: number;
+        totalPages?: number;
+        data?: { users?: Array<Record<string, unknown>> };
+      }>('/users', { params: { ...params, page, limit: 100 } });
+      const batch = response.data?.data?.users ?? [];
+      merged.push(...batch);
+      const tp = Number(response.data?.totalPages);
+      totalPages = Number.isFinite(tp) && tp >= 1 ? Math.min(tp, 500) : 1;
+      page++;
+    } while (page <= totalPages);
+    return merged;
+  },
+
+  /** Phase 2: `GET /api/v1/users/:id` — UA, CA (see phase2_api_doc). */
+  getUser: async (id: string): Promise<Record<string, unknown>> => {
+    const response = await axiosInstance.get<{
+      status?: string;
+      data?: { user?: Record<string, unknown> };
+    }>(`/users/${encodeURIComponent(id)}`);
+    const u = response.data?.data?.user;
+    if (!u || typeof u !== 'object') {
+      throw new Error('User not found');
+    }
+    return u;
+  },
+
+  /**
+   * Phase 2: `PATCH /api/v1/users/:id` — multipart allowlist: name, email, phoneNumber, department_id, photo.
+   */
+  patchUser: async (
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phoneNumber?: string;
+      department_id?: string;
+    }
+  ): Promise<Record<string, unknown>> => {
+    const fd = new FormData();
+    if (data.name != null) fd.append('name', data.name);
+    if (data.email != null) fd.append('email', data.email);
+    if (data.phoneNumber != null && data.phoneNumber !== '') fd.append('phoneNumber', data.phoneNumber);
+    if (data.department_id != null) fd.append('department_id', data.department_id);
+    const response = await axiosInstance.patch<{
+      status?: string;
+      data?: { user?: Record<string, unknown> };
+    }>(`/users/${encodeURIComponent(id)}`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const u = response.data?.data?.user;
+    if (!u) throw new Error('Update failed');
+    return u;
+  },
+
+  /** Phase 2: `PATCH /api/v1/users/:id/deactivate` — soft-delete. */
+  deactivateUser: async (id: string): Promise<void> => {
+    await axiosInstance.patch(`/users/${encodeURIComponent(id)}/deactivate`);
+  },
+
+  // --- Phase 1: Colleges (Module 1) — see `services/colleges.service.ts` ---
+  getColleges: async (params?: {
+    search?: string;
+    isArchived?: 'true' | 'false' | 'all';
+    page?: number;
+    limit?: number;
+    sort?: string;
+    fields?: string;
+  }): Promise<Array<Record<string, unknown>>> => {
+    const { items } = await collegesService.getColleges(params);
+    return items;
+  },
+
+  getCollege: async (id: string, params?: { isArchived?: 'true' }): Promise<Record<string, unknown>> => {
+    return collegesService.getCollege(id, params);
+  },
+
+  getCollegeDepartments: async (
+    collegeId: string,
+    params?: { page?: number; limit?: number; sort?: string; fields?: string; isArchived?: 'true' | 'false' | 'all' }
+  ): Promise<Array<Record<string, unknown>>> => {
+    const { items } = await collegesService.getCollegeDepartments(collegeId, params);
+    return items;
+  },
+
+  getCollegeDepartment: async (collegeId: string, deptId: string, params?: { isArchived?: 'true' }): Promise<Record<string, unknown>> => {
+    return collegesService.getCollegeDepartment(collegeId, deptId, params);
+  },
+
+  getCollegeLocations: async (
+    collegeId: string,
+    params?: { type?: string; status?: string; isArchived?: 'true' | 'false' | 'all'; page?: number; limit?: number }
+  ): Promise<Array<Record<string, unknown>>> => {
+    const { items } = await collegesService.getCollegeLocations(collegeId, params);
+    return items;
+  },
+
+  getCollegeLocation: async (collegeId: string, locId: string): Promise<Record<string, unknown>> => {
+    return collegesService.getCollegeLocation(collegeId, locId);
+  },
+
+  // --- Phase 1: Departments (Module 2) ---
+  getDepartments: async (params?: {
+    search?: string;
+    college_id?: string;
+    isArchived?: 'true' | 'false' | 'all';
+    page?: number;
+    limit?: number;
+    sort?: string;
+    fields?: string;
+  }): Promise<Array<Record<string, unknown>>> => {
+    const { items } = await departmentsService.getDepartments(params);
+    return items;
+  },
+
+  getDepartment: async (id: string, params?: { isArchived?: 'true' }): Promise<Record<string, unknown>> => {
+    return departmentsService.getDepartment(id, params);
+  },
+
+  createCollege: async (data: {
+    name: string;
+    code: string;
+    description?: string;
+    dean_id?: string;
+    establishedYear?: number;
+  }): Promise<Record<string, unknown>> => {
+    return collegesService.createCollege(data);
+  },
+
+  updateCollege: async (
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      dean_id?: string | null;
+      establishedYear?: number;
+    }
+  ): Promise<Record<string, unknown>> => {
+    return collegesService.updateCollege(id, data);
+  },
+
+  archiveCollege: async (id: string): Promise<void> => {
+    await collegesService.archiveCollege(id);
+  },
+
+  restoreCollege: async (id: string): Promise<Record<string, unknown>> => {
+    return collegesService.restoreCollege(id);
+  },
+
+  createDepartment: async (data: {
+    name: string;
+    code: string;
+    description?: string;
+    college_id?: string;
+    head_id?: string;
+  }): Promise<Record<string, unknown>> => {
+    return departmentsService.createDepartment(data);
+  },
+
+  updateDepartment: async (
+    id: string,
+    data: {
+      name?: string;
+      code?: string;
+      description?: string;
+      head_id?: string | null;
+    }
+  ): Promise<Record<string, unknown>> => {
+    return departmentsService.updateDepartment(id, data);
+  },
+
+  archiveDepartment: async (id: string): Promise<void> => {
+    await departmentsService.archiveDepartment(id);
+  },
+
+  restoreDepartment: async (id: string): Promise<Record<string, unknown>> => {
+    return departmentsService.restoreDepartment(id);
+  },
+
+  getSettings: async (): Promise<Record<string, unknown>> => {
+    return settingsService.getSettings();
+  },
+
+  patchSettings: async (data: {
+    currentAcademicYear?: string;
+    currentSemester?: 'fall' | 'spring';
+    isEnrollmentOpen?: boolean;
+    gradePoints?: Record<string, number>;
+    defaultCreditLimit?: {
+      good_standing?: number;
+      probation?: number;
+      honors?: number;
+    };
+  }): Promise<Record<string, unknown>> => {
+    return settingsService.updateSettings(data);
+  },
+
+  // --- Phase 1: Locations (Module 4) ---
+  getLocations: async (params?: {
+    type?: string;
+    status?: string;
+    isArchived?: 'true' | 'false' | 'all';
+    page?: number;
+    limit?: number;
+    sort?: string;
+    fields?: string;
+  }): Promise<Array<Record<string, unknown>>> => {
+    const { items } = await locationsService.getLocations(params);
+    return items;
+  },
+
+  getLocation: async (id: string): Promise<Record<string, unknown>> => {
+    return locationsService.getLocation(id);
+  },
+
+  createLocation: async (data: {
+    name: string;
+    college_id?: string;
+    capacity: number;
+    type: 'lecture_hall' | 'lab' | 'section_room' | 'auditorium';
+    building?: string;
+    floor?: number;
+    roomNumber?: string;
+    readerId?: string;
+  }): Promise<Record<string, unknown>> => {
+    return locationsService.createLocation(data);
+  },
+
+  updateLocation: async (
+    id: string,
+    data: Partial<{
+      name: string;
+      building: string;
+      floor: number;
+      roomNumber: string;
+      capacity: number;
+      type: 'lecture_hall' | 'lab' | 'section_room' | 'auditorium';
+      readerId: string;
+    }>
+  ): Promise<Record<string, unknown>> => {
+    return locationsService.updateLocation(id, data);
+  },
+
+  patchLocationStatus: async (id: string, status: 'active' | 'maintenance'): Promise<Record<string, unknown>> => {
+    return locationsService.updateLocationStatus(id, status);
+  },
+
+  archiveLocation: async (id: string): Promise<void> => {
+    await locationsService.archiveLocation(id);
+  },
+
+  restoreLocation: async (id: string): Promise<Record<string, unknown>> => {
+    return locationsService.restoreLocation(id);
+  },
+
   // University endpoints
   getUniversityMeta: async (universityId: string) => {
     const response = await axiosInstance.get<{
@@ -118,8 +354,18 @@ export const api = {
 
   // Enrollment endpoints
   getEnrollments: async (params?: { studentId?: string; courseId?: string }): Promise<IEnrollment[]> => {
-    const response = await axiosInstance.get<IEnrollment[]>('/enrollments', { params });
-    return response.data;
+    const response = await axiosInstance.get<unknown>('/enrollments', { params });
+    const d = response.data;
+    if (Array.isArray(d)) return d as IEnrollment[];
+    if (d && typeof d === 'object') {
+      const bag = d as { data?: unknown };
+      if (Array.isArray(bag.data)) return bag.data as IEnrollment[];
+      if (bag.data && typeof bag.data === 'object' && 'enrollments' in bag.data) {
+        const inner = (bag.data as { enrollments?: IEnrollment[] }).enrollments;
+        if (Array.isArray(inner)) return inner;
+      }
+    }
+    return [];
   },
 
   // Student-specific endpoints
