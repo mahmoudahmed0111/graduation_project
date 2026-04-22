@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from './store/authStore';
 import { useTenantStore } from './store/tenantStore';
+import { useThemeStore } from './store/themeStore';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 import { Toaster } from './components/ui/Toaster';
@@ -32,7 +33,6 @@ import { Announcements } from './pages/shared/Announcements';
 import { Chatbot } from './pages/shared/Chatbot';
 import { Notifications } from './pages/shared/Notifications';
 import { Profile } from './pages/shared/Profile';
-import { Settings } from './pages/shared/Settings';
 import { Students, CreateStudent, EditStudent, ShowStudent } from './pages/admin/Students';
 import { ManageMaterials, UploadMaterial } from './pages/doctor/Materials';
 import { CreateAssessment, GradeSubmissions } from './pages/doctor/Assessments';
@@ -74,6 +74,12 @@ function App() {
   const { t } = useTranslation();
   const { isAuthenticated, user } = useAuthStore();
   const { loadUniversityMeta, loadUniversities } = useTenantStore();
+  const { theme, setTheme } = useThemeStore();
+
+  // Keep <html class="dark"> in sync with the persisted theme
+  useEffect(() => {
+    setTheme(theme);
+  }, [theme, setTheme]);
 
   useEffect(() => {
     // Load university metadata on mount
@@ -228,7 +234,7 @@ function App() {
           <Route path="students/:id" element={<ShowStudent />} />
           <Route path="students/:id/edit" element={<EditStudent />} />
           
-          {/* User Management — Phase 2 */}
+          {/* User management */}
           <Route
             path="users/directory"
             element={
@@ -450,7 +456,6 @@ function App() {
             }
           />
 
-          <Route path="settings" element={<Settings />} />
           <Route
             path="system-settings"
             element={

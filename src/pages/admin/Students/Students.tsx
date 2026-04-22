@@ -100,12 +100,12 @@ export function Students() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-600 mt-1 max-w-2xl">
-            Directory from <code className="bg-gray-100 px-1 rounded text-sm">GET /api/v1/users?role=student</code>
-            (scoped for college admins). Aggregated college totals remain on the{' '}
+            Student accounts in the directory. College admins see students in their college. For aggregated enrollment
+            totals by college, see{' '}
             <Link to="/dashboard/organizational/colleges" className="text-primary-600 hover:underline">
               Colleges
-            </Link>{' '}
-            screen (Phase 1).
+            </Link>
+            .
           </p>
         </div>
         {canManage && (
@@ -226,8 +226,8 @@ export function Students() {
         <CardContent className="p-5 flex gap-3">
           <GraduationCap className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
           <p className="text-sm text-gray-600">
-            Phase 1 organizational APIs expose <strong>studentCount</strong> per college, not individual accounts. This
-            table uses the user directory API so admins can manage students.
+            College pages show an aggregated <strong>student count</strong>. This list is the per-student directory for
+            administration.
           </p>
         </CardContent>
       </Card>

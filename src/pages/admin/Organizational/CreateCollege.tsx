@@ -58,7 +58,6 @@ export function CreateCollege() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Create College</h1>
-          <p className="text-gray-600 mt-1">Fields follow Phase 1 API (POST /api/v1/colleges)</p>
         </div>
       </div>
 
@@ -128,10 +127,10 @@ export function CreateCollege() {
               <Input
                 value={formData.deanId}
                 onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
-                placeholder="MongoDB ObjectId — field `dean_id` in Phase 1 API"
+                placeholder="ObjectId of the dean user"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Phase 1 expects <code className="bg-gray-100 px-0.5 rounded">dean_id</code> as an active user id (doctor, universityAdmin, or collegeAdmin).
+                If set, the dean must be an active user with role doctor, university admin, or college admin.
               </p>
             </div>
 

@@ -144,40 +144,71 @@ export function Login() {
   const isFormDisabled = isDeactivated || (lockoutSeconds !== null && lockoutSeconds > 0);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 p-4 relative overflow-hidden">
-      {/* Clean professional background */}
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900">
+      {/* Branded university background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Subtle pattern */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{
-          backgroundImage: `linear-gradient(to right, #0055cc 1px, transparent 1px),
-                           linear-gradient(to bottom, #0055cc 1px, transparent 1px)`,
-          backgroundSize: '60px 60px'
-        }}></div>
-        
-        {/* Minimal floating elements */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary-100 rounded-full blur-3xl opacity-20"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-accent-100 rounded-full blur-3xl opacity-15"></div>
+        {/* Radial navy depth */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse at top, rgba(10, 36, 114, 0.35) 0%, rgba(0, 17, 57, 0.95) 70%)',
+          }}
+        ></div>
+
+        {/* Soft gold ornamental pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, #ffd700 1px, transparent 0)",
+            backgroundSize: '28px 28px',
+          }}
+        ></div>
+
+        {/* Gold corner accents */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-accent-500 rounded-full blur-3xl opacity-[0.12]"></div>
+        <div className="absolute -bottom-32 -left-32 w-[28rem] h-[28rem] bg-accent-500 rounded-full blur-3xl opacity-[0.08]"></div>
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-primary-400 rounded-full blur-3xl opacity-10"></div>
       </div>
 
-      <Card className="w-full max-w-lg relative z-10 animate-fade-in-up shadow-xl border border-gray-100 bg-white/95 backdrop-blur-md hover:shadow-2xl hover:bg-white transition-all duration-200 rounded-2xl overflow-hidden">
-        {/* Elegant top border */}
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary-500 to-transparent"></div>
-        
-        <CardHeader className="pb-4">
-          <div className="flex justify-center mb-4 animate-scale-in">
+      <Card className="w-full max-w-lg relative z-10 animate-fade-in-up shadow-2xl border-0 bg-white rounded-2xl overflow-hidden">
+        {/* Top gold accent bar — echoes logo identity */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-500 via-accent-400 to-accent-500"></div>
+
+        <CardHeader className="pb-4 pt-8">
+          <div className="flex justify-center mb-5 animate-scale-in">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-accent-400 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-200"></div>
-              <img
-                src="/logo/logo.png.png"
-                alt="University Logo"
-                className="h-20 w-20 relative z-10 transition-transform duration-200 group-hover:scale-105 drop-shadow-lg"
-              />
+              {/* Double gold ring — mimics the logo's outer ring */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 blur-md opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
+              <div className="relative p-1 rounded-full bg-gradient-to-br from-accent-400 via-accent-500 to-accent-600 shadow-lg">
+                <div className="p-1 rounded-full bg-white">
+                  <img
+                    src="/logo/logo.png.png"
+                    alt="Beni-Suef University Logo"
+                    className="h-24 w-24 rounded-full transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <CardTitle className="text-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent animate-fade-in font-cairo">
+
+          <CardTitle className="text-center text-2xl md:text-3xl font-bold text-primary-800 animate-fade-in">
             {t('auth.loginTitle') || 'Login to Your Account'}
           </CardTitle>
-          <p className="text-center text-sm text-gray-500 mt-2 animate-fade-in">
+
+          <p className="text-center text-base font-semibold mt-2 animate-fade-in" style={{ color: '#0a2472' }}>
+            Beni-Suef University
+          </p>
+
+          {/* Gold separator */}
+          <div className="flex items-center justify-center mt-3 mb-1 animate-fade-in">
+            <span className="h-px w-10 bg-accent-400"></span>
+            <span className="mx-2 text-accent-500 text-xs">◆</span>
+            <span className="h-px w-10 bg-accent-400"></span>
+          </div>
+
+          <p className="text-center text-xs md:text-sm text-gray-500 mt-1 animate-fade-in">
             Welcome to the University Management System
           </p>
         </CardHeader>
@@ -195,7 +226,7 @@ export function Login() {
                   className="transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-primary-500/30 border-2 py-3 text-base pr-12"
                   {...register('email')}
                 />
-                <div className="absolute right-3 top-9 text-primary-500 bg-primary-50 p-1.5 rounded-lg">
+                <div className="absolute right-3 top-9 text-primary-700 bg-gradient-to-br from-accent-50 to-primary-50 p-1.5 rounded-lg border border-accent-200/50">
                   <Mail className="h-4 w-4" />
                 </div>
               </div>
@@ -213,7 +244,7 @@ export function Login() {
                   className="transition-all duration-200 hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-primary-500/30 border-2 py-3 text-base pr-12"
                   {...register('nationalId')}
                 />
-                <div className="absolute right-3 top-9 text-primary-500 bg-primary-50 p-1.5 rounded-lg">
+                <div className="absolute right-3 top-9 text-primary-700 bg-gradient-to-br from-accent-50 to-primary-50 p-1.5 rounded-lg border border-accent-200/50">
                   <CreditCard className="h-4 w-4" />
                 </div>
               </div>
@@ -245,7 +276,7 @@ export function Login() {
                       <Eye className="h-4 w-4" />
                     )}
                   </button>
-                  <div className="text-primary-500 bg-primary-50 p-1.5 rounded-lg">
+                  <div className="text-primary-700 bg-gradient-to-br from-accent-50 to-primary-50 p-1.5 rounded-lg border border-accent-200/50">
                     <Lock className="h-4 w-4" />
                   </div>
                 </div>
@@ -298,13 +329,21 @@ export function Login() {
               <Button
                 type="submit"
                 disabled={isFormDisabled}
-                className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-3.5 text-base transition-all duration-200 hover:shadow-lg rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 hover:from-primary-800 hover:via-primary-700 hover:to-primary-800 text-white font-semibold py-3.5 text-base transition-all duration-300 hover:shadow-xl hover:shadow-primary-900/30 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed border-b-2 border-accent-500"
                 isLoading={isLoading}
               >
                 {t('common.login') || 'Login'}
               </Button>
             </div>
           </form>
+
+          {/* Branded footer */}
+          <div className="mt-6 pt-4 border-t border-gray-100 text-center animate-fade-in">
+            <p className="text-xs text-gray-500">
+              © {new Date().getFullYear()}{' '}
+              <span className="text-primary-700 font-semibold">Beni-Suef University</span>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

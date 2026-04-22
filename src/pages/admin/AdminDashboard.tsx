@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Users,
   GraduationCap,
@@ -21,16 +22,19 @@ import { useToastStore } from '@/store/toastStore';
 import { PieChart } from '@/components/charts/PieChart';
 import { logger } from '@/lib/logger';
 import { AdminPageShell } from '@/components/admin';
+import { SETTINGS_QUERY_KEY } from '@/hooks/queries/useSettings';
+import { semesterApiToUi } from '@/lib/mapSystemSettings';
 
 export function AdminDashboard() {
   const { user } = useAuthStore();
   const admin = user as IUser;
   const { success, error: showError } = useToastStore();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // System Config (Phase 1: GET/PATCH /api/v1/settings)
+  // System config from settings API
   const [registrationOpen, setRegistrationOpen] = useState(false);
   const [academicYear, setAcademicYear] = useState('2025-2026');
   /** API: fall | spring */
@@ -43,7 +47,7 @@ export function AdminDashboard() {
   const [restoreNationalId, setRestoreNationalId] = useState('');
   const [restoring, setRestoring] = useState(false);
 
-  /** Phase 1 only: GET /colleges, GET /departments — see phase1_api_docs.md */
+  /** College and department list stats */
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalColleges: 0,
@@ -88,8 +92,8 @@ export function AdminDashboard() {
         setSettingsLoading(true);
         const s = await api.getSettings();
         if (typeof s.currentAcademicYear === 'string') setAcademicYear(s.currentAcademicYear);
-        if (s.currentSemester === 'spring' || s.currentSemester === 'fall') {
-          setCurrentSemester(s.currentSemester);
+        if (s.currentSemester != null && String(s.currentSemester).trim() !== '') {
+          setCurrentSemester(semesterApiToUi(s.currentSemester));
         }
         if (typeof s.isEnrollmentOpen === 'boolean') setRegistrationOpen(s.isEnrollmentOpen);
       } catch {
@@ -109,7 +113,7 @@ export function AdminDashboard() {
 
   const handleQuickActionSave = async () => {
     if (admin?.role !== 'universityAdmin') {
-      showError('Only a university administrator can save system settings (PATCH /settings).');
+      showError('Only a university administrator can save system settings.');
       return;
     }
     try {
@@ -119,6 +123,7 @@ export function AdminDashboard() {
         currentSemester,
         isEnrollmentOpen: registrationOpen,
       });
+      await queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
       setSystemConfigModalOpen(false);
       success('System config updated');
     } catch (error) {
@@ -150,7 +155,10 @@ export function AdminDashboard() {
     return (
       <AdminPageShell title="Operations Room" subtitle="Loading…">
         <div className="flex min-h-[320px] items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+          <div className="relative h-14 w-14">
+            <div className="absolute inset-0 rounded-full border-4 border-primary-100" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-primary-600 border-r-accent-500" />
+          </div>
         </div>
       </AdminPageShell>
     );
@@ -160,36 +168,49 @@ export function AdminDashboard() {
     <AdminPageShell
       title="Operations Room"
       subtitle="Overview and control"
-      badge={{ label: 'Phase 1', variant: 'neutral' }}
     >
     <div className="animate-fade-in-up space-y-6">
-      {/* Welcome Header */}
-      <div className="rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 p-6 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      {/* Welcome Header - branded navy with gold accent */}
+      <div className="relative rounded-2xl bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 p-6 lg:p-7 text-white shadow-xl overflow-hidden">
+        {/* ornamental pattern */}
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, #ffd700 1px, transparent 0)',
+          backgroundSize: '24px 24px',
+        }} />
+        {/* gold glow */}
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-accent-500 rounded-full blur-3xl opacity-20 pointer-events-none" />
+        {/* gold bottom accent */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent-500 to-transparent" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Operations Room</h1>
-            <p className="text-primary-100">Overview and control</p>
-            <div className="flex flex-wrap items-center gap-4 mt-2 text-primary-100">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-[11px] font-semibold tracking-wider uppercase text-accent-300 mb-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent-400 animate-pulse" />
+              Live
+            </div>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-1.5 tracking-tight">Operations Room</h1>
+            <p className="text-primary-200 text-sm lg:text-base">Overview and control center</p>
+            <div className="flex flex-wrap items-center gap-3 mt-3 text-primary-100 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Building2 className="h-4 w-4 text-accent-400" />
                 <span>{admin?.role === 'universityAdmin' ? 'University Administrator' : 'College Administrator'}</span>
               </div>
-              <span className="hidden md:inline">•</span>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+              <span className="text-primary-500">•</span>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-accent-400" />
                 <span>{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-5 w-5" />
-                <div className="text-2xl font-bold font-mono">
+            <div className="md:text-right rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 px-4 py-3">
+              <div className="flex items-center gap-2 md:justify-end mb-0.5">
+                <Clock className="h-4 w-4 text-accent-400" />
+                <div className="text-2xl font-bold font-mono tracking-wide">
                   {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                 </div>
               </div>
-              <div className="text-sm text-primary-200">
+              <div className="text-xs text-primary-300">
                 {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             </div>
@@ -209,18 +230,18 @@ export function AdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Registration status</span>
-              <span className={registrationOpen ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+              <span className="text-gray-600 dark:text-slate-400">Registration status</span>
+              <span className={registrationOpen ? 'text-green-600 dark:text-green-400 font-medium' : 'text-red-600 dark:text-red-400 font-medium'}>
                 {settingsLoading ? '…' : registrationOpen ? 'Open' : 'Closed'}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Academic year</span>
-              <span className="font-medium">{settingsLoading ? '…' : academicYear}</span>
+              <span className="text-gray-600 dark:text-slate-400">Academic year</span>
+              <span className="font-medium text-gray-900 dark:text-slate-100">{settingsLoading ? '…' : academicYear}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Current semester</span>
-              <span className="font-medium">
+              <span className="text-gray-600 dark:text-slate-400">Current semester</span>
+              <span className="font-medium text-gray-900 dark:text-slate-100">
                 {settingsLoading ? '…' : currentSemester === 'spring' ? 'Spring' : 'Fall'}
               </span>
             </div>
@@ -231,13 +252,13 @@ export function AdminDashboard() {
         </Card>
 
         {/* Quick Restore Widget */}
-        <Card className="border-2 border-amber-200 bg-amber-50/30">
+        <Card className="border-2 border-amber-200 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-amber-600" />
+              <RotateCcw className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               Quick Restore
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Restore a soft-deleted user by National ID</p>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Restore a soft-deleted user by National ID</p>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
@@ -266,28 +287,34 @@ export function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-gray-500 mb-3">
-              Student totals use each college&apos;s <code className="bg-gray-100 px-0.5 rounded">studentCount</code> from Phase 1 GET /colleges.
+            <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+              Student totals use each college&apos;s <code className="bg-gray-100 dark:bg-slate-800 dark:text-slate-200 px-0.5 rounded">studentCount</code> from the colleges list.
             </p>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="text-center p-3 rounded-lg bg-blue-50">
-                <GraduationCap className="h-6 w-6 mx-auto text-blue-600 mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
-                <p className="text-xs text-gray-600">Students (sum)</p>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="group relative text-center p-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-100 dark:from-primary-900/40 dark:to-primary-900/20 dark:border-primary-800/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-600 dark:bg-primary-500 text-white shadow-sm mb-2">
+                  <GraduationCap className="h-5 w-5" />
+                </div>
+                <p className="text-2xl font-bold text-primary-900 dark:text-white">{stats.totalStudents}</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wide">Students</p>
               </div>
-              <div className="text-center p-3 rounded-lg bg-green-50">
-                <Building2 className="h-6 w-6 mx-auto text-green-600 mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{stats.totalColleges}</p>
-                <p className="text-xs text-gray-600">Colleges</p>
+              <div className="group relative text-center p-4 rounded-xl bg-gradient-to-br from-accent-50 to-accent-100/50 border border-accent-200/70 dark:from-accent-500/10 dark:to-accent-500/5 dark:border-accent-500/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-500 to-accent-600 text-primary-900 shadow-sm mb-2">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <p className="text-2xl font-bold text-primary-900 dark:text-white">{stats.totalColleges}</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wide">Colleges</p>
               </div>
-              <div className="text-center p-3 rounded-lg bg-purple-50">
-                <Users className="h-6 w-6 mx-auto text-purple-600 mb-1" />
-                <p className="text-2xl font-bold text-gray-900">{stats.totalDepartments}</p>
-                <p className="text-xs text-gray-600">Departments</p>
+              <div className="group relative text-center p-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200 dark:from-slate-800/60 dark:to-slate-800/30 dark:border-slate-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-800 dark:bg-primary-600 text-white shadow-sm mb-2">
+                  <Users className="h-5 w-5" />
+                </div>
+                <p className="text-2xl font-bold text-primary-900 dark:text-white">{stats.totalDepartments}</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium uppercase tracking-wide">Departments</p>
               </div>
             </div>
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Students by college (Phase 1)</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Students by college</p>
               <PieChart data={stats.byCollege} height={200} />
             </div>
           </CardContent>
@@ -296,19 +323,18 @@ export function AdminDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              Phase 1 scope
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              What this dashboard shows
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              This dashboard slice uses only Phase 1 endpoints: Colleges, Departments, Settings. User accounts and security metrics are not part of that specification.
+            <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+              This view focuses on colleges, departments, and institution settings. Detailed user accounts and security
+              tooling live in their own admin sections.
             </p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50/80 border border-amber-100 text-sm text-gray-700">
-              <Lock className="h-8 w-8 text-amber-600 shrink-0" />
-              <p>
-                See <code className="bg-white px-1 rounded">phase1_api_docs.md</code> for Modules 1–4 (Colleges, Departments, Settings, Locations).
-              </p>
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50/80 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/30 text-sm text-gray-700 dark:text-slate-200">
+              <Lock className="h-8 w-8 text-amber-600 dark:text-amber-400 shrink-0" />
+              <p>Colleges, departments, system settings, and locations are managed from the navigation menu.</p>
             </div>
           </CardContent>
         </Card>
@@ -322,7 +348,7 @@ export function AdminDashboard() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Registration status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Registration status</label>
             <div className="flex gap-2">
               <Button
                 variant={registrationOpen ? 'primary' : 'secondary'}
@@ -341,7 +367,7 @@ export function AdminDashboard() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Academic year</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Academic year</label>
             <Input
               value={academicYear}
               onChange={(e) => setAcademicYear(e.target.value)}
@@ -349,7 +375,7 @@ export function AdminDashboard() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current semester (API)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Current semester (API)</label>
             <div className="flex gap-2">
               <Button
                 variant={currentSemester === 'fall' ? 'primary' : 'secondary'}

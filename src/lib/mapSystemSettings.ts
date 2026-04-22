@@ -1,12 +1,30 @@
 import type { ISystemSettings } from '@/types';
 
+export type SettingsSemesterUi = ISystemSettings['currentSemester'];
+
+/**
+ * Backend `currentSemester` enum uses `First` / `Second` (see course-offering docs);
+ * `phase1_api_docs.md` examples use `fall` / `spring`. Accept both on read.
+ */
+export function semesterApiToUi(raw: unknown): SettingsSemesterUi {
+  const v = String(raw ?? '').trim().toLowerCase();
+  if (v === 'spring' || v === 'second' || v === 'summer') return 'spring';
+  if (v === 'fall' || v === 'first' || v === 'autumn') return 'fall';
+  return 'fall';
+}
+
+/** Values accepted by the API validator (Pascal case). */
+export function semesterUiToApi(sem: SettingsSemesterUi): 'First' | 'Second' {
+  return sem === 'spring' ? 'Second' : 'First';
+}
+
 export function mapSettingsFromApi(s: Record<string, unknown>): ISystemSettings {
   const gp = (s.gradePoints as Record<string, number> | undefined) ?? {};
   const defaultCredit = (s.defaultCreditLimit as ISystemSettings['defaultCreditLimit'] | undefined);
   return {
     id: String(s._id ?? 'settings'),
     currentAcademicYear: String(s.currentAcademicYear ?? ''),
-    currentSemester: s.currentSemester === 'spring' ? 'spring' : 'fall',
+    currentSemester: semesterApiToUi(s.currentSemester),
     isEnrollmentOpen: Boolean(s.isEnrollmentOpen),
     gradePoints: {
       'A+': gp['A+'] ?? 4.0,

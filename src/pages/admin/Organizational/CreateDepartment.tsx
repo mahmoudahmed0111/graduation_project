@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
-import { 
-  School, 
+import {
+  School,
   ArrowLeft,
   Save
 } from 'lucide-react';
@@ -14,13 +14,15 @@ import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 import { api, getApiErrorMessage } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { useColleges } from '@/hooks/queries/useColleges';
+import { useInvalidateDepartments } from '@/hooks/queries/useDepartments';
 
 export function CreateDepartment() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
+  const invalidateDepartments = useInvalidateDepartments();
   const [loading, setLoading] = useState(false);
-  const [colleges, setColleges] = useState<Array<{ id: string; name: string }>>([]);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -31,25 +33,32 @@ export function CreateDepartment() {
 
   const isUniversityAdmin = user?.role === 'universityAdmin';
 
+  const {
+    data: collegesData,
+    isLoading: collegesLoading,
+    isError: collegesError,
+    refetch: refetchColleges,
+  } = useColleges(
+    { page: 1, limit: 100, sort: 'name', isArchived: 'false' },
+    { enabled: isUniversityAdmin }
+  );
+
+  const colleges = useMemo(() => {
+    const items = collegesData?.items ?? [];
+    return items.map((c) => {
+      const r = c as Record<string, unknown>;
+      return {
+        id: String(r._id ?? r.id ?? ''),
+        name: String(r.name ?? ''),
+      };
+    });
+  }, [collegesData?.items]);
+
   useEffect(() => {
-    const fetchColleges = async () => {
-      try {
-        const list = await api.getColleges({ isArchived: 'false' });
-        const rows = list.map((c) => ({
-          id: String(c._id ?? c.id ?? ''),
-          name: String(c.name ?? ''),
-        }));
-        setColleges(rows);
-        if (user?.role === 'collegeAdmin' && rows.length >= 1) {
-          setFormData((prev) => ({ ...prev, collegeId: rows[0].id }));
-        }
-      } catch (error) {
-        logger.error('Failed to load colleges', { context: 'CreateDepartment', error });
-        showError('Failed to load colleges');
-      }
-    };
-    void fetchColleges();
-  }, [user?.role]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (user?.role === 'collegeAdmin' && user.collegeId) {
+      setFormData((prev) => ({ ...prev, collegeId: user.collegeId! }));
+    }
+  }, [user?.role, user?.collegeId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +80,7 @@ export function CreateDepartment() {
         ...(formData.headId.trim() && { head_id: formData.headId.trim() }),
       });
       success('Department created successfully');
+      invalidateDepartments();
       navigate('/dashboard/organizational/departments');
     } catch (error) {
       logger.error('Failed to create department', { context: 'CreateDepartment', error });
@@ -79,6 +89,39 @@ export function CreateDepartment() {
       setLoading(false);
     }
   };
+
+  if (isUniversityAdmin && collegesLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading colleges…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isUniversityAdmin && collegesError && !collegesLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link to="/dashboard/organizational/departments">
+            <Button variant="secondary" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Create Department</h1>
+        </div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
+          <p className="font-medium text-red-800 dark:text-red-200">Could not load colleges</p>
+          <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetchColleges()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -90,8 +133,7 @@ export function CreateDepartment() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Department</h1>
-          <p className="text-gray-600 mt-1">POST /api/v1/departments — fields per phase1_api_docs.md</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Create Department</h1>
         </div>
       </div>
 
@@ -169,7 +211,7 @@ export function CreateDepartment() {
             </div>
 
             <div className="flex items-center gap-2 pt-4">
-              <Button type="submit" isLoading={loading}>
+              <Button type="submit" isLoading={loading} disabled={isUniversityAdmin && colleges.length === 0}>
                 <Save className="h-4 w-4 mr-2" />
                 Create Department
               </Button>

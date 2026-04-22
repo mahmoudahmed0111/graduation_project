@@ -8,6 +8,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>University Management System</title>
+    <script>
+      // Apply theme early to avoid flash of wrong theme
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme-storage');
+          var theme = null;
+          if (stored) {
+            var parsed = JSON.parse(stored);
+            theme = parsed && parsed.state && parsed.state.theme;
+          }
+          if (theme !== 'dark' && theme !== 'light') {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

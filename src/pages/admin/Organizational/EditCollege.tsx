@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { 
-  Building2, 
-  ArrowLeft,
-  Save
-} from 'lucide-react';
+import { Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 import { api, getApiErrorMessage } from '@/lib/api';
+import { OrganizationalEditBreadcrumb } from '@/components/admin';
+import { formatDate } from '@/utils/formatters';
+
+const FORM_ID = 'edit-college-form';
 
 export function EditCollege() {
   const { id } = useParams<{ id: string }>();
@@ -27,15 +27,26 @@ export function EditCollege() {
     deanId: '',
     establishedYear: '' as string,
   });
+  const [recordMeta, setRecordMeta] = useState<{
+    createdAt?: string;
+    isArchived: boolean;
+    archivedAt: string | null;
+  }>({ isArchived: false, archivedAt: null });
 
   useEffect(() => {
     const fetchCollege = async () => {
       if (!id) return;
       try {
         setFetching(true);
-        const raw = await api.getCollege(id);
-        const dean = raw.dean_id as Record<string, unknown> | undefined;
-        const deanId = dean && typeof dean === 'object' ? String(dean._id ?? dean.id ?? '') : '';
+        const raw = await api.getCollegeResolvingArchived(id);
+        const rawDean = raw.dean_id;
+        let deanId = '';
+        if (rawDean != null && typeof rawDean === 'object' && !Array.isArray(rawDean)) {
+          const d = rawDean as Record<string, unknown>;
+          deanId = String(d._id ?? d.id ?? '');
+        } else if (typeof rawDean === 'string' && rawDean.trim()) {
+          deanId = rawDean.trim();
+        }
         const year =
           typeof raw.establishedYear === 'number'
             ? String(raw.establishedYear)
@@ -47,6 +58,12 @@ export function EditCollege() {
           description: typeof raw.description === 'string' ? raw.description : '',
           deanId,
           establishedYear: year,
+        });
+        setRecordMeta({
+          createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : undefined,
+          isArchived: Boolean(raw.isArchived),
+          archivedAt:
+            raw.archivedAt === null || raw.archivedAt === undefined ? null : String(raw.archivedAt),
         });
       } catch (error) {
         logger.error('Failed to fetch college', { context: 'EditCollege', error });
@@ -71,7 +88,7 @@ export function EditCollege() {
         ...(year != null && !Number.isNaN(year) ? { establishedYear: year } : {}),
       });
       success('College updated successfully');
-      navigate('/dashboard/organizational/colleges');
+      navigate(`/dashboard/organizational/colleges/${id}`);
     } catch (error) {
       logger.error('Failed to update college', { context: 'EditCollege', error });
       showError(getApiErrorMessage(error, 'Failed to update college'));
@@ -80,12 +97,12 @@ export function EditCollege() {
     }
   };
 
-  if (fetching) {
+  if (fetching || !id) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading college...</p>
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading college…</p>
         </div>
       </div>
     );
@@ -93,68 +110,98 @@ export function EditCollege() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/dashboard/organizational/colleges">
-          <Button variant="secondary" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Edit College</h1>
-          <p className="text-gray-600 mt-1">PATCH /api/v1/colleges/:id — code cannot be changed</p>
-        </div>
-      </div>
+      <OrganizationalEditBreadcrumb
+        segments={[
+          { label: 'University Structure' },
+          { label: 'Colleges', href: '/dashboard/organizational/colleges' },
+          {
+            label: formData.name.trim() || 'College',
+            href: `/dashboard/organizational/colleges/${id}`,
+          },
+          { label: 'Edit' },
+        ]}
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            College Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="py-4">
+          <div className="mb-4 flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-xs dark:border-dark-border dark:bg-slate-900/40">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                College Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Faculty of Engineering"
-                required
-              />
+              <span className="text-gray-500 dark:text-gray-400">Created</span>{' '}
+              <span className="font-medium text-gray-800 dark:text-gray-200">
+                {recordMeta.createdAt ? formatDate(recordMeta.createdAt, 'full') : '—'}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Status</span>{' '}
+              {recordMeta.isArchived ? (
+                <span className="font-medium text-gray-800 dark:text-gray-200">Archived</span>
+              ) : (
+                <span className="font-medium text-emerald-800 dark:text-emerald-300">Active</span>
+              )}
+            </div>
+            {recordMeta.isArchived && recordMeta.archivedAt ? (
+              <div>
+                <span className="text-gray-500 dark:text-gray-400">Archived at</span>{' '}
+                <span className="font-medium text-gray-800 dark:text-gray-200">
+                  {formatDate(recordMeta.archivedAt, 'full')}
+                </span>
+              </div>
+            ) : null}
+          </div>
+          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            College code cannot be changed after creation.
+          </p>
+          <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  College name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Faculty of Engineering"
+                  required
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College code</label>
+                <Input
+                  value={formData.code}
+                  readOnly
+                  className="bg-gray-50 text-gray-600 dark:bg-slate-800/50 dark:text-gray-300"
+                  title="Code is set at creation and cannot be changed"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Slug <span className="font-normal text-gray-400">(read-only)</span>
+                </label>
+                <Input
+                  value={formData.slug}
+                  readOnly
+                  className="bg-gray-50 text-gray-600 dark:bg-slate-800/50 dark:text-gray-300"
+                  title="Read-only: supplied by the server"
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Established year</label>
+                <Input
+                  type="number"
+                  value={formData.establishedYear}
+                  onChange={(e) => setFormData({ ...formData, establishedYear: e.target.value })}
+                  placeholder="e.g. 1985"
+                  min={1800}
+                  max={2100}
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                College Code
-              </label>
-              <Input
-                value={formData.code}
-                readOnly
-                className="bg-gray-50 text-gray-600"
-                title="Code is set at creation and cannot be changed via PATCH"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Slug <span className="text-gray-400 font-normal">(read-only)</span>
-              </label>
-              <Input
-                value={formData.slug}
-                readOnly
-                className="bg-gray-50 text-gray-600"
-                title="From Phase 1 API response"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -162,45 +209,38 @@ export function EditCollege() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Established year
-              </label>
-              <Input
-                type="number"
-                value={formData.establishedYear}
-                onChange={(e) => setFormData({ ...formData, establishedYear: e.target.value })}
-                placeholder="e.g. 1985"
-                min={1800}
-                max={2100}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dean user ID <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <Input
-                value={formData.deanId}
-                onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
-                placeholder="MongoDB ObjectId — field dean_id"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 pt-4">
-              <Button type="submit" isLoading={loading}>
-                <Save className="h-4 w-4 mr-2" />
-                Update College
-              </Button>
-              <Link to="/dashboard/organizational/colleges">
-                <Button type="button" variant="secondary">
-                  Cancel
-                </Button>
-              </Link>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Dean user ID <span className="font-normal text-gray-400">(optional)</span>
+                </label>
+                <Input
+                  value={formData.deanId}
+                  onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
+                  placeholder="MongoDB ObjectId — field dean_id"
+                />
+              </div>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      <div className="flex flex-wrap justify-end gap-2">
+        <Link to={`/dashboard/organizational/colleges/${id}`}>
+          <Button type="button" variant="secondary" className="rounded-xl">
+            Cancel
+          </Button>
+        </Link>
+        <Button
+          type="submit"
+          form={FORM_ID}
+          isLoading={loading}
+          className="inline-flex items-center gap-2 rounded-xl"
+        >
+          <Save className="h-4 w-4" />
+          Save
+        </Button>
+      </div>
     </div>
   );
 }

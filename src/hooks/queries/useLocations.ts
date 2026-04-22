@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as locationsService from '@/services/locations.service';
 import type { GetLocationsParams } from '@/services/locations.service';
 
+/** Phase 1 Module 4 — `/api/v1/locations` list + mutations. */
 const key = ['phase1', 'locations'] as const;
 
 export function useLocations(params?: GetLocationsParams) {

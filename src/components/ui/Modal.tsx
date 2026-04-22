@@ -40,15 +40,15 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', className
     >
       <div
         className={cn(
-          'bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-auto',
+          'bg-white dark:bg-slate-900 rounded-lg shadow-xl dark:shadow-black/40 w-full max-h-[90vh] overflow-auto',
           sizeClasses[size],
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
             <IconButton onClick={onClose} variant="ghost" size="sm">
               <X className="h-5 w-5" />
             </IconButton>

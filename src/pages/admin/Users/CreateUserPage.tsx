@@ -124,7 +124,7 @@ export function CreateUserPage() {
   return (
     <AdminPageShell
       title="Create user"
-      subtitle="Single user via Phase 2 POST /users (multipart). Password is generated server-side."
+      subtitle="Create a user account. Password is generated on the server."
       breadcrumbs={[{ label: 'User Management' }, { label: 'Users' }, { label: 'Create' }]}
       actions={
         <Link to="/dashboard/users/directory">

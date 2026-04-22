@@ -188,7 +188,7 @@ export function UsersDirectory() {
   return (
     <AdminPageShell
       title="Users"
-      subtitle="Directory, filters, and bulk actions (Phase 2 Users API)."
+      subtitle="Directory, filters, and bulk actions"
       breadcrumbs={[{ label: 'User Management' }, { label: 'Users' }]}
       actions={
         <div className="flex flex-wrap gap-2">

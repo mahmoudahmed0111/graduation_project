@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,8 @@ import { api, getApiErrorMessage } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useLocations, useInvalidateLocations } from '@/hooks/queries';
+import { AdminPageShell, AdminDataTableShell } from '@/components/admin';
+import { formatDate } from '@/utils/formatters';
 
 function mapLocation(raw: Record<string, unknown>): ILocation {
   const college = raw.college_id as Record<string, unknown> | undefined;
@@ -51,6 +53,12 @@ const STATUS_OPTS = [
   { value: 'maintenance', label: 'Maintenance' },
 ];
 
+const ARCHIVE_FILTER_OPTS = [
+  { value: 'all', label: 'All records' },
+  { value: 'false', label: 'Active (not archived)' },
+  { value: 'true', label: 'Archived' },
+] as const;
+
 export function Locations() {
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
@@ -58,6 +66,7 @@ export function Locations() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [archiveFilter, setArchiveFilter] = useState<'all' | 'true' | 'false'>('all');
   const [archiveOpen, setArchiveOpen] = useState<{ open: boolean; loc: ILocation | null }>({
     open: false,
     loc: null,
@@ -67,12 +76,22 @@ export function Locations() {
   const isCa = user?.role === 'collegeAdmin';
   const canMutate = isUa || isCa;
   const canArchive = isUa;
+  /** `isArchived` query is for UA/CA only (Phase 1 security notes). */
+  const canFilterArchive = canMutate;
 
-  const { data, isLoading, isError, error, refetch } = useLocations({
-    isArchived: 'all',
-    ...(typeFilter ? { type: typeFilter } : {}),
-    ...(statusFilter ? { status: statusFilter } : {}),
-  });
+  const listParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 100,
+      sort: 'name',
+      ...(typeFilter ? { type: typeFilter } : {}),
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(canFilterArchive ? { isArchived: archiveFilter } : {}),
+    }),
+    [archiveFilter, canFilterArchive, statusFilter, typeFilter]
+  );
+
+  const { data, isLoading, isError, error, refetch } = useLocations(listParams);
 
   const rows = useMemo(
     () => (data?.items ?? []).map((r) => mapLocation(r as Record<string, unknown>)),
@@ -127,53 +146,46 @@ export function Locations() {
 
   if (isLoading && !data) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading locations…</p>
+      <AdminPageShell
+        titleStack={{ section: 'University Structure', page: 'Locations' }}
+        subtitle="Loading…"
+      >
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading locations…</p>
+          </div>
         </div>
-      </div>
+      </AdminPageShell>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-red-800 font-medium">Could not load locations</p>
-        <p className="text-sm text-red-600 mt-1">{error instanceof Error ? error.message : 'Unknown error'}</p>
-        <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-          Retry
-        </Button>
-      </div>
+      <AdminPageShell
+        titleStack={{ section: 'University Structure', page: 'Locations' }}
+        subtitle="Could not load data"
+      >
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
+          <p className="font-medium text-red-800 dark:text-red-200">Could not load locations</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-300">
+            {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+          <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Locations</h1>
-          <p className="text-gray-600 mt-1">GET /api/v1/locations — Phase 1 Module 4</p>
-        </div>
-        {canMutate && (
-          <Link to="/dashboard/organizational/locations/create">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add location
-            </Button>
-          </Link>
-        )}
-      </div>
-
+    <AdminPageShell titleStack={{ section: 'University Structure', page: 'Locations' }}>
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary-600" />
-              All locations
-            </CardTitle>
-            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="relative w-full min-w-0 sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
                   placeholder="Search name, slug, college, building…"
@@ -196,39 +208,59 @@ export function Locations() {
                 placeholder="Status"
                 className="sm:w-44"
               />
+              {canFilterArchive && (
+                <Select2
+                  value={archiveFilter}
+                  onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')}
+                  options={[...ARCHIVE_FILTER_OPTS]}
+                  placeholder="Archive filter"
+                  className="sm:w-52"
+                />
+              )}
             </div>
+            {canMutate && (
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <Link to="/dashboard/organizational/locations/create">
+                  <Button className="inline-flex items-center gap-2 rounded-xl">
+                    <Plus className="h-4 w-4" />
+                    Add Location
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>College</TableHead>
-                  <TableHead>Building</TableHead>
-                  <TableHead>Floor</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reader ID</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Archived</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 ? (
+        <CardContent>
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center">
+              <MapPin className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-500 dark:text-gray-400">
+                {rows.length === 0 ? 'No locations found' : 'No locations match your search or filters'}
+              </p>
+            </div>
+          ) : (
+            <AdminDataTableShell>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-12 text-gray-500">
-                      No locations match your filters.
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>College</TableHead>
+                    <TableHead>Building</TableHead>
+                    <TableHead>Floor</TableHead>
+                    <TableHead>Room</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Reader ID</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Archived</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filtered.map((loc) => (
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((loc) => (
                     <TableRow key={loc.id}>
-                      <TableCell className="font-medium break-words">{loc.name}</TableCell>
+                      <TableCell className="break-words font-medium">{loc.name}</TableCell>
                       <TableCell>{loc.college.name}</TableCell>
                       <TableCell>{loc.building ?? '—'}</TableCell>
                       <TableCell>{loc.floor ?? '—'}</TableCell>
@@ -237,11 +269,11 @@ export function Locations() {
                       <TableCell className="text-sm">{loc.type.replace(/_/g, ' ')}</TableCell>
                       <TableCell>
                         {loc.status === 'maintenance' ? (
-                          <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
+                          <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
                             Maintenance
                           </span>
                         ) : (
-                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">
                             Active
                           </span>
                         )}
@@ -250,9 +282,20 @@ export function Locations() {
                       <TableCell className="text-sm text-gray-600">{loc.slug ?? '—'}</TableCell>
                       <TableCell>
                         {loc.isArchived ? (
-                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Yes</span>
+                          <div className="space-y-0.5">
+                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                              Archived
+                            </span>
+                            {loc.archivedAt ? (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                <time dateTime={loc.archivedAt}>{formatDate(loc.archivedAt, 'short')}</time>
+                              </div>
+                            ) : null}
+                          </div>
                         ) : (
-                          <span className="px-2 py-1 text-xs rounded-full bg-green-50 text-green-800">No</span>
+                          <span className="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            Active
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -297,11 +340,11 @@ export function Locations() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </AdminDataTableShell>
+          )}
         </CardContent>
       </Card>
 
@@ -314,6 +357,6 @@ export function Locations() {
         confirmText="Archive"
         variant="danger"
       />
-    </div>
+    </AdminPageShell>
   );
 }

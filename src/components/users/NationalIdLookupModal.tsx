@@ -39,7 +39,7 @@ export function NationalIdLookupModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Lookup by National ID" size="md">
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        National ID is sent in the request body only (not in the URL), per Phase 2 security guidelines.
+        National ID is sent in the request body only, not in the URL.
       </p>
       <div className="space-y-4">
         <Input

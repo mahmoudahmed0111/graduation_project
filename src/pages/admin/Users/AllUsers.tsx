@@ -8,7 +8,7 @@ function roleQueryFromPath(pathname: string): string {
 }
 
 /**
- * Legacy role-specific URLs redirect to the unified Phase 2 directory with a role preset.
+ * Legacy role-specific URLs redirect to the unified user directory with a role preset.
  */
 export function AllUsers() {
   const { pathname } = useLocation();

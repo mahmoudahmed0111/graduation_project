@@ -151,6 +151,11 @@ export const api = {
     return collegesService.getCollege(id, params);
   },
 
+  /** GET /colleges/:id per Phase 1; retries with `?isArchived=true` when the college is archived (404 on first call). */
+  getCollegeResolvingArchived: async (id: string): Promise<Record<string, unknown>> => {
+    return collegesService.getCollegeResolvingArchived(id);
+  },
+
   getCollegeDepartments: async (
     collegeId: string,
     params?: { page?: number; limit?: number; sort?: string; fields?: string; isArchived?: 'true' | 'false' | 'all' }
@@ -191,6 +196,10 @@ export const api = {
 
   getDepartment: async (id: string, params?: { isArchived?: 'true' }): Promise<Record<string, unknown>> => {
     return departmentsService.getDepartment(id, params);
+  },
+
+  getDepartmentResolvingArchived: async (id: string): Promise<Record<string, unknown>> => {
+    return departmentsService.getDepartmentResolvingArchived(id);
   },
 
   createCollege: async (data: {
@@ -253,10 +262,12 @@ export const api = {
     return departmentsService.restoreDepartment(id);
   },
 
+  /** Phase 1 Module 3: `GET /api/v1/settings` */
   getSettings: async (): Promise<Record<string, unknown>> => {
     return settingsService.getSettings();
   },
 
+  /** Phase 1 Module 3: `PATCH /api/v1/settings` (UA only) */
   patchSettings: async (data: {
     currentAcademicYear?: string;
     currentSemester?: 'fall' | 'spring';
@@ -271,7 +282,7 @@ export const api = {
     return settingsService.updateSettings(data);
   },
 
-  // --- Phase 1: Locations (Module 4) ---
+  // --- Phase 1: Locations (Module 4) — see `services/locations.service.ts` ---
   getLocations: async (params?: {
     type?: string;
     status?: string;

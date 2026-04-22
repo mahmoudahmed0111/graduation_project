@@ -171,7 +171,7 @@ export function EditStudent() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Edit Student</h1>
           <p className="mt-1 text-gray-600">
-            Updates use PATCH /api/v1/users/:id (name, email, phone, department)
+            You can update name, email, phone, and department.
           </p>
         </div>
       </div>

@@ -108,7 +108,6 @@ export function CourseCatalog() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Course catalog</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">Phase 3 — GET/POST/PATCH /api/v1/course-catalog</p>
         </div>
         {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
           <Button type="button" onClick={() => setCreateOpen(true)} className="gap-2">

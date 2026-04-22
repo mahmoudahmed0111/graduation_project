@@ -81,7 +81,6 @@ export function AdminEnrollments() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Enrollments</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">Phase 3 — /api/v1/enrollments (admin)</p>
         </div>
         <Button type="button" variant="primary" className="gap-2" onClick={() => setForceOpen(true)}>
           <UserPlus className="h-4 w-4" />

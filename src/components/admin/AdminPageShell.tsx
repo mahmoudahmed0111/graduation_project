@@ -2,7 +2,10 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface AdminPageShellProps {
-  title: string;
+  /** Plain page title (use `titleStack` instead for section / page layout). */
+  title?: string;
+  /** One-row heading: section / page with shared typography (e.g. University Structure / Colleges). */
+  titleStack?: { section: string; page: string };
   subtitle?: string;
   breadcrumbs?: { label: string }[];
   badge?: { label: string; variant?: 'success' | 'neutral' };
@@ -13,6 +16,7 @@ export interface AdminPageShellProps {
 
 export function AdminPageShell({
   title,
+  titleStack,
   subtitle,
   breadcrumbs,
   badge,
@@ -44,9 +48,19 @@ export function AdminPageShell({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-              {title}
-            </h1>
+            {titleStack ? (
+              <h1 className="flex min-w-0 max-w-full flex-nowrap items-center gap-x-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+                <span className="min-w-0 truncate">{titleStack.section}</span>
+                <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
+                  /
+                </span>
+                <span className="min-w-0 truncate">{titleStack.page}</span>
+              </h1>
+            ) : title ? (
+              <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                {title}
+              </h1>
+            ) : null}
             {badge && (
               <span
                 className={cn(

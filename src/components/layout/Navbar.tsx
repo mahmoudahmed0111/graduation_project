@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useTenantStore } from '@/store/tenantStore';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Globe, LogOut, Menu, Check, Bell, Lock as LockIcon, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Globe, LogOut, Menu, Check, Bell, Lock as LockIcon, Sun, Moon } from 'lucide-react';
+import { useThemeStore } from '@/store/themeStore';
 import { Select } from '../ui/Select';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '@/lib/utils';
@@ -13,45 +14,17 @@ interface NavbarProps {
   onToggleSidebar?: () => void;
 }
 
-const pathToBreadcrumb: Record<string, string> = {
-  dashboard: 'Home',
-  users: 'Users',
-  students: 'Students',
-  doctors: 'Doctors',
-  tas: 'TAs',
-  admins: 'Admins',
-  organizational: 'University Structure',
-  colleges: 'Colleges',
-  departments: 'Departments',
-  locations: 'Locations',
-  'colleges/create': 'Add College',
-  academic: 'Academic',
-  catalog: 'Course Catalog',
-  offerings: 'Course Offerings',
-  'system-settings': 'System Settings',
-  announcements: 'Broadcast Center',
-  chatbot: 'AI Assistant',
-  'audit-logs': 'Audit Logs',
-  profile: 'Profile',
-  settings: 'Settings',
-};
-
 export function Navbar({ onToggleSidebar }: NavbarProps) {
   const { user, logout } = useAuthStore();
   const { currentUniversity, universities, setCurrentUniversity } = useTenantStore();
+  const { theme, toggleTheme } = useThemeStore();
   const { i18n, t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const isAdmin = user?.role === 'universityAdmin' || user?.role === 'collegeAdmin';
-  const pathSegments = location.pathname.replace(/^\/dashboard\/?/, '').split('/').filter(Boolean);
-  const breadcrumbs = pathSegments.map((segment, i) => ({
-    label: pathToBreadcrumb[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    path: '/dashboard/' + pathSegments.slice(0, i + 1).join('/'),
-  }));
 
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const notificationsDropdownRef = useRef<HTMLDivElement>(null);
@@ -133,52 +106,56 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   };
 
   return (
-    <nav className="bg-white px-4 py-4 lg:px-6 h-16 flex items-center">
+    <nav className="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800 shadow-sm dark:shadow-slate-950/30 px-4 py-3 lg:px-6 h-16 flex items-center transition-colors duration-300">
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="flex p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex p-2 text-slate-600 dark:text-slate-300 hover:text-primary-700 dark:hover:text-accent-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg transition-all duration-200"
               aria-label="Toggle sidebar"
             >
               <Menu className="h-5 w-5" />
             </button>
           )}
           {currentUniversity && (
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200/70 dark:border-slate-700">
               {currentUniversity.logoUrl && (
                 <img
                   src={currentUniversity.logoUrl}
                   alt={currentUniversity.name}
-                  className="h-8 w-8"
+                  className="h-8 w-8 rounded-full ring-2 ring-accent-200 dark:ring-accent-500/40"
                 />
               )}
-              <span className="font-medium text-gray-900">
+              <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
                 {currentUniversity.name}
               </span>
             </div>
           )}
-          {isAdmin && (
-            <>
-              <nav className="hidden lg:flex items-center gap-1 text-sm text-gray-600">
-                <Link to="/dashboard" className="hover:text-primary-600">Home</Link>
-                {breadcrumbs.map((b, i) => (
-                  <span key={b.path} className="flex items-center gap-1">
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                    {i === breadcrumbs.length - 1 ? (
-                      <span className="text-gray-900 font-medium">{b.label}</span>
-                    ) : (
-                      <Link to={b.path} className="hover:text-primary-600">{b.label}</Link>
-                    )}
-                  </span>
-                ))}
-              </nav>
-            </>
-          )}
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className={cn(
+              'relative flex items-center justify-center p-2 rounded-lg transition-all duration-300 overflow-hidden',
+              'text-slate-600 hover:text-primary-700 hover:bg-primary-50',
+              'dark:text-slate-300 dark:hover:text-accent-400 dark:hover:bg-slate-800'
+            )}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <Sun className={cn(
+              'h-5 w-5 transition-all duration-300',
+              theme === 'dark' ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
+            )} />
+            <Moon className={cn(
+              'h-5 w-5 absolute transition-all duration-300 text-accent-400',
+              theme === 'dark' ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
+            )} />
+          </button>
+
           {/* Notifications */}
           <div 
             ref={notificationsDropdownRef}
@@ -188,14 +165,14 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
               className={cn(
                 'relative flex items-center justify-center p-2 rounded-lg transition-all duration-200',
-                'hover:bg-gray-100',
-                showNotificationsDropdown && 'bg-gray-50'
+                'text-slate-600 dark:text-slate-300 hover:text-primary-700 dark:hover:text-accent-400 hover:bg-primary-50 dark:hover:bg-slate-800',
+                showNotificationsDropdown && 'bg-primary-50 text-primary-700 dark:bg-slate-800 dark:text-accent-400'
               )}
               aria-label="Notifications"
             >
-              <Bell className="h-5 w-5 text-gray-600" />
+              <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full">
+                <span className="absolute top-0.5 right-0.5 flex items-center justify-center h-4 min-w-[1rem] px-1 bg-gradient-to-br from-accent-500 to-accent-600 text-primary-900 text-[10px] font-bold rounded-full ring-2 ring-white dark:ring-slate-900">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -204,17 +181,17 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {/* Notifications Dropdown */}
             {showNotificationsDropdown && (
               <div className={cn(
-                'absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50',
+                'absolute top-full mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50',
                 'animate-fade-in w-80 max-h-96 overflow-hidden flex flex-col right-0'
               )}>
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
                       {isAdmin ? 'Critical System Notifications' : 'Notifications'}
                     </h3>
                     {unreadCount > 0 && (
-                      <span className="text-xs text-gray-500">{unreadCount} unread</span>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">{unreadCount} unread</span>
                     )}
                   </div>
                 </div>
@@ -222,8 +199,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                 {/* Notifications List */}
                 <div className="overflow-y-auto max-h-64">
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-gray-500">
-                      <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <div className="px-4 py-8 text-center text-gray-500 dark:text-slate-400">
+                      <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-slate-600" />
                       <p className="text-sm">No notifications</p>
                     </div>
                   ) : (
@@ -234,8 +211,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                           to={notification.link || '#'}
                           onClick={() => setShowNotificationsDropdown(false)}
                           className={cn(
-                            'block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0',
-                            !notification.read && 'bg-blue-50/50'
+                            'block px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors border-b border-gray-100 dark:border-slate-800 last:border-b-0',
+                            !notification.read && 'bg-blue-50/50 dark:bg-primary-900/20'
                           )}
                         >
                           <div className="flex items-start gap-3">
@@ -248,15 +225,15 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                             )} />
                             <div className="flex-1 min-w-0">
                               <p className={cn(
-                                'text-sm font-medium text-gray-900 mb-1',
+                                'text-sm font-medium text-gray-900 dark:text-slate-100 mb-1',
                                 !notification.read && 'font-semibold'
                               )}>
                                 {notification.title}
                               </p>
-                              <p className="text-xs text-gray-600 line-clamp-2 mb-1">
+                              <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-2 mb-1">
                                 {notification.message}
                               </p>
-                              <p className="text-xs text-gray-400">
+                              <p className="text-xs text-gray-400 dark:text-slate-500">
                                 {formatTimeAgo(notification.createdAt)}
                               </p>
                             </div>
@@ -272,11 +249,11 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
 
                 {/* Footer - See More Button */}
                 {notifications.length > 0 && (
-                  <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                  <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
                     <Link
                       to="/dashboard/notifications"
                       onClick={() => setShowNotificationsDropdown(false)}
-                      className="block w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                      className="block w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 transition-colors"
                     >
                       See all notifications
                     </Link>
@@ -295,12 +272,12 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200',
-                'hover:bg-gray-100 border-r border-gray-200 pr-3',
-                showLanguageDropdown && 'bg-gray-50'
+                'text-slate-600 dark:text-slate-300 hover:text-primary-700 dark:hover:text-accent-400 hover:bg-primary-50 dark:hover:bg-slate-800',
+                showLanguageDropdown && 'bg-primary-50 text-primary-700 dark:bg-slate-800 dark:text-accent-400'
               )}
             >
-              <Globe className="h-4 w-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">
+              <Globe className="h-4 w-4" />
+              <span className="text-sm font-semibold">
                 {languages.find(lang => lang.code === i18n.language)?.code.toUpperCase() || 'EN'}
               </span>
             </button>
@@ -308,7 +285,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {/* Dropdown Menu */}
             {showLanguageDropdown && (
               <div className={cn(
-                'absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[160px] z-50',
+                'absolute top-full mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 py-2 min-w-[160px] z-50',
                 'animate-fade-in right-0'
               )}>
                 {languages.map((language) => (
@@ -317,8 +294,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                     onClick={() => handleLanguageChange(language.code)}
                     className={cn(
                       'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                      'hover:bg-gray-50',
-                      i18n.language === language.code && 'bg-primary-50 text-primary-700 font-medium'
+                      'text-slate-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800',
+                      i18n.language === language.code && 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-accent-400 font-medium'
                     )}
                   >
                     <span className="text-lg">{language.flag}</span>
@@ -326,7 +303,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                       {language.label}
                     </span>
                     {i18n.language === language.code && (
-                      <Check className="h-4 w-4 text-primary-600 flex-shrink-0" />
+                      <Check className="h-4 w-4 text-primary-600 dark:text-accent-400 flex-shrink-0" />
                     )}
                   </button>
                 ))}
@@ -356,9 +333,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               <button
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
                 className={cn(
-                  'flex items-center gap-2 p-1.5 rounded-lg transition-all duration-200',
-                  'hover:bg-gray-100',
-                  showUserDropdown && 'bg-gray-50'
+                  'flex items-center gap-2 p-1 rounded-full transition-all duration-200 ring-2',
+                  showUserDropdown ? 'ring-accent-400 bg-primary-50 dark:bg-slate-800' : 'ring-transparent hover:ring-accent-300 dark:hover:ring-accent-500/60'
                 )}
                 aria-label="User menu"
               >
@@ -372,11 +348,11 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               {/* User Dropdown Menu */}
               {showUserDropdown && (
                 <div className={cn(
-                  'absolute top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[220px] z-50',
+                  'absolute top-full mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 py-2 min-w-[220px] z-50',
                   'animate-fade-in right-0'
                 )}>
                   {/* User Info */}
-                  <div className="px-4 py-3 border-b border-gray-200">
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
                     <div className="flex items-center gap-3">
                       <Avatar
                         src={user.avatarUrl}
@@ -384,10 +360,10 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                         size="md"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                           {user.name}
                         </p>
-                        <p className="text-xs text-gray-500 truncate capitalize">
+                        <p className="text-xs text-gray-500 dark:text-slate-400 truncate capitalize">
                           {user.role}
                         </p>
                       </div>
@@ -398,16 +374,16 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                   <div className="py-1">
                     <button
                       onClick={handleLockScreen}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 text-gray-700"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-slate-200"
                     >
-                      <LockIcon className="h-4 w-4 text-gray-500" />
+                      <LockIcon className="h-4 w-4 text-gray-500 dark:text-slate-400" />
                       <span className="flex-1 text-left">
                         Lock Screen
                       </span>
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-red-50 text-red-600 hover:text-red-700"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-red-50 dark:hover:bg-red-500/10 text-red-600 dark:text-red-400 hover:text-red-700"
                     >
                       <LogOut className="h-4 w-4" />
                       <span className="flex-1 text-left">

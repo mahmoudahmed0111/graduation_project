@@ -12,8 +12,9 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100;
     font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -35,12 +36,14 @@
   }
 
   .input {
-    @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    @apply w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    @apply dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-accent-400 dark:focus:ring-accent-400/30;
   }
 
   .card {
-    @apply rounded-lg bg-white shadow-sm border border-gray-200 p-6 relative;
-    transition: all 0.3s ease;
+    @apply rounded-lg bg-white shadow-sm border border-gray-200 p-6 relative text-gray-700;
+    @apply dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:shadow-black/20;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
   }
 
   .card::before {
@@ -51,9 +54,9 @@
     right: -2px;
     bottom: -2px;
     border-radius: inherit;
-    background: linear-gradient(45deg, 
-      theme('colors.primary.500'), 
-      theme('colors.accent.500'), 
+    background: linear-gradient(45deg,
+      theme('colors.primary.500'),
+      theme('colors.accent.500'),
       theme('colors.primary.600'),
       theme('colors.accent.500'),
       theme('colors.primary.500')
@@ -75,6 +78,10 @@
     border-radius: inherit;
     background: white;
     z-index: -1;
+  }
+
+  .dark .card::after {
+    background: theme('colors.slate.900');
   }
 
   .card:hover {

@@ -271,7 +271,12 @@ export interface ICollege {
   dean?: {
     id: string;
     name: string;
+    /** Populated `dean_id` on `GET /colleges/:id` (Phase 1). */
+    email?: string;
+    role?: string;
   };
+  /** When API returns `dean_id` as an ObjectId string (not populated). */
+  deanRefId?: string;
   departments?: Array<{
     id: string;
     name: string;
@@ -288,12 +293,18 @@ export interface IDepartment {
   head?: {
     id: string;
     name: string;
+    /** Phase 1 list/detail `head_id` populate */
+    email?: string;
+    role?: string;
   };
   college: {
     id: string;
     name: string;
     code: string;
   };
+  /** Phase 1 `GET /departments` */
+  archivedAt?: string | null;
+  createdAt?: string;
   isArchived: boolean;
 }
 

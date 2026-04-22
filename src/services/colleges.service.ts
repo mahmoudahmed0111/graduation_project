@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { apiClient } from '@/lib/http/client';
 import { buildQuery, type ListQueryParams } from '@/lib/http/buildQuery';
 import { normalizeListResponse, normalizeSingleResponse } from '@/lib/http/normalize';
@@ -11,19 +12,34 @@ export interface GetCollegesParams extends ListQueryParams {
 }
 
 /**
- * GET /colleges — normalized list + pagination meta.
+ * GET /api/v1/colleges — list (Phase 1 `phase1_api_docs.md`).
+ * UA/CA: full rows + `deptCount` + `studentCount`; use `isArchived` as documented.
  */
 export async function getColleges(params?: GetCollegesParams): Promise<Phase1ListResult<CollegeRecord>> {
   const response = await apiClient.get('/colleges', { params: buildQuery(params as Record<string, unknown>) });
   return normalizeListResponse<CollegeRecord>(response, 'colleges');
 }
 
-/** GET /colleges/:id */
+/** GET /api/v1/colleges/:id — optional `?isArchived=true` for archived colleges (UA/CA). */
 export async function getCollege(id: string, query?: { isArchived?: 'true' }): Promise<CollegeRecord> {
   const response = await apiClient.get(`/colleges/${encodeURIComponent(id)}`, {
     params: buildQuery(query as Record<string, unknown>),
   });
   return normalizeSingleResponse<CollegeRecord>(response, 'college');
+}
+
+/**
+ * GET /colleges/:id then, on 404 only, GET /colleges/:id?isArchived=true (Phase 1 detail contract).
+ */
+export async function getCollegeResolvingArchived(id: string): Promise<CollegeRecord> {
+  try {
+    return await getCollege(id);
+  } catch (e) {
+    if (isAxiosError(e) && e.response?.status === 404) {
+      return await getCollege(id, { isArchived: 'true' });
+    }
+    throw e;
+  }
 }
 
 /** POST /colleges */

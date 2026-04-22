@@ -53,7 +53,7 @@ export function SystemSettings() {
     return (
       <AdminPageShell
         title="System Settings"
-        subtitle="Configure global parameters (Phase 1: GET/PATCH /api/v1/settings)"
+        subtitle="Configure global parameters"
       >
         <Card>
           <CardContent className="p-6 text-sm text-red-600 dark:text-red-400">
@@ -72,7 +72,7 @@ export function SystemSettings() {
   return (
     <AdminPageShell
       title="System Settings"
-      subtitle="Configure global system parameters (Phase 1 API: GET/PATCH /settings). University admin only for updates."
+      subtitle="Configure global system parameters. University administrators can update these values."
     >
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">

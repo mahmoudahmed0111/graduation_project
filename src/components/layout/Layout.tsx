@@ -25,14 +25,14 @@ export function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar 
-        isOpen={sidebarOpen} 
+    <div className="min-h-screen bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
+      <Sidebar
+        isOpen={sidebarOpen}
         isExpanded={sidebarExpanded}
         onClose={() => setSidebarOpen(false)}
         onToggleExpand={toggleSidebarExpanded}
       />
-      <div 
+      <div
         className={cn(
           'transition-all duration-300 ease-in-out',
           sidebarExpanded ? 'lg:pl-64' : 'lg:pl-16'
@@ -43,7 +43,7 @@ export function Layout() {
       >
         <Navbar onToggleSidebar={handleToggleSidebar} />
         <AuthMeSync />
-        <main className="p-4 lg:p-6">
+        <main className="p-4 lg:p-8 max-w-[1600px] mx-auto">
           <RequiresPasswordChangeGate>
             <Outlet />
           </RequiresPasswordChangeGate>

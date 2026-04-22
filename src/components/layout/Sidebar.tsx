@@ -21,7 +21,6 @@ import {
   UserCheck,
   Database,
   MapPin,
-  Settings,
   Library,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -158,7 +157,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
     { path: '/dashboard/attendance', label: t('nav.attendance'), icon: Clock },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
-    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
@@ -197,7 +195,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       ],
     },
     { path: '/dashboard/system-settings', label: 'System Settings', icon: Database },
-    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/announcements', label: 'Broadcast Center', icon: Bell },
     { path: '/dashboard/chatbot', label: 'AI Assistant', icon: MessageSquare },
     { path: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileText },
@@ -249,7 +246,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
     { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3 },
     { path: '/dashboard/organizational/locations', label: 'Locations', icon: MapPin },
-    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
@@ -282,29 +278,34 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             <button
               onClick={() => toggleItem(item.path)}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative',
+                'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative',
                 active
-                  ? 'bg-primary-50 text-primary-700 font-medium'
-                  : 'text-gray-700 hover:bg-gray-100',
+                  ? 'bg-gradient-to-r from-primary-50 to-accent-50/40 text-primary-800 font-semibold shadow-sm dark:from-primary-900/40 dark:to-accent-500/10 dark:text-accent-300'
+                  : 'text-slate-600 hover:bg-slate-100/70 hover:text-primary-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-accent-400',
                 !isExpanded && 'lg:justify-center',
-                level > 0 && 'ml-4'
+                level > 0 && 'ml-3 text-[13px]'
               )}
               title={!isExpanded ? item.label : undefined}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
+              {active && isExpanded && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-accent-500 rounded-r-full" />
+              )}
+              <item.icon className={cn(
+                'h-[18px] w-[18px] flex-shrink-0 transition-colors',
+                active ? 'text-primary-700 dark:text-accent-400' : 'text-slate-500 group-hover:text-primary-600 dark:text-slate-400 dark:group-hover:text-accent-400'
+              )} />
               {isExpanded && (
                 <>
                   <span className={cn(
-                    'flex-1 text-left transition-opacity duration-300 ease-in-out whitespace-nowrap',
-                    item.label === 'University Structure' && 'text-sm'
+                    'flex-1 text-left transition-opacity duration-300 ease-in-out whitespace-nowrap text-sm',
                   )}>
                     {item.label}
                   </span>
                   <div className="transition-transform duration-300 ease-in-out">
                     {isOpen ? (
-                      <ChevronDown className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
+                      <ChevronDown className="h-4 w-4 flex-shrink-0 text-slate-400 dark:text-slate-500" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 transition-all duration-300 ease-in-out" />
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-slate-400 dark:text-slate-500" />
                     )}
                   </div>
                 </>
@@ -341,18 +342,24 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             to={item.path}
             onClick={onClose}
             className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+              'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative',
               active
-                ? 'bg-primary-50 text-primary-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-100',
+                ? 'bg-gradient-to-r from-primary-50 to-accent-50/40 text-primary-800 font-semibold shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100/70 hover:text-primary-700',
               !isExpanded && 'lg:justify-center',
-              level > 0 && 'ml-4'
+              level > 0 && 'ml-3 text-[13px]'
             )}
             title={!isExpanded ? item.label : undefined}
           >
-            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {active && isExpanded && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-accent-500 rounded-r-full" />
+            )}
+            <item.icon className={cn(
+              'h-[18px] w-[18px] flex-shrink-0 transition-colors',
+              active ? 'text-primary-700' : 'text-slate-500 group-hover:text-primary-600'
+            )} />
             {isExpanded && (
-              <span className="flex-1 text-left transition-opacity duration-300 ease-in-out">
+              <span className="flex-1 text-left transition-opacity duration-300 ease-in-out text-sm whitespace-nowrap">
                 {item.label}
               </span>
             )}
@@ -387,10 +394,10 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
           onMouseEnter={handleDropdownMouseEnter}
           onMouseLeave={handleDropdownMouseLeave}
         >
-          <div className="bg-white rounded-lg shadow-2xl py-2 min-w-[220px] animate-fade-in overflow-hidden">
-            <div className="px-4 py-2.5 bg-gray-50">
-              <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <hoveredNavItem.icon className="h-4 w-4 text-primary-600" />
+          <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-700 rounded-lg shadow-2xl py-2 min-w-[220px] animate-fade-in overflow-hidden">
+            <div className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800/60">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <hoveredNavItem.icon className="h-4 w-4 text-primary-600 dark:text-accent-400" />
                 <span className="text-left">{hoveredNavItem.label}</span>
               </p>
             </div>
@@ -405,13 +412,13 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
                           className={cn(
                             'flex items-center gap-3 px-4 py-2.5 text-sm transition-all duration-200',
                             childActive
-                              ? 'bg-primary-50 text-primary-700 font-medium'
-                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                              ? 'bg-primary-50 text-primary-700 font-medium dark:bg-primary-900/30 dark:text-accent-400'
+                              : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white'
                           )}
                         >
                           <child.icon className={cn(
                             'h-4 w-4 flex-shrink-0',
-                            childActive ? 'text-primary-600' : 'text-gray-500'
+                            childActive ? 'text-primary-600 dark:text-accent-400' : 'text-gray-500 dark:text-slate-400'
                           )} />
                           <span className="flex-1">{child.label}</span>
                         </Link>
@@ -426,7 +433,8 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-full bg-white z-50',
+          'fixed top-0 left-0 h-full z-50 shadow-xl shadow-primary-900/5 dark:shadow-black/40',
+          'bg-white dark:bg-slate-900 border-r border-slate-200/70 dark:border-slate-800',
           'transition-all duration-300 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isExpanded ? 'lg:w-64' : 'lg:w-16'
@@ -436,23 +444,32 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         }}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 h-16">
-            <div className="flex items-center gap-2 min-w-0">
-              <img 
-                src="/logo/icon.png.png" 
-                alt="Logo" 
-                className="h-8 w-8 flex-shrink-0"
-              />
+          {/* Brand Header */}
+          <div className="flex items-center justify-between px-4 h-16 border-b border-slate-200/70 dark:border-slate-800 bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.08]" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, #ffd700 1px, transparent 0)',
+              backgroundSize: '16px 16px',
+            }} />
+            <div className="flex items-center gap-2.5 min-w-0 relative z-10">
+              <div className="p-0.5 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 shadow-md flex-shrink-0">
+                <div className="p-0.5 rounded-full bg-white">
+                  <img
+                    src="/logo/icon.png.png"
+                    alt="Logo"
+                    className="h-7 w-7 rounded-full"
+                  />
+                </div>
+              </div>
               {isExpanded && (
-                <span className="font-semibold text-primary-600 whitespace-nowrap transition-opacity duration-300 ease-in-out">
-                  Beni Suef University
-                </span>
+                <div className="min-w-0 transition-opacity duration-300">
+                  <p className="font-bold text-white text-sm leading-tight whitespace-nowrap">Beni-Suef</p>
+                  <p className="text-[10px] text-accent-300 font-semibold tracking-wider uppercase">University</p>
+                </div>
               )}
             </div>
             <button
               onClick={onClose}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors ml-auto"
+              className="lg:hidden p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors relative z-10"
               aria-label="Close sidebar"
             >
               <X className="h-5 w-5" />
@@ -460,31 +477,36 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+            {isExpanded && (
+              <p className="px-3 pb-2 text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Menu</p>
+            )}
             {navItems.map((item) => renderNavItem(item))}
           </nav>
 
           {/* User section */}
           {user && (
             <div className={cn(
-              'p-4',
+              'p-3 border-t border-slate-200/70 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30',
               !isExpanded && 'lg:flex lg:flex-col lg:items-center'
             )}>
               <div className={cn(
-                'flex items-center gap-3',
-                !isExpanded && 'lg:flex-col'
+                'flex items-center gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors',
+                !isExpanded && 'lg:flex-col lg:gap-1 lg:p-1'
               )}>
-                <Avatar
-                  src={user.avatarUrl}
-                  name={user.name}
-                  size="sm"
-                />
+                <div className="ring-2 ring-accent-300 dark:ring-accent-500/60 rounded-full">
+                  <Avatar
+                    src={user.avatarUrl}
+                    name={user.name}
+                    size="sm"
+                  />
+                </div>
                 {isExpanded && (
                   <div className="flex-1 min-w-0 transition-opacity duration-300 ease-in-out">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {user.name}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate capitalize font-medium">
                       {user.role}
                     </p>
                   </div>

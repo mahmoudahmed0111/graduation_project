@@ -3,15 +3,32 @@ import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Building2, School, ArrowLeft, Plus, MapPin } from 'lucide-react';
+import { School, ArrowLeft, Plus, MapPin, User, Edit } from 'lucide-react';
 import { ICollege, ILocation } from '@/types';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { useToastStore } from '@/store/toastStore';
+import { mapDeanIdPopulate } from '@/lib/phase1Dean';
+import { formatDate } from '@/utils/formatters';
 
 function mapCollegeRecord(college: Record<string, unknown>): ICollege {
-  const dean = college.dean_id as Record<string, unknown> | undefined;
+  const rawDean = college.dean_id;
+
+  let dean: ICollege['dean'];
+  let deanRefId: string | undefined;
+
+  const populated = mapDeanIdPopulate(rawDean);
+  if (populated) {
+    dean = {
+      id: populated.id,
+      name: populated.name,
+      email: populated.email,
+      role: populated.role,
+    };
+  } else if (typeof rawDean === 'string' && rawDean.trim()) {
+    deanRefId = rawDean.trim();
+  }
 
   return {
     id: String(college._id ?? college.id ?? ''),
@@ -24,18 +41,14 @@ function mapCollegeRecord(college: Record<string, unknown>): ICollege {
     studentCount: typeof college.studentCount === 'number' ? college.studentCount : undefined,
     archivedAt: college.archivedAt === null || college.archivedAt === undefined ? null : String(college.archivedAt),
     createdAt: typeof college.createdAt === 'string' ? college.createdAt : undefined,
-    dean: dean
-      ? {
-          id: String(dean._id ?? dean.id ?? ''),
-          name: String(dean.name ?? '—'),
-        }
-      : undefined,
+    dean,
+    deanRefId,
     departments: [],
     isArchived: Boolean(college.isArchived),
   };
 }
 
-/** Resolve Phase 1 `college_id` (ObjectId string or populated `{ _id, name, ... }`). */
+/** Resolve `college_id` (ObjectId string or populated `{ _id, name, ... }`). */
 function collegeIdFromDepartment(rec: Record<string, unknown>): string | null {
   const c = rec.college_id;
   if (c == null) return null;
@@ -65,11 +78,22 @@ function filterDepartmentsToCollege(rows: Array<Record<string, unknown>>, colleg
 async function fetchDepartmentsForCollegeDetail(collegeId: string): Promise<Array<Record<string, unknown>>> {
   let rows: Array<Record<string, unknown>> = [];
   try {
-    const byFilter = await api.getDepartments({ college_id: collegeId, isArchived: 'all', limit: 500 });
+    const byFilter = await api.getDepartments({
+      college_id: collegeId,
+      isArchived: 'all',
+      page: 1,
+      limit: 500,
+      sort: 'name',
+    });
     rows = byFilter as Array<Record<string, unknown>>;
   } catch {
     try {
-      const nested = await api.getCollegeDepartments(collegeId, { isArchived: 'all', limit: 500 });
+      const nested = await api.getCollegeDepartments(collegeId, {
+        isArchived: 'all',
+        page: 1,
+        limit: 500,
+        sort: 'name',
+      });
       rows = nested as Array<Record<string, unknown>>;
     } catch (error) {
       logger.error('Failed to load departments for college', { context: 'CollegeDetails', error });
@@ -117,7 +141,7 @@ export function CollegeDetails() {
       try {
         setLoading(true);
         const [rawCollege, rawLocations] = await Promise.all([
-          api.getCollege(id),
+          api.getCollegeResolvingArchived(id),
           api.getCollegeLocations(id, { isArchived: 'all', limit: 500 }),
         ]);
         const rawDepartments = await fetchDepartmentsForCollegeDetail(id);
@@ -173,64 +197,159 @@ export function CollegeDetails() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Link to="/dashboard/organizational/colleges">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm font-medium text-gray-600 dark:text-gray-400"
+        >
+          <span className="shrink-0">University Structure</span>
+          <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
+            /
+          </span>
+          <Link
+            to="/dashboard/organizational/colleges"
+            className="shrink-0 hover:text-primary-600 dark:hover:text-accent-400"
+          >
+            Colleges
+          </Link>
+          <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
+            /
+          </span>
+          <span
+            className="min-w-0 truncate font-semibold text-gray-900 dark:text-gray-100"
+            title={college.name}
+          >
+            {college.name}
+          </span>
+        </nav>
+        <div className="flex shrink-0 justify-end">
+          <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
+            <Button variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
+              <Edit className="h-4 w-4" />
+              Edit
             </Button>
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-primary-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{college.name}</h1>
-              <p className="text-sm text-gray-500">
-                {college.code}
-                {college.slug ? ` · ${college.slug}` : ''}
-              </p>
-            </div>
-          </div>
         </div>
-        <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
-          <Button variant="secondary">Edit College</Button>
-        </Link>
       </div>
 
       <Card>
         <CardContent className="py-4">
-          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-gray-500">Description</dt>
-              <dd className="text-gray-900 mt-0.5">{college.description ?? '—'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Name</dt>
+              <dd className="mt-0.5 font-medium text-gray-900 dark:text-gray-100">{college.name}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Established</dt>
-              <dd className="text-gray-900 mt-0.5">{college.establishedYear ?? '—'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Code</dt>
+              <dd className="mt-0.5 font-medium text-gray-900 dark:text-gray-100">{college.code}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Dean (dean_id)</dt>
-              <dd className="text-gray-900 mt-0.5">{college.dean?.name ?? '—'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Slug</dt>
+              <dd className="mt-0.5">
+                {college.slug ? (
+                  <code className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-800 dark:bg-gray-800/80 dark:text-gray-200">
+                    {college.slug}
+                  </code>
+                ) : (
+                  <span className="text-gray-500 dark:text-gray-400">—</span>
+                )}
+              </dd>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <dt className="text-gray-500 dark:text-gray-400">Description</dt>
+              <dd className="mt-0.5 text-gray-900 dark:text-gray-100">{college.description ?? '—'}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Departments (deptCount)</dt>
-              <dd className="text-gray-900 mt-0.5">{college.deptCount ?? college.departments?.length ?? 0}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Students (studentCount)</dt>
-              <dd className="text-gray-900 mt-0.5">{college.studentCount ?? '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Archived</dt>
-              <dd className="text-gray-900 mt-0.5">
-                {college.isArchived ? `Yes${college.archivedAt ? ` (${college.archivedAt})` : ''}` : 'No'}
+              <dt className="text-gray-500 dark:text-gray-400">Established year</dt>
+              <dd className="mt-0.5 tabular-nums text-gray-900 dark:text-gray-100">
+                {college.establishedYear ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Created</dt>
-              <dd className="text-gray-900 mt-0.5">{college.createdAt ?? '—'}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">Dean</dt>
+              <dd className="mt-0.5 space-y-1 text-gray-900 dark:text-gray-100">
+                {college.dean ? (
+                  <>
+                    <div className="flex items-start gap-2">
+                      <User className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold leading-snug">
+                          {college.dean.name && college.dean.name !== '—' ? college.dean.name : '—'}
+                        </div>
+                        {college.dean.email ? (
+                          <div className="text-xs text-gray-600 dark:text-gray-400">{college.dean.email}</div>
+                        ) : null}
+                        {college.dean.role ? (
+                          <div className="text-xs capitalize text-gray-500 dark:text-gray-400">
+                            {college.dean.role}
+                          </div>
+                        ) : null}
+                        {college.dean.id ? (
+                          <code
+                            className="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400"
+                            title={college.dean.id}
+                          >
+                            {college.dean.id}
+                          </code>
+                        ) : null}
+                      </div>
+                    </div>
+                  </>
+                ) : college.deanRefId ? (
+                  <code className="text-xs" title={college.deanRefId}>
+                    {college.deanRefId}
+                  </code>
+                ) : (
+                  '—'
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Departments</dt>
+              <dd className="mt-0.5 tabular-nums text-gray-900 dark:text-gray-100">
+                {college.deptCount ?? college.departments?.length ?? '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Students</dt>
+              <dd className="mt-0.5 tabular-nums text-gray-900 dark:text-gray-100">
+                {college.studentCount ?? '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Archive status</dt>
+              <dd className="mt-0.5 space-y-1 text-gray-900 dark:text-gray-100">
+                {college.isArchived ? (
+                  <>
+                    <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                      Archived
+                    </span>
+                    {college.archivedAt ? (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <time dateTime={college.archivedAt} title={college.archivedAt}>
+                          {formatDate(college.archivedAt, 'full')}
+                        </time>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200">
+                    Active
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Created</dt>
+              <dd className="mt-0.5 text-gray-900 dark:text-gray-100">
+                {college.createdAt ? (
+                  <time dateTime={college.createdAt} title={college.createdAt}>
+                    {formatDate(college.createdAt, 'full')}
+                  </time>
+                ) : (
+                  '—'
+                )}
+              </dd>
             </div>
           </dl>
         </CardContent>
@@ -263,8 +382,7 @@ export function CollegeDetails() {
         <CardContent className="pt-6">
           {activeTab === 'departments' && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-600">GET /api/v1/colleges/:id/departments</p>
+              <div className="flex items-center justify-end mb-4">
                 <Link to="/dashboard/organizational/departments/create">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
@@ -303,8 +421,7 @@ export function CollegeDetails() {
           )}
           {activeTab === 'locations' && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-600">GET /api/v1/colleges/:id/locations</p>
+              <div className="flex items-center justify-end mb-4">
                 <Link to="/dashboard/organizational/locations/create">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />

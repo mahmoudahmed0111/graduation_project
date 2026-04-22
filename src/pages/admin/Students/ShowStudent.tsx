@@ -107,7 +107,6 @@ export function ShowStudent() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{student.name}</h1>
-            <p className="mt-1 text-gray-600">Student details — data from GET /api/v1/users/:id</p>
           </div>
         </div>
         <Link to={`/dashboard/students/${student.id}/edit`}>
