@@ -3,17 +3,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { AdminPageShell } from '@/components/admin';
 import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select2 } from '@/components/ui/Select2';
 import { useColleges } from '@/hooks/queries/useColleges';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import { useCreateUser } from '@/hooks/queries/useUsers';
 import { getApiErrorMessage } from '@/lib/http/client';
+import { listPathForPhase2Role } from '@/lib/userListPaths';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save, UserPlus } from 'lucide-react';
 
 const phoneRe = /^01[0125]\d{8}$/;
 
@@ -29,20 +30,35 @@ const baseSchema = z.object({
 
 type FormData = z.infer<typeof baseSchema>;
 
-const ROLE_OPTIONS = [
+const ROLE_OPTIONS_ALL = [
   { value: 'student', label: 'Student' },
   { value: 'ta', label: 'Teaching assistant' },
   { value: 'doctor', label: 'Doctor' },
   { value: 'collegeAdmin', label: 'College admin' },
   { value: 'universityAdmin', label: 'University admin' },
-];
+] as const;
 
-export function CreateUserPage() {
+export type CreateUserPageProps = {
+  /** Initial and submitted role when `lockRole` is true. */
+  defaultRole?: FormData['role'];
+  /** Hide role picker (segment-specific create pages). */
+  lockRole?: boolean;
+  /** Cancel / back target; defaults from current role selection. */
+  cancelReturnPath?: string;
+};
+
+export function CreateUserPage(props?: CreateUserPageProps) {
+  const { defaultRole = 'student', lockRole = false, cancelReturnPath } = props ?? {};
   const navigate = useNavigate();
   const { user: auth } = useAuthStore();
   const isUA = auth?.role === 'universityAdmin';
   const { success, error: toastError } = useToastStore();
   const createUser = useCreateUser();
+
+  const roleOptions = useMemo(
+    () => (isUA ? [...ROLE_OPTIONS_ALL] : ROLE_OPTIONS_ALL.filter((o) => o.value !== 'universityAdmin')),
+    [isUA]
+  );
 
   const schema = useMemo(
     () =>
@@ -63,18 +79,22 @@ export function CreateUserPage() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      role: 'student',
+      role: defaultRole,
       college_id: '',
       department_id: '',
     },
   });
 
+  const cancelTo = cancelReturnPath ?? listPathForPhase2Role(watch('role'));
+
   const collegeId = watch('college_id');
   const effectiveCollegeId = isUA ? collegeId : auth?.collegeId ?? '';
-  const { data: collegesData } = useColleges(
-    { limit: 100, isArchived: 'false' },
-    { enabled: isUA }
-  );
+  const {
+    data: collegesData,
+    isLoading: collegesLoading,
+    isError: collegesError,
+    refetch: refetchColleges,
+  } = useColleges({ limit: 100, isArchived: 'false' }, { enabled: isUA });
   const { data: departmentsData } = useDepartments(
     { college_id: effectiveCollegeId || undefined, limit: 100, isArchived: 'false' },
     { enabled: Boolean(effectiveCollegeId) }
@@ -113,83 +133,151 @@ export function CreateUserPage() {
     if (photoEl?.files?.[0]) fd.append('photo', photoEl.files[0]);
 
     try {
-      await createUser.mutateAsync(fd);
+      const created = await createUser.mutateAsync(fd);
       success('User created. Credentials are emailed to the user.');
-      navigate('/dashboard/users/directory');
+      navigate(listPathForPhase2Role(String(created.role)));
     } catch (e) {
       toastError(getApiErrorMessage(e));
     }
   };
 
+  if (isUA && collegesLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading colleges…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isUA && collegesError && !collegesLoading) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Link to={cancelTo}>
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create user</h1>
+        </div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
+          <p className="font-medium text-red-800 dark:text-red-200">Could not load colleges</p>
+          <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetchColleges()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AdminPageShell
-      title="Create user"
-      subtitle="Create a user account. Password is generated on the server."
-      breadcrumbs={[{ label: 'User Management' }, { label: 'Users' }, { label: 'Create' }]}
-      actions={
-        <Link to="/dashboard/users/directory">
-          <Button type="button" variant="ghost" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex items-center gap-4">
+        <Link to={cancelTo}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="mr-1 h-4 w-4" />
             Back
           </Button>
         </Link>
-      }
-    >
-      <form
-        onSubmit={handleSubmit((d) => void onSubmit(d))}
-        className="mx-auto max-w-2xl space-y-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-dark-border dark:bg-dark-surface"
-      >
-        <Input label="Full name" {...register('name')} error={errors.name?.message} />
-        <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-        <Input label="National ID (14 digits)" {...register('nationalID')} error={errors.nationalID?.message} />
-        <Input label="Phone" placeholder="01xxxxxxxxx" {...register('phoneNumber')} error={errors.phoneNumber?.message} />
-        <Select2
-          label="Role"
-          options={ROLE_OPTIONS}
-          value={watch('role')}
-          onChange={(v) => setValue('role', v as FormData['role'])}
-          error={errors.role?.message}
-          searchable={false}
-        />
-        {isUA && (
-          <Select2
-            label="College"
-            options={collegeOptions}
-            value={collegeId ?? ''}
-            onChange={(v) => {
-              setValue('college_id', v);
-              setValue('department_id', '');
-            }}
-            error={errors.college_id?.message}
-          />
-        )}
-        <Select2
-          label="Department (optional)"
-          options={departmentOptions}
-          value={watch('department_id') ?? ''}
-          onChange={(v) => setValue('department_id', v)}
-          error={errors.department_id?.message}
-        />
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Photo (optional)</label>
-          <input
-            id="create-user-photo"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/svg+xml,image/bmp"
-            className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700"
-          />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create user</h1>
         </div>
-        <div className="flex gap-3 pt-2">
-          <Button type="submit" variant="primary" disabled={createUser.isPending}>
-            {createUser.isPending ? 'Creating…' : 'Create user'}
-          </Button>
-          <Link to="/dashboard/users/directory">
-            <Button type="button" variant="secondary">
-              Cancel
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <UserPlus className="h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
+            Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+            A temporary password is generated on the server and sent to the user by email.
+          </p>
+          <form onSubmit={handleSubmit((d) => void onSubmit(d))} className="space-y-4">
+            {isUA && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College *</label>
+                <Select2
+                  value={collegeId ?? ''}
+                  onChange={(v) => {
+                    setValue('college_id', v);
+                    setValue('department_id', '');
+                  }}
+                  options={collegeOptions.map((o) => ({ value: o.value, label: o.label }))}
+                  error={errors.college_id?.message}
+                />
+              </div>
+            )}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Full name *</label>
+              <Input {...register('name')} error={errors.name?.message} />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
+                <Input type="email" {...register('email')} error={errors.email?.message} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone *</label>
+                <Input placeholder="01xxxxxxxxx" {...register('phoneNumber')} error={errors.phoneNumber?.message} />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                National ID (14 digits) *
+              </label>
+              <Input {...register('nationalID')} error={errors.nationalID?.message} />
+            </div>
+            {!lockRole && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Role *</label>
+                <Select2
+                  value={watch('role')}
+                  onChange={(v) => setValue('role', v as FormData['role'])}
+                  options={roleOptions.map((o) => ({ value: o.value, label: o.label }))}
+                  error={errors.role?.message}
+                  searchable={false}
+                />
+              </div>
+            )}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Department (optional)
+              </label>
+              <Select2
+                value={watch('department_id') ?? ''}
+                onChange={(v) => setValue('department_id', v)}
+                options={departmentOptions}
+                error={errors.department_id?.message}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Photo (optional)</label>
+              <input
+                id="create-user-photo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml,image/bmp"
+                className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 dark:text-gray-400 dark:file:bg-primary-950/40 dark:file:text-primary-300"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={createUser.isPending || (isUA && collegeOptions.length === 0)}
+              className="w-full sm:w-auto"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {createUser.isPending ? 'Saving…' : 'Create'}
             </Button>
-          </Link>
-        </div>
-      </form>
-    </AdminPageShell>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -1,33 +1,24 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AdminPageShell } from '@/components/admin';
 import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
 import { IndeterminateCheckbox } from '@/components/admin/AdminIndexBulkBar';
 import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select2 } from '@/components/ui/Select2';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { NationalIdLookupModal } from '@/components/users/NationalIdLookupModal';
 import { UserBulkActionsPanel } from '@/components/users/UserBulkActionsPanel';
-import { UsersTableSkeleton } from '@/components/users/UsersTableSkeleton';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useColleges } from '@/hooks/queries/useColleges';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import { useUsers } from '@/hooks/queries/useUsers';
-import { phase2RefLabel, phase2UserId, phase2UserIsActive } from '@/lib/phase2UserUi';
+import { phase2DepartmentDisplayName, phase2UserId, phase2UserIsActive } from '@/lib/phase2UserUi';
+import { apiRoleForSegment, listPathForSegment, type UserListSegment } from '@/lib/userListPaths';
 import { useAuthStore } from '@/store/authStore';
 import type { Phase2ApiUser } from '@/types/phase2-user';
-import { FileUp, Fingerprint, Plus, Search } from 'lucide-react';
-
-const ROLE_FILTERS = [
-  { value: '', label: 'All roles' },
-  { value: 'student', label: 'Student' },
-  { value: 'ta', label: 'Teaching assistant' },
-  { value: 'doctor', label: 'Doctor' },
-  { value: 'collegeAdmin', label: 'College admin' },
-  { value: 'universityAdmin', label: 'University admin' },
-];
+import { Eye, FileUp, Fingerprint, Plus, Search, Users } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: 'false', label: 'Active' },
@@ -51,32 +42,95 @@ const ACADEMIC_OPTIONS = [
   { value: 'probation', label: 'Probation' },
 ];
 
-export function UsersDirectory() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+const ADMIN_TYPE_OPTIONS = [
+  { value: 'universityAdmin', label: 'University admins' },
+  { value: 'collegeAdmin', label: 'College admins' },
+];
+
+/** Match `/dashboard/organizational/colleges`: load a batch once, filter in the browser (no refetch while typing). */
+const USERS_LIST_FETCH_LIMIT = 500;
+const CLIENT_PAGE_SIZE = 25;
+
+function userMatchesLocalSearch(u: Phase2ApiUser, q: string): boolean {
+  const s = q.trim().toLowerCase();
+  if (!s) return true;
+  if (u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s)) return true;
+  if (String(u.role ?? '').toLowerCase().includes(s)) return true;
+  if (u.phoneNumber?.toLowerCase().includes(s)) return true;
+  if (u.nationalID?.toLowerCase().includes(s)) return true;
+  if (u.realNationalID?.toLowerCase().includes(s)) return true;
+  if (u.academicStatus?.toLowerCase().includes(s)) return true;
+  if (u.level !== undefined && String(u.level).includes(s)) return true;
+  return false;
+}
+
+function parseIsArchived(raw: string | null): 'true' | 'false' | 'all' {
+  if (raw === 'true' || raw === 'false' || raw === 'all') return raw;
+  return 'all';
+}
+
+export interface UsersDirectoryProps {
+  segment: UserListSegment;
+}
+
+export function UsersDirectory({ segment }: UsersDirectoryProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user: authUser } = useAuthStore();
   const isUA = authUser?.role === 'universityAdmin';
   const isCA = authUser?.role === 'collegeAdmin';
 
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState('-createdAt');
-  const [role, setRole] = useState(() => searchParams.get('role') ?? '');
-  const [isArchived, setIsArchived] = useState<'true' | 'false' | 'all'>('false');
-  const [collegeId, setCollegeId] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
-  const [academicStatus, setAcademicStatus] = useState('');
-  const [levelStr, setLevelStr] = useState('');
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebouncedValue(search, 350);
+  const listBase = listPathForSegment(segment);
+
+  const pageTitle =
+    segment === 'students'
+      ? 'Students'
+      : segment === 'doctors'
+        ? 'Doctors'
+        : segment === 'tas'
+          ? 'Teaching assistants'
+          : 'Administrators';
+
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const sort = searchParams.get('sort') || '-createdAt';
+  const isArchived = parseIsArchived(searchParams.get('isArchived'));
+  const collegeId = isUA ? searchParams.get('college_id') ?? '' : '';
+  const departmentId = searchParams.get('department_id') ?? '';
+  const academicStatus = searchParams.get('academicStatus') ?? '';
+  const levelStr = searchParams.get('level') ?? '';
+  const adminSubtypeRaw = searchParams.get('adminRole');
+  const adminSubtype: 'universityAdmin' | 'collegeAdmin' =
+    isCA && !isUA ? 'collegeAdmin' : adminSubtypeRaw === 'collegeAdmin' ? 'collegeAdmin' : 'universityAdmin';
+
+  const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
   const [lookupOpen, setLookupOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const patchParams = useCallback(
+    (updates: Record<string, string | null | undefined>) => {
+      setSearchParams(
+        (prev) => {
+          const n = new URLSearchParams(prev);
+          for (const [k, val] of Object.entries(updates)) {
+            if (val === undefined || val === null || val === '') n.delete(k);
+            else n.set(k, val);
+          }
+          return n;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  useEffect(() => {
+    if (!searchParams.get('search')) return;
+    patchParams({ search: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time: drop legacy ?search= from URL; term stays in state
+  }, [patchParams, searchParams]);
+
   const collegeScope = isUA ? collegeId || undefined : authUser?.collegeId;
 
-  const { data: collegesData } = useColleges(
-    { limit: 100, isArchived: 'false' },
-    { enabled: isUA }
-  );
+  const { data: collegesData } = useColleges({ limit: 100, isArchived: 'false' }, { enabled: isUA });
   const { data: departmentsData } = useDepartments(
     {
       college_id: collegeScope,
@@ -112,69 +166,93 @@ export function UsersDirectory() {
     ];
   }, [departmentsData?.items]);
 
+  const departmentNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const o of departmentOptions) {
+      if (o.value) m.set(o.value, o.label);
+    }
+    return m;
+  }, [departmentOptions]);
+
   const levelNum = levelStr.trim() === '' ? undefined : Number(levelStr);
   const levelValid = levelStr.trim() === '' || (Number.isFinite(levelNum) && levelNum! >= 1);
 
+  const apiRole = apiRoleForSegment(segment, adminSubtype);
+
   const listParams = useMemo(
     () => ({
-      page,
-      limit: 25,
+      page: 1,
+      limit: USERS_LIST_FETCH_LIMIT,
       sort,
       isArchived,
-      role: role || undefined,
+      role: apiRole,
       department_id: departmentId || undefined,
       college_id: isUA ? collegeId || undefined : undefined,
-      academicStatus: academicStatus || undefined,
-      level: levelValid && levelNum !== undefined ? levelNum : undefined,
-      search: debouncedSearch.trim() || undefined,
+      academicStatus: segment === 'students' && academicStatus ? academicStatus : undefined,
+      level: segment === 'students' && levelValid && levelNum !== undefined ? levelNum : undefined,
     }),
     [
-      page,
       sort,
       isArchived,
-      role,
+      apiRole,
       departmentId,
       collegeId,
       isUA,
       academicStatus,
+      segment,
       levelValid,
       levelNum,
-      debouncedSearch,
     ]
   );
 
   useEffect(() => {
-    setPage(1);
-  }, [role, departmentId, collegeId, isArchived, academicStatus, debouncedSearch, levelStr]);
-
-  useEffect(() => {
     setSelected(new Set());
-  }, [page]);
+  }, [page, segment, apiRole, departmentId, collegeId, isArchived, academicStatus, levelStr, searchTerm]);
 
   const query = useUsers(listParams);
 
   const items = query.data?.items ?? [];
-  const totalPages = Math.max(1, query.data?.totalPages ?? 1);
+  const apiTotal = query.data?.totalResults ?? items.length;
+
+  const filteredItems = useMemo(
+    () => items.filter((u) => userMatchesLocalSearch(u, searchTerm)),
+    [items, searchTerm]
+  );
+
+  const totalFilteredPages = Math.max(1, Math.ceil(filteredItems.length / CLIENT_PAGE_SIZE));
+
+  useEffect(() => {
+    if (page > totalFilteredPages) {
+      patchParams({ page: totalFilteredPages <= 1 ? null : String(totalFilteredPages) });
+    }
+  }, [page, totalFilteredPages, patchParams]);
+
+  const paginatedItems = useMemo(() => {
+    const p = Math.min(Math.max(1, page), totalFilteredPages);
+    const start = (p - 1) * CLIENT_PAGE_SIZE;
+    return filteredItems.slice(start, start + CLIENT_PAGE_SIZE);
+  }, [filteredItems, page, totalFilteredPages]);
 
   const selectedUsers = useMemo(() => {
     const map = new Map(items.map((u) => [phase2UserId(u), u]));
-    return selected.size ? [...selected].map((id) => map.get(id)).filter(Boolean) as Phase2ApiUser[] : [];
+    return selected.size ? ([...selected].map((id) => map.get(id)).filter(Boolean) as Phase2ApiUser[]) : [];
   }, [items, selected]);
 
-  const allOnPageSelected = items.length > 0 && items.every((u) => selected.has(phase2UserId(u)));
-  const someOnPageSelected = items.some((u) => selected.has(phase2UserId(u)));
+  const allOnPageSelected =
+    paginatedItems.length > 0 && paginatedItems.every((u) => selected.has(phase2UserId(u)));
+  const someOnPageSelected = paginatedItems.some((u) => selected.has(phase2UserId(u)));
 
   const toggleAllPage = useCallback(() => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (allOnPageSelected) {
-        items.forEach((u) => next.delete(phase2UserId(u)));
+        paginatedItems.forEach((u) => next.delete(phase2UserId(u)));
       } else {
-        items.forEach((u) => next.add(phase2UserId(u)));
+        paginatedItems.forEach((u) => next.add(phase2UserId(u)));
       }
       return next;
     });
-  }, [allOnPageSelected, items]);
+  }, [allOnPageSelected, paginatedItems]);
 
   const toggleOne = useCallback((id: string) => {
     setSelected((prev) => {
@@ -185,192 +263,281 @@ export function UsersDirectory() {
     });
   }, []);
 
-  return (
-    <AdminPageShell
-      title="Users"
-      subtitle="Directory, filters, and bulk actions"
-      breadcrumbs={[{ label: 'User Management' }, { label: 'Users' }]}
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" className="gap-2" onClick={() => setLookupOpen(true)}>
-            <Fingerprint className="h-4 w-4" />
-            Lookup
-          </Button>
-          <Link to="/dashboard/users/directory/bulk-import">
-            <Button type="button" variant="secondary" className="gap-2">
-              <FileUp className="h-4 w-4" />
-              Bulk import
-            </Button>
-          </Link>
-          <Link to="/dashboard/users/directory/create">
-            <Button type="button" variant="primary" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create user
-            </Button>
-          </Link>
+  const createPath = `${listBase}/create`;
+
+  if (query.isLoading) {
+    return (
+      <AdminPageShell titleStack={{ section: 'User Management', page: pageTitle }} subtitle="Loading…">
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading users…</p>
+          </div>
         </div>
-      }
-    >
+      </AdminPageShell>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <AdminPageShell titleStack={{ section: 'User Management', page: pageTitle }} subtitle="Could not load data">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
+          <p className="font-medium text-red-800 dark:text-red-200">Could not load users</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-300">
+            {query.error instanceof Error ? query.error.message : 'You may be outside your scope, or the server returned an error.'}
+          </p>
+          <Button variant="secondary" className="mt-4" type="button" onClick={() => void query.refetch()}>
+            Retry
+          </Button>
+        </div>
+      </AdminPageShell>
+    );
+  }
+
+  return (
+    <AdminPageShell titleStack={{ section: 'User Management', page: pageTitle }}>
       <NationalIdLookupModal isOpen={lookupOpen} onClose={() => setLookupOpen(false)} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <Select2 label="Role" options={ROLE_FILTERS} value={role} onChange={setRole} searchable={false} />
-        <Select2
-          label="Account status"
-          options={STATUS_FILTERS}
-          value={isArchived}
-          onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
-          searchable={false}
-        />
-        {isUA && (
-          <Select2 label="College" options={collegeOptions} value={collegeId} onChange={setCollegeId} />
-        )}
-        <Select2
-          label="Department"
-          options={departmentOptions}
-          value={departmentId}
-          onChange={setDepartmentId}
-        />
-        <Select2 label="Sort" options={SORT_OPTIONS} value={sort} onChange={setSort} searchable={false} />
-        <Select2
-          label="Academic status"
-          options={ACADEMIC_OPTIONS}
-          value={academicStatus}
-          onChange={setAcademicStatus}
-        />
-        <div className="col-span-full">
-          <div className="flex flex-nowrap items-end gap-3">
-            <div className="relative min-w-0 flex-1">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full min-w-0 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
+                placeholder="Search name, email, phone, National ID, role…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
-                placeholder="Search name or email (sent as search query if supported)"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="w-40 shrink-0">
-              <Input
-                label="Level (optional)"
-                type="number"
-                min={1}
-                value={levelStr}
-                onChange={(e) => setLevelStr(e.target.value)}
-                error={!levelValid ? 'Invalid level' : undefined}
-              />
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="inline-flex items-center gap-2 rounded-xl"
+                onClick={() => setLookupOpen(true)}
+              >
+                <Fingerprint className="h-4 w-4" />
+                Lookup
+              </Button>
+              <Link to="/dashboard/users/bulk-import">
+                <Button type="button" variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
+                  <FileUp className="h-4 w-4" />
+                  Bulk import
+                </Button>
+              </Link>
+              <Link to={createPath}>
+                <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  {segment === 'students' ? 'Add student' : 'Create user'}
+                </Button>
+              </Link>
             </div>
           </div>
-        </div>
-      </div>
-
-      <UserBulkActionsPanel
-        selectedIds={[...selected]}
-        selectedUsers={selectedUsers}
-        departmentOptions={departmentOptions.filter((o) => o.value)}
-        currentUserId={authUser?.id}
-        isCollegeAdmin={isCA}
-        onClear={() => setSelected(new Set())}
-      />
-
-      <AdminDataTableShell>
-        {query.isLoading ? (
-          <UsersTableSkeleton />
-        ) : query.isError ? (
-          <div className="p-8 text-center text-red-600">
-            Could not load users. You may be outside your scope, or the server returned an error.
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {segment === 'admins' && isUA && (
+              <Select2
+                label="Admin type"
+                options={ADMIN_TYPE_OPTIONS}
+                value={adminSubtype}
+                onChange={(v) => {
+                  const next = v as 'universityAdmin' | 'collegeAdmin';
+                  patchParams({
+                    adminRole: next === 'universityAdmin' ? null : 'collegeAdmin',
+                    page: null,
+                  });
+                }}
+                searchable={false}
+              />
+            )}
+            <Select2
+              label="Account status"
+              options={STATUS_FILTERS}
+              value={isArchived}
+              onChange={(v) => {
+                const next = v as 'true' | 'false' | 'all';
+                patchParams({ isArchived: next === 'all' ? null : next, page: null });
+              }}
+              searchable={false}
+            />
+            {isUA && (
+              <Select2
+                label="College"
+                options={collegeOptions}
+                value={collegeId}
+                onChange={(v) => patchParams({ college_id: v || null, page: null })}
+              />
+            )}
+            <Select2
+              label="Department"
+              options={departmentOptions}
+              value={departmentId}
+              onChange={(v) => patchParams({ department_id: v || null, page: null })}
+            />
+            <Select2
+              label="Sort"
+              options={SORT_OPTIONS}
+              value={sort}
+              onChange={(v) => patchParams({ sort: v === '-createdAt' ? null : v, page: null })}
+              searchable={false}
+            />
+            {segment === 'students' && (
+              <Select2
+                label="Academic status"
+                options={ACADEMIC_OPTIONS}
+                value={academicStatus}
+                onChange={(v) => patchParams({ academicStatus: v || null, page: null })}
+              />
+            )}
+            {segment === 'students' && (
+              <div className="min-w-0 sm:max-w-[11rem]">
+                <Input
+                  label="Level (optional)"
+                  type="number"
+                  min={1}
+                  value={levelStr}
+                  onChange={(e) => patchParams({ level: e.target.value || null, page: null })}
+                  error={!levelValid ? 'Invalid level' : undefined}
+                />
+              </div>
+            )}
           </div>
-        ) : items.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            <p className="font-medium text-gray-700">No users match these filters</p>
-            <p className="mt-1 text-sm">Try clearing search or widening status to &quot;All&quot;.</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <IndeterminateCheckbox
-                    checked={allOnPageSelected}
-                    indeterminate={!allOnPageSelected && someOnPageSelected}
-                    onChange={toggleAllPage}
-                    aria-label="Select all on page"
-                  />
-                </TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((u) => {
-                const id = phase2UserId(u);
-                const active = phase2UserIsActive(u);
-                return (
-                  <TableRow key={id}>
-                    <TableCell>
-                      <div
-                        onClick={(e: MouseEvent) => e.stopPropagation()}
-                        onKeyDown={(e: KeyboardEvent) => e.stopPropagation()}
-                        role="presentation"
-                      >
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-primary-600"
-                          checked={selected.has(id)}
-                          onChange={() => toggleOne(id)}
-                          aria-label={`Select ${u.name}`}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-900">{u.name}</TableCell>
-                    <TableCell className="text-gray-600">{u.email}</TableCell>
-                    <TableCell>
-                      <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                        {u.role}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-gray-600">{phase2RefLabel(u.department_id)}</TableCell>
-                    <TableCell>
-                      <span
-                        className={
-                          active
-                            ? 'inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800'
-                            : 'inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600'
-                        }
-                      >
-                        {active ? 'Active' : 'Deactivated'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/dashboard/users/directory/${id}`)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
+
+          <UserBulkActionsPanel
+            selectedIds={[...selected]}
+            selectedUsers={selectedUsers}
+            departmentOptions={departmentOptions.filter((o) => o.value)}
+            currentUserId={authUser?.id}
+            isCollegeAdmin={isCA}
+            onClear={() => setSelected(new Set())}
+          />
+
+          {items.length === 0 ? (
+            <div className="py-12 text-center">
+              <Users className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-500 dark:text-gray-400">
+                No users match these filters. Try widening status to &quot;All&quot; or adjusting scope.
+              </p>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="py-12 text-center">
+              <Users className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-500 dark:text-gray-400">
+                No users match your search. Try a different term or use National ID lookup.
+              </p>
+            </div>
+          ) : (
+            <div
+              className={
+                query.isPlaceholderData && query.isFetching
+                  ? 'pointer-events-none opacity-60 transition-opacity'
+                  : undefined
+              }
+              aria-busy={query.isPlaceholderData && query.isFetching ? true : undefined}
+            >
+              <AdminDataTableShell>
+                <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <IndeterminateCheckbox
+                        checked={allOnPageSelected}
+                        indeterminate={!allOnPageSelected && someOnPageSelected}
+                        onChange={toggleAllPage}
+                        aria-label="Select all on page"
+                      />
+                    </TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-end">Actions</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </AdminDataTableShell>
+                </TableHeader>
+                <TableBody>
+                  {paginatedItems.map((u) => {
+                    const id = phase2UserId(u);
+                    const active = phase2UserIsActive(u);
+                    return (
+                      <TableRow key={id}>
+                        <TableCell>
+                          <div
+                            onClick={(e: MouseEvent) => e.stopPropagation()}
+                            onKeyDown={(e: KeyboardEvent) => e.stopPropagation()}
+                            role="presentation"
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300 text-primary-600"
+                              checked={selected.has(id)}
+                              onChange={() => toggleOne(id)}
+                              aria-label={`Select ${u.name}`}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-900 dark:text-gray-100">{u.name}</TableCell>
+                        <TableCell className="text-gray-600 dark:text-gray-400">{u.email}</TableCell>
+                        <TableCell>
+                          <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                            {u.role}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-gray-600 dark:text-gray-400">
+                          {phase2DepartmentDisplayName(u, departmentNameById)}
+                        </TableCell>
+                        <TableCell>
+                          {active ? (
+                            <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                              Deactivated
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-end">
+                          <Link to={`${listBase}/${id}`}>
+                            <Button variant="secondary" size="sm" title="View" className="inline-flex items-center gap-1 rounded-xl">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              </AdminDataTableShell>
+            </div>
+          )}
 
-      {!query.isLoading && items.length > 0 && (
-        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
-          <p className="text-sm text-gray-500">
-            Page {query.data?.currentPage ?? page} of {totalPages} · {query.data?.totalResults ?? items.length}{' '}
-            users
-          </p>
-          <Pagination currentPage={query.data?.currentPage ?? page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
-      )}
+          {filteredItems.length > 0 && (
+            <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4 dark:border-dark-border sm:flex-row sm:justify-between">
+              <div className="text-center sm:text-left">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Page {Math.min(page, totalFilteredPages)} of {totalFilteredPages} · {filteredItems.length}{' '}
+                  {searchTerm.trim() ? 'matching users' : 'users'}
+                </p>
+                {apiTotal > items.length ? (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Loaded {items.length} of {apiTotal} in this scope. Narrow filters if someone is missing, or use
+                    Lookup.
+                  </p>
+                ) : null}
+              </div>
+              <Pagination
+                currentPage={Math.min(page, totalFilteredPages)}
+                totalPages={totalFilteredPages}
+                onPageChange={(p) => patchParams({ page: p <= 1 ? null : String(p) })}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </AdminPageShell>
   );
 }

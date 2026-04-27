@@ -2,10 +2,30 @@ import type { Phase2ApiUser } from '@/types/phase2-user';
 
 export function phase2RefLabel(ref: Phase2ApiUser['college_id'] | Phase2ApiUser['department_id']): string {
   if (ref == null || ref === '') return '—';
-  if (typeof ref === 'object' && ref !== null && 'name' in ref) {
-    return String((ref as { name?: string }).name ?? '—');
+  if (typeof ref === 'object' && ref !== null) {
+    const o = ref as { name?: string; title?: string };
+    const s = o.name ?? o.title;
+    if (s != null && String(s).trim()) return String(s).trim();
   }
   return typeof ref === 'string' ? ref : '—';
+}
+
+const OBJECT_ID_HEX = /^[a-f\d]{24}$/i;
+
+/** Human-readable department for tables when `department_id` is an id or sparsely populated. */
+export function phase2DepartmentDisplayName(
+  u: Phase2ApiUser,
+  idToLabel: Map<string, string>
+): string {
+  const ref = u.department_id;
+  const fromRef = phase2RefLabel(ref);
+  if (fromRef !== '—' && !OBJECT_ID_HEX.test(fromRef)) return fromRef;
+
+  const id = phase2DepartmentId(u) ?? (typeof ref === 'string' ? ref.trim() : '');
+  if (id && idToLabel.has(id)) return idToLabel.get(id)!;
+
+  if (id && OBJECT_ID_HEX.test(id)) return '—';
+  return fromRef;
 }
 
 export function phase2UserIsActive(u: Phase2ApiUser): boolean {

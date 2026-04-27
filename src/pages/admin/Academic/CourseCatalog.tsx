@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Link } from 'react-router-dom';
+import { AdminDataTableShell, AdminPageShell } from '@/components/admin';
+import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -14,7 +16,7 @@ import { useColleges } from '@/hooks/queries/useColleges';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import {
   useCourseCatalogs,
-  useCreateCourseCatalog,
+  useCourseCatalog,
   useUpdateCourseCatalog,
   useArchiveCourseCatalog,
   useRestoreCourseCatalog,
@@ -39,7 +41,6 @@ export function CourseCatalog() {
   const [collegeId, setCollegeId] = useState('');
   const [search, setSearch] = useState('');
 
-  const [createOpen, setCreateOpen] = useState(false);
   const [editRow, setEditRow] = useState<Record<string, unknown> | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Record<string, unknown> | null>(null);
 
@@ -88,13 +89,15 @@ export function CourseCatalog() {
   );
 
   const { data, isLoading, isError, refetch } = useCourseCatalogs(listParams);
-  const createMut = useCreateCourseCatalog();
+  const editCatalogId = editRow ? p3Id(editRow) : undefined;
+  const {
+    data: editCatalogDetail,
+    isLoading: editCatalogLoading,
+    isError: editCatalogDetailError,
+  } = useCourseCatalog(editCatalogId);
   const updateMut = useUpdateCourseCatalog();
   const archiveMut = useArchiveCourseCatalog();
   const restoreMut = useRestoreCourseCatalog();
-
-  const items = data?.items ?? [];
-  const totalPages = Math.max(1, data?.totalPages ?? 1);
 
   const { data: prereqPicker } = useCourseCatalogs({
     limit: 100,
@@ -103,203 +106,209 @@ export function CourseCatalog() {
     department_id: departmentId || undefined,
   });
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Course catalog</h1>
-        </div>
-        {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
-          <Button type="button" onClick={() => setCreateOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add course
-          </Button>
-        )}
-      </div>
+  const items = data?.items ?? [];
+  const totalPages = Math.max(1, data?.totalPages ?? 1);
 
+  if (isLoading) {
+    return (
+      <AdminPageShell titleStack={{ section: 'Academic', page: 'Course catalog' }} subtitle="Loading…">
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading course catalog…</p>
+          </div>
+        </div>
+      </AdminPageShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AdminPageShell titleStack={{ section: 'Academic', page: 'Course catalog' }} subtitle="Could not load data">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
+          <p className="font-medium text-red-800 dark:text-red-200">Could not load course catalog</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-300">
+            Check permissions, API URL, or try again.
+          </p>
+          <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
+      </AdminPageShell>
+    );
+  }
+
+  return (
+    <AdminPageShell titleStack={{ section: 'Academic', page: 'Course catalog' }}>
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <CardTitle>All courses</CardTitle>
-            <div className="flex flex-wrap items-center gap-2">
-              {isUA && (
-                <Select2
-                  label=""
-                  options={collegeOptions}
-                  value={collegeId}
-                  onChange={setCollegeId}
-                  className="w-48"
-                  placeholder="College"
-                />
-              )}
-              <Select2
-                label=""
-                options={departmentOptions}
-                value={departmentId}
-                onChange={setDepartmentId}
-                className="w-56"
-                placeholder="Department"
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full min-w-0 sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search code, title, description…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
               />
-              <Select2
-                label=""
-                options={ARCHIVE_FILTERS}
-                value={isArchived}
-                onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
-                searchable={false}
-                className="w-36"
-              />
-              <div className="relative min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  className="pl-10"
-                  placeholder="Search…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
             </div>
+            {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                <Link to="/dashboard/academic/catalog/create">
+                  <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
+                    <Plus className="h-4 w-4" />
+                    Add course
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="py-16 text-center text-gray-500">Loading…</div>
-          ) : isError ? (
-            <div className="py-16 text-center text-red-600">Failed to load catalog. Check permissions or API URL.</div>
-          ) : items.length === 0 ? (
-            <div className="py-12 text-center text-gray-500">
-              <Library className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-              No courses found
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {isUA && (
+              <Select2 label="College" options={collegeOptions} value={collegeId} onChange={setCollegeId} />
+            )}
+            <Select2 label="Department" options={departmentOptions} value={departmentId} onChange={setDepartmentId} />
+            <Select2
+              label="Record status"
+              options={ARCHIVE_FILTERS}
+              value={isArchived}
+              onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
+              searchable={false}
+            />
+          </div>
+
+          {items.length === 0 ? (
+            <div className="py-12 text-center">
+              <Library className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-500 dark:text-gray-400">No courses match these filters.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Prerequisites</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((course) => {
-                  const id = p3Id(course);
-                  const archived = course.isArchived === true;
-                  return (
-                    <TableRow key={id}>
-                      <TableCell className="font-medium">{String(course.code ?? '')}</TableCell>
-                      <TableCell>
-                        <div className="font-medium">{String(course.title ?? '')}</div>
-                        {course.description ? (
-                          <div className="text-sm text-gray-500">{String(course.description)}</div>
-                        ) : null}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <School className="h-4 w-4 text-gray-400" />
-                          {p3RefName(course.department_id)}
-                        </div>
-                      </TableCell>
-                      <TableCell>{String(course.creditHours ?? '')}</TableCell>
-                      <TableCell className="text-sm">{formatPrerequisites(course)}</TableCell>
-                      <TableCell>
-                        <span
-                          className={
-                            archived
-                              ? 'rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700'
-                              : 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
-                          }
-                        >
-                          {archived ? 'Archived' : 'Active'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
-                            <>
-                              <Button type="button" variant="secondary" size="sm" onClick={() => setEditRow(course)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              {!archived ? (
+            <AdminDataTableShell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Credits</TableHead>
+                    <TableHead>Prerequisites</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-end">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((course) => {
+                    const id = p3Id(course);
+                    const archived = course.isArchived === true;
+                    return (
+                      <TableRow key={id}>
+                        <TableCell className="font-medium text-gray-900 dark:text-gray-100">
+                          {String(course.code ?? '')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">{String(course.title ?? '')}</div>
+                          {course.description ? (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{String(course.description)}</div>
+                          ) : null}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                            <School className="h-4 w-4 shrink-0 text-gray-400" />
+                            {p3RefName(course.department_id)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-600 dark:text-gray-400">{String(course.creditHours ?? '')}</TableCell>
+                        <TableCell className="text-sm text-gray-600 dark:text-gray-400">{formatPrerequisites(course)}</TableCell>
+                        <TableCell>
+                          <span
+                            className={
+                              archived
+                                ? 'inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                : 'inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            }
+                          >
+                            {archived ? 'Archived' : 'Active'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-end">
+                          <div className="flex justify-end gap-2">
+                            {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
+                              <>
                                 <Button
                                   type="button"
                                   variant="secondary"
                                   size="sm"
-                                  onClick={() => setArchiveTarget(course)}
+                                  title="Edit"
+                                  className="inline-flex items-center gap-1 rounded-xl"
+                                  onClick={() => setEditRow(course)}
                                 >
-                                  <Archive className="h-4 w-4" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              ) : (
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    void (async () => {
-                                      try {
-                                        await restoreMut.mutateAsync(id);
-                                        success('Course restored.');
-                                        void refetch();
-                                      } catch (e) {
-                                        showError(getApiErrorMessage(e));
-                                      }
-                                    })();
-                                  }}
-                                >
-                                  <RotateCcw className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                                {!archived ? (
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    title="Archive"
+                                    className="inline-flex items-center gap-1 rounded-xl"
+                                    onClick={() => setArchiveTarget(course)}
+                                  >
+                                    <Archive className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    title="Restore"
+                                    className="inline-flex items-center gap-1 rounded-xl"
+                                    onClick={() => {
+                                      void (async () => {
+                                        try {
+                                          await restoreMut.mutateAsync(id);
+                                          success('Course restored.');
+                                          void refetch();
+                                        } catch (e) {
+                                          showError(getApiErrorMessage(e));
+                                        }
+                                      })();
+                                    }}
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </AdminDataTableShell>
           )}
-          {!isLoading && items.length > 0 && (
-            <div className="mt-4 flex justify-center">
+
+          {items.length > 0 && (
+            <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4 dark:border-dark-border sm:flex-row sm:justify-between">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Page {data?.currentPage ?? page} of {totalPages} · {data?.totalResults ?? items.length} courses
+              </p>
               <Pagination currentPage={data?.currentPage ?? page} totalPages={totalPages} onPageChange={setPage} />
             </div>
           )}
         </CardContent>
       </Card>
 
-      <CatalogFormModal
-        mode="create"
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        departmentOptions={departmentOptions.filter((o) => o.value)}
-        prerequisiteOptions={
-          (prereqPicker?.items ?? []).map((c) => {
-            const r = c as Record<string, unknown>;
-            return { value: p3Id(r), label: `${String(r.code ?? '')} — ${String(r.title ?? '')}` };
-          })
-        }
-        onCreate={async (payload) => {
-          try {
-            await createMut.mutateAsync(payload);
-            success('Course created.');
-            setCreateOpen(false);
-          } catch (e) {
-            showError(getApiErrorMessage(e));
-          }
-        }}
-        onUpdate={undefined}
-        loading={createMut.isPending}
-      />
-
       {editRow && (
-        <CatalogFormModal
-          mode="edit"
+        <CatalogEditModal
           open={!!editRow}
           onClose={() => setEditRow(null)}
-          initial={editRow}
-          departmentOptions={departmentOptions.filter((o) => o.value)}
+          initial={(editCatalogDetail as Record<string, unknown> | undefined) ?? editRow}
+          detailLoading={Boolean(editCatalogId) && editCatalogLoading && !editCatalogDetail}
+          detailError={Boolean(editCatalogId) && editCatalogDetailError}
           prerequisiteOptions={
             (prereqPicker?.items ?? [])
               .filter((c) => p3Id(c as Record<string, unknown>) !== p3Id(editRow))
@@ -308,7 +317,6 @@ export function CourseCatalog() {
                 return { value: p3Id(r), label: `${String(r.code ?? '')} — ${String(r.title ?? '')}` };
               })
           }
-          onCreate={undefined}
           onUpdate={async (payload) => {
             try {
               await updateMut.mutateAsync({ id: p3Id(editRow), data: payload });
@@ -343,36 +351,29 @@ export function CourseCatalog() {
         confirmText="Archive"
         variant="danger"
       />
-    </div>
+    </AdminPageShell>
   );
 }
 
-function CatalogFormModal({
-  mode,
+function CatalogEditModal({
   open,
   onClose,
   initial,
-  departmentOptions,
+  detailLoading,
+  detailError,
   prerequisiteOptions,
-  onCreate,
   onUpdate,
   loading,
 }: {
-  mode: 'create' | 'edit';
   open: boolean;
   onClose: () => void;
   initial?: Record<string, unknown> | null;
-  departmentOptions: { value: string; label: string }[];
+  /** True while `GET /course-catalog/:id` is in flight (edit mode). */
+  detailLoading?: boolean;
+  /** True when detail fetch failed; form still uses list row as fallback. */
+  detailError?: boolean;
   prerequisiteOptions: { value: string; label: string }[];
-  onCreate?: (data: {
-    title: string;
-    code: string;
-    description?: string;
-    creditHours: number;
-    department_id: string;
-    prerequisites_ids?: string[];
-  }) => Promise<void>;
-  onUpdate?: (data: {
+  onUpdate: (data: {
     title?: string;
     description?: string;
     creditHours?: number;
@@ -384,73 +385,50 @@ function CatalogFormModal({
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [creditHours, setCreditHours] = useState('3');
-  const [department_id, setDepartment_id] = useState('');
   const [selectedPrereq, setSelectedPrereq] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!open) return;
-    if (mode === 'edit' && initial) {
-      setTitle(String(initial.title ?? ''));
-      setCode(String(initial.code ?? ''));
-      setDescription(String(initial.description ?? ''));
-      setCreditHours(String(initial.creditHours ?? 3));
-      const d = initial.department_id;
-      const deptId =
-        typeof d === 'object' && d && '_id' in d
-          ? String((d as { _id: string })._id)
-          : typeof d === 'string'
-            ? d
-            : '';
-      setDepartment_id(deptId);
-      const raw = initial.prerequisites_ids;
-      if (Array.isArray(raw)) {
-        setSelectedPrereq(
-          raw
-            .map((p) =>
-              typeof p === 'string'
-                ? p
-                : p && typeof p === 'object' && '_id' in p
-                  ? String((p as { _id: string })._id)
-                  : ''
-            )
-            .filter(Boolean)
-        );
-      } else setSelectedPrereq([]);
-      return;
-    }
-    if (mode === 'create') {
-      setTitle('');
-      setCode('');
-      setDescription('');
-      setCreditHours('3');
-      setDepartment_id(departmentOptions[0]?.value ?? '');
-      setSelectedPrereq([]);
-    }
-  }, [open, initial, mode, departmentOptions]);
+    if (!open || !initial) return;
+    setTitle(String(initial.title ?? ''));
+    setCode(String(initial.code ?? ''));
+    setDescription(String(initial.description ?? ''));
+    setCreditHours(String(initial.creditHours ?? 3));
+    const raw = initial.prerequisites_ids;
+    if (Array.isArray(raw)) {
+      setSelectedPrereq(
+        raw
+          .map((p) =>
+            typeof p === 'string'
+              ? p
+              : p && typeof p === 'object' && '_id' in p
+                ? String((p as { _id: string })._id)
+                : ''
+          )
+          .filter(Boolean)
+      );
+    } else setSelectedPrereq([]);
+  }, [open, initial]);
 
   const togglePrereq = (id: string) => {
     setSelectedPrereq((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   return (
-    <Modal
-      isOpen={open}
-      onClose={onClose}
-      title={mode === 'create' ? 'Create catalog course' : 'Edit catalog course'}
-      size="lg"
-    >
+    <Modal isOpen={open} onClose={onClose} title="Edit catalog course" size="lg">
       <div className="space-y-4">
-        {mode === 'edit' && (
-          <p className="text-sm text-gray-500">
-            Code and department cannot be changed (API allowlist). Update title, description, credits, or prerequisites.
+        {detailLoading ? (
+          <p className="text-sm text-amber-700 dark:text-amber-300">Loading latest course from server…</p>
+        ) : null}
+        {detailError ? (
+          <p className="text-sm text-amber-800 dark:text-amber-200">
+            Could not refresh this course from the server. Showing list data — save may fail if the record changed.
           </p>
-        )}
+        ) : null}
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Code and department cannot be changed (API allowlist). Update title, description, credits, or prerequisites.
+        </p>
         <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        {mode === 'create' ? (
-          <Input label="Code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. CS301" />
-        ) : (
-          <Input label="Code (read-only)" value={code} disabled />
-        )}
+        <Input label="Code (read-only)" value={code} disabled />
         <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
         <Input
           label="Credit hours"
@@ -459,9 +437,6 @@ function CatalogFormModal({
           value={creditHours}
           onChange={(e) => setCreditHours(e.target.value)}
         />
-        {mode === 'create' && (
-          <Select2 label="Department" options={departmentOptions} value={department_id} onChange={setDepartment_id} />
-        )}
         <div>
           <p className="mb-2 text-sm font-medium text-gray-700">Prerequisites</p>
           <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-2">
@@ -492,25 +467,12 @@ function CatalogFormModal({
             onClick={() => {
               const ch = Number(creditHours);
               if (!title.trim() || !Number.isFinite(ch) || ch < 1) return;
-              if (mode === 'create' && onCreate) {
-                if (!code.trim() || !department_id) return;
-                void onCreate({
-                  title: title.trim(),
-                  code: code.trim(),
-                  description: description.trim() || undefined,
-                  creditHours: ch,
-                  department_id,
-                  prerequisites_ids: selectedPrereq.length ? selectedPrereq : undefined,
-                });
-              }
-              if (mode === 'edit' && onUpdate) {
-                void onUpdate({
-                  title: title.trim(),
-                  description: description.trim() || undefined,
-                  creditHours: ch,
-                  prerequisites_ids: selectedPrereq,
-                });
-              }
+              void onUpdate({
+                title: title.trim(),
+                description: description.trim() || undefined,
+                creditHours: ch,
+                prerequisites_ids: selectedPrereq,
+              });
             }}
           >
             {loading ? 'Saving…' : 'Save'}

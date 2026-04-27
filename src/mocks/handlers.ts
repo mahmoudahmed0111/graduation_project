@@ -127,6 +127,39 @@ const translateLocation = (location: string): string => {
   return t(`locations.${key}`, location);
 };
 
+/** Shape for Phase 3 `GET /enrollments` / `GET /enrollments/my` in MSW. */
+function legacyEnrollmentToPhase3Api(e: IEnrollment): Record<string, unknown> {
+  const g = e.grades;
+  return {
+    _id: e.id,
+    student_id: e.student_id,
+    course_id: e.courseOffering.id,
+    catalogCourse_id: e.courseOffering.course.id,
+    college_id: 'college-1',
+    semester: e.semester,
+    academicYear: e.semester.includes('2025') ? '2025-2026' : '2024-2025',
+    status: e.status,
+    finalAttendancePercentage: e.finalAttendancePercentage ?? 0,
+    grades: {
+      attendance: g?.attendance ?? 0,
+      midterm: g?.midterm ?? 0,
+      assignments: g?.assignments ?? 0,
+      project: g?.project ?? 0,
+      finalExam: g?.finalExam ?? 0,
+      finalTotal: g?.finalTotal ?? 0,
+      finalLetter: g?.finalLetter ?? null,
+    },
+    snapshot: {
+      courseCode: e.courseOffering.course.code,
+      courseTitle: e.courseOffering.course.title,
+      creditHours: e.courseOffering.course.creditHours,
+    },
+    forceEnrolled: null,
+    createdAt: e.enrolledAt,
+    updatedAt: e.enrolledAt,
+  };
+}
+
 export const handlers = [
   // Auth endpoints
   http.post(`${API_BASE_URL}/auth/login`, async ({ request }) => {
@@ -320,16 +353,35 @@ export const handlers = [
     });
   }),
 
-  // Enrollment endpoints
+  // Enrollment endpoints — Phase 3 list envelope (`GET /enrollments`)
   http.get(`${API_BASE_URL}/enrollments`, ({ request }) => {
     const url = new URL(request.url);
-    const studentId = url.searchParams.get('studentId');
-    
-    const filtered = studentId
-      ? mockEnrollments.filter(e => e.student_id === studentId)
-      : mockEnrollments;
+    const studentId = url.searchParams.get('student_id') || url.searchParams.get('studentId');
 
-    return HttpResponse.json(filtered);
+    const filtered = studentId
+      ? mockEnrollments.filter((e) => e.student_id === studentId)
+      : mockEnrollments;
+    const rows = filtered.map(legacyEnrollmentToPhase3Api);
+    return HttpResponse.json({
+      status: 'success',
+      results: rows.length,
+      currentPage: 1,
+      totalPages: 1,
+      totalResults: rows.length,
+      data: { enrollments: rows },
+    });
+  }),
+
+  http.get(`${API_BASE_URL}/enrollments/my`, () => {
+    const rows = mockEnrollments.map(legacyEnrollmentToPhase3Api);
+    return HttpResponse.json({
+      status: 'success',
+      results: rows.length,
+      currentPage: 1,
+      totalPages: 1,
+      totalResults: rows.length,
+      data: { enrollments: rows },
+    });
   }),
 
   // Student-specific endpoints

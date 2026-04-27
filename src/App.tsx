@@ -8,6 +8,19 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 import { Toaster } from './components/ui/Toaster';
 import { Landing } from './pages/Landing';
+import { PublicLayout } from './pages/public/PublicLayout';
+import { Home as PublicHome } from './pages/public/Home';
+import { About as PublicAbout } from './pages/public/About';
+import { Colleges as PublicColleges } from './pages/public/Colleges';
+import { Academics as PublicAcademics } from './pages/public/Academics';
+import { Admissions as PublicAdmissions } from './pages/public/Admissions';
+import { Research as PublicResearch } from './pages/public/Research';
+import { CampusLife as PublicCampusLife } from './pages/public/CampusLife';
+import { News as PublicNews } from './pages/public/News';
+import { Contact as PublicContact } from './pages/public/Contact';
+import { PrivacyPolicy as PublicPrivacy } from './pages/public/PrivacyPolicy';
+import { TermsOfUse as PublicTerms } from './pages/public/TermsOfUse';
+import { Sitemap as PublicSitemap } from './pages/public/Sitemap';
 import { Login } from './pages/auth/Login';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { OTP } from './pages/auth/OTP';
@@ -22,6 +35,7 @@ import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
 import { TeacherRoster } from './pages/doctor/TeacherRoster';
 import { Analytics } from './pages/shared/Analytics';
 import { AllCourses } from './pages/shared/Courses';
+import { StaticUiDashboard } from './pages/shared/StaticUiDashboard';
 import { MyCourses } from './pages/student/Courses';
 import { EnrollCourse } from './pages/student/Courses';
 import { Enrollments } from './pages/student/Enrollment';
@@ -33,7 +47,6 @@ import { Announcements } from './pages/shared/Announcements';
 import { Chatbot } from './pages/shared/Chatbot';
 import { Notifications } from './pages/shared/Notifications';
 import { Profile } from './pages/shared/Profile';
-import { Students, CreateStudent, EditStudent, ShowStudent } from './pages/admin/Students';
 import { ManageMaterials, UploadMaterial } from './pages/doctor/Materials';
 import { CreateAssessment, GradeSubmissions } from './pages/doctor/Assessments';
 import { AttendanceSessions } from './pages/doctor/Attendance';
@@ -50,19 +63,25 @@ import {
   CreateLocation,
   EditLocation,
 } from './pages/admin/Organizational';
-import { CourseCatalog, CourseOfferings, AdminEnrollments } from './pages/admin/Academic';
 import {
-  AllUsers,
+  CourseCatalog,
+  CourseOfferings,
+  AdminEnrollments,
+  CreateCatalogCoursePage,
+  CreateCourseOfferingPage,
+  ForceEnrollPage,
+} from './pages/admin/Academic';
+import {
   UsersDirectory,
   UserDetailsPage,
   CreateUserPage,
   BulkImportUsersPage,
-  CreateDoctor,
-  EditDoctor,
-  CreateTA,
-  EditTA,
-  CreateAdmin,
-  EditAdmin,
+  LegacyUsersDirectoryRedirect,
+  UserFromLegacyDirectoryRedirect,
+  RedirectToUsersStudents,
+  RedirectToUsersStudentsCreate,
+  RedirectToUsersStudentProfile,
+  RedirectUserEditToDetail,
 } from './pages/admin/Users';
 import { ChangePasswordPage } from './pages/shared/Account/ChangePasswordPage';
 import { SystemSettings } from './pages/admin/SystemSettings';
@@ -99,10 +118,21 @@ function App() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster />
       <Routes>
-        <Route
-          path="/"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />}
-        />
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<PublicHome />} />
+          <Route path="/about" element={<PublicAbout />} />
+          <Route path="/colleges" element={<PublicColleges />} />
+          <Route path="/academics" element={<PublicAcademics />} />
+          <Route path="/admissions" element={<PublicAdmissions />} />
+          <Route path="/research" element={<PublicResearch />} />
+          <Route path="/campus-life" element={<PublicCampusLife />} />
+          <Route path="/news" element={<PublicNews />} />
+          <Route path="/contact" element={<PublicContact />} />
+          <Route path="/privacy" element={<PublicPrivacy />} />
+          <Route path="/terms" element={<PublicTerms />} />
+          <Route path="/sitemap" element={<PublicSitemap />} />
+        </Route>
+        <Route path="/landing-old" element={<Landing />} />
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -160,6 +190,7 @@ function App() {
               )
             }
           />
+          <Route path="ui-preview" element={<StaticUiDashboard />} />
           <Route
             path="roster"
             element={
@@ -229,22 +260,25 @@ function App() {
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
           <Route path="account/change-password" element={<ChangePasswordPage />} />
-          <Route path="students" element={<Students />} />
-          <Route path="students/create" element={<CreateStudent />} />
-          <Route path="students/:id" element={<ShowStudent />} />
-          <Route path="students/:id/edit" element={<EditStudent />} />
-          
-          {/* User management */}
+          <Route path="students" element={<RedirectToUsersStudents />} />
+          <Route path="students/create" element={<RedirectToUsersStudentsCreate />} />
+          <Route path="students/:id" element={<RedirectToUsersStudentProfile />} />
+          <Route path="students/:id/edit" element={<RedirectToUsersStudentProfile />} />
+
+          {/* User management — Phase 2 `GET /users` per role; filters in URL query string */}
+          <Route path="users/directory" element={<LegacyUsersDirectoryRedirect />} />
+          <Route path="users/directory/create" element={<Navigate to="/dashboard/users/create" replace />} />
+          <Route path="users/directory/bulk-import" element={<Navigate to="/dashboard/users/bulk-import" replace />} />
           <Route
-            path="users/directory"
+            path="users/directory/:id"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <UsersDirectory />
+                <UserFromLegacyDirectoryRedirect />
               </ProtectedRoute>
             }
           />
           <Route
-            path="users/directory/create"
+            path="users/create"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
                 <CreateUserPage />
@@ -252,7 +286,7 @@ function App() {
             }
           />
           <Route
-            path="users/directory/bulk-import"
+            path="users/bulk-import"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
                 <BulkImportUsersPage />
@@ -260,7 +294,19 @@ function App() {
             }
           />
           <Route
-            path="users/directory/:id"
+            path="users/students/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateUserPage
+                  defaultRole="student"
+                  lockRole
+                  cancelReturnPath="/dashboard/users/students"
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/students/:id"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
                 <UserDetailsPage />
@@ -271,15 +317,7 @@ function App() {
             path="users/students"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <Students />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="users/doctors"
-            element={
-              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <AllUsers />
+                <UsersDirectory segment="students" />
               </ProtectedRoute>
             }
           />
@@ -287,7 +325,11 @@ function App() {
             path="users/doctors/create"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <CreateDoctor />
+                <CreateUserPage
+                  defaultRole="doctor"
+                  lockRole
+                  cancelReturnPath="/dashboard/users/doctors"
+                />
               </ProtectedRoute>
             }
           />
@@ -295,15 +337,23 @@ function App() {
             path="users/doctors/:id/edit"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <EditDoctor />
+                <RedirectUserEditToDetail />
               </ProtectedRoute>
             }
           />
           <Route
-            path="users/tas"
+            path="users/doctors/:id"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <AllUsers />
+                <UserDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/doctors"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UsersDirectory segment="doctors" />
               </ProtectedRoute>
             }
           />
@@ -311,7 +361,7 @@ function App() {
             path="users/tas/create"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <CreateTA />
+                <CreateUserPage defaultRole="ta" lockRole cancelReturnPath="/dashboard/users/tas" />
               </ProtectedRoute>
             }
           />
@@ -319,31 +369,55 @@ function App() {
             path="users/tas/:id/edit"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <EditTA />
+                <RedirectUserEditToDetail />
               </ProtectedRoute>
             }
           />
           <Route
-            path="users/admins"
+            path="users/tas/:id"
             element={
-              <ProtectedRoute allowedRoles={['universityAdmin']}>
-                <AllUsers />
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UserDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/tas"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UsersDirectory segment="tas" />
               </ProtectedRoute>
             }
           />
           <Route
             path="users/admins/create"
             element={
-              <ProtectedRoute allowedRoles={['universityAdmin']}>
-                <CreateAdmin />
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateUserPage cancelReturnPath="/dashboard/users/admins" />
               </ProtectedRoute>
             }
           />
           <Route
             path="users/admins/:id/edit"
             element={
-              <ProtectedRoute allowedRoles={['universityAdmin']}>
-                <EditAdmin />
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <RedirectUserEditToDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/admins/:id"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UserDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/admins"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <UsersDirectory segment="admins" />
               </ProtectedRoute>
             }
           />
@@ -440,6 +514,14 @@ function App() {
             }
           />
           <Route
+            path="academic/catalog/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateCatalogCoursePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="academic/offerings"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
@@ -448,10 +530,26 @@ function App() {
             }
           />
           <Route
+            path="academic/offerings/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <CreateCourseOfferingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="academic/enrollments"
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
                 <AdminEnrollments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="academic/enrollments/force"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <ForceEnrollPage />
               </ProtectedRoute>
             }
           />

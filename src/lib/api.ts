@@ -4,6 +4,8 @@ import * as collegesService from '@/services/colleges.service';
 import * as departmentsService from '@/services/departments.service';
 import * as settingsService from '@/services/settings.service';
 import * as locationsService from '@/services/locations.service';
+import * as enrollmentsService from '@/services/enrollments.service';
+import { mapPhase3EnrollmentToIEnrollment } from '@/lib/mapPhase3Enrollment';
 
 /** Re-export for callers that import from `@/lib/api`. */
 export { getApiErrorMessage } from '@/lib/http/client';
@@ -35,6 +37,40 @@ function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
     ...(u.year != null && { year: u.year as number, semester: u.semester as number, creditsEarned: u.creditsEarned as number, gpa: u.gpa as number }),
   };
   return user as IUser | IStudent;
+}
+
+/** Phase 3 Module 8: `GET /enrollments/my` — paginate and map to legacy `IEnrollment`. */
+async function fetchAllMyEnrollmentsMapped(): Promise<IEnrollment[]> {
+  const limit = 100;
+  let page = 1;
+  const all: IEnrollment[] = [];
+  for (;;) {
+    const res = await enrollmentsService.getMyEnrollments({ page, limit, sort: '-createdAt' });
+    for (const item of res.items) {
+      all.push(mapPhase3EnrollmentToIEnrollment(item as Record<string, unknown>));
+    }
+    const totalPages = res.totalPages ?? 1;
+    if (page >= totalPages || res.items.length === 0) break;
+    page++;
+  }
+  return all;
+}
+
+/** Phase 3 `GET /enrollments` (admin) with optional `student_id` / `course_id`. */
+async function fetchAdminEnrollmentsPages(filter: { student_id?: string; course_id?: string }): Promise<IEnrollment[]> {
+  const limit = 100;
+  let page = 1;
+  const all: IEnrollment[] = [];
+  for (;;) {
+    const res = await enrollmentsService.getEnrollments({ ...filter, page, limit, sort: '-createdAt' });
+    for (const item of res.items) {
+      all.push(mapPhase3EnrollmentToIEnrollment(item as Record<string, unknown>));
+    }
+    const totalPages = res.totalPages ?? 1;
+    if (page >= totalPages || res.items.length === 0) break;
+    page++;
+  }
+  return all;
 }
 
 /**
@@ -363,31 +399,32 @@ export const api = {
     return response.data;
   },
 
-  // Enrollment endpoints
-  getEnrollments: async (params?: { studentId?: string; courseId?: string }): Promise<IEnrollment[]> => {
-    const response = await axiosInstance.get<unknown>('/enrollments', { params });
-    const d = response.data;
-    if (Array.isArray(d)) return d as IEnrollment[];
-    if (d && typeof d === 'object') {
-      const bag = d as { data?: unknown };
-      if (Array.isArray(bag.data)) return bag.data as IEnrollment[];
-      if (bag.data && typeof bag.data === 'object' && 'enrollments' in bag.data) {
-        const inner = (bag.data as { enrollments?: IEnrollment[] }).enrollments;
-        if (Array.isArray(inner)) return inner;
-      }
-    }
-    return [];
+  // Enrollment endpoints — Phase 3 Module 8 (`GET /enrollments`, `GET /enrollments/my`, …)
+  getEnrollments: async (params?: {
+    studentId?: string;
+    student_id?: string;
+    courseId?: string;
+    course_id?: string;
+  }): Promise<IEnrollment[]> => {
+    const student_id = params?.student_id ?? params?.studentId;
+    const course_id = params?.course_id ?? params?.courseId;
+    return fetchAdminEnrollmentsPages({
+      ...(student_id ? { student_id } : {}),
+      ...(course_id ? { course_id } : {}),
+    });
   },
 
-  // Student-specific endpoints
+  // Student-specific endpoints — `GET /enrollments/my` (replaces legacy `/my-courses`, `/transcript`)
   getMyCourses: async (params?: { semester?: string }): Promise<IEnrollment[]> => {
-    const response = await axiosInstance.get<IEnrollment[]>('/enrollments/my-courses', { params });
-    return response.data;
+    const rows = await fetchAllMyEnrollmentsMapped();
+    if (params?.semester === 'current') {
+      return rows.filter((e) => e.status === 'enrolled');
+    }
+    return rows;
   },
 
   getMyTranscript: async (): Promise<IEnrollment[]> => {
-    const response = await axiosInstance.get<IEnrollment[]>('/enrollments/transcript');
-    return response.data;
+    return fetchAllMyEnrollmentsMapped();
   },
 
   getMyAnnouncements: async (): Promise<IAnnouncement[]> => {
@@ -429,14 +466,17 @@ export const api = {
     return response.data;
   },
 
-  // Enrollment actions
-  enrollInCourse: async (data: { courseOffering: string }): Promise<IEnrollment> => {
-    const response = await axiosInstance.post<IEnrollment>('/enrollments', data);
-    return response.data;
+  // Enrollment actions — Phase 3: `POST /enrollments`, `PATCH /enrollments/:id/withdraw`
+  enrollInCourse: async (data: { courseOffering?: string; courseOffering_id?: string }): Promise<IEnrollment> => {
+    const courseOffering_id = data.courseOffering_id ?? data.courseOffering;
+    if (!courseOffering_id) throw new Error('courseOffering_id is required');
+    const raw = await enrollmentsService.createStudentEnrollment(courseOffering_id);
+    return mapPhase3EnrollmentToIEnrollment(raw as Record<string, unknown>);
   },
 
-  dropCourse: async (enrollmentId: string): Promise<void> => {
-    await axiosInstance.delete(`/enrollments/${enrollmentId}`);
+  dropCourse: async (enrollmentId: string): Promise<IEnrollment> => {
+    const raw = await enrollmentsService.withdrawEnrollment(enrollmentId);
+    return mapPhase3EnrollmentToIEnrollment(raw as Record<string, unknown>);
   },
 
   // Doctor-specific endpoints

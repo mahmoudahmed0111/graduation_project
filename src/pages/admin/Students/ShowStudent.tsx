@@ -48,7 +48,7 @@ export function ShowStudent() {
         }
         setStudent(mapUserRecordToStudent(raw));
 
-        const enrollmentsData = await api.getEnrollments({ studentId: id }).catch(() => [] as IEnrollment[]);
+        const enrollmentsData = await api.getEnrollments({ student_id: id }).catch(() => [] as IEnrollment[]);
         setEnrollments(Array.isArray(enrollmentsData) ? enrollmentsData : []);
       } catch (err) {
         logger.error('Failed to fetch student data', {

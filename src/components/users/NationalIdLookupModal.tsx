@@ -6,6 +6,7 @@ import { useLookupUser } from '@/hooks/queries/useUsers';
 import { getApiErrorMessage } from '@/lib/http/client';
 import { useToastStore } from '@/store/toastStore';
 import { useNavigate } from 'react-router-dom';
+import { detailPathForPhase2Role } from '@/lib/userListPaths';
 
 export function NationalIdLookupModal({
   isOpen,
@@ -30,7 +31,7 @@ export function NationalIdLookupModal({
       success('User found.');
       onClose();
       setNationalID('');
-      navigate(`/dashboard/users/directory/${user._id}`);
+      navigate(detailPathForPhase2Role(String(user.role), user._id));
     } catch (e) {
       toastError(getApiErrorMessage(e, 'No user found or not available in your scope.'));
     }

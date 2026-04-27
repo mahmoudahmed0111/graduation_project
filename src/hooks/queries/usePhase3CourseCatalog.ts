@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as courseCatalogService from '@/services/courseCatalog.service';
 import type { CourseCatalogListParams } from '@/services/courseCatalog.service';
 
@@ -31,12 +31,19 @@ export function useCreateCourseCatalog() {
   });
 }
 
+function invalidateCatalogDetail(qc: QueryClient, id: string) {
+  void qc.invalidateQueries({ queryKey: [...key, 'detail', id] });
+}
+
 export function useUpdateCourseCatalog() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof courseCatalogService.updateCourseCatalog>[1] }) =>
       courseCatalogService.updateCourseCatalog(id, data),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: key }),
+    onSuccess: (_data, { id }) => {
+      void qc.invalidateQueries({ queryKey: key });
+      invalidateCatalogDetail(qc, id);
+    },
   });
 }
 
@@ -44,7 +51,10 @@ export function useArchiveCourseCatalog() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: courseCatalogService.archiveCourseCatalog,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: key }),
+    onSuccess: (_data, id) => {
+      void qc.invalidateQueries({ queryKey: key });
+      invalidateCatalogDetail(qc, id);
+    },
   });
 }
 
@@ -52,6 +62,9 @@ export function useRestoreCourseCatalog() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: courseCatalogService.restoreCourseCatalog,
-    onSuccess: () => void qc.invalidateQueries({ queryKey: key }),
+    onSuccess: (_data, id) => {
+      void qc.invalidateQueries({ queryKey: key });
+      invalidateCatalogDetail(qc, id);
+    },
   });
 }

@@ -322,7 +322,8 @@ export function MyCourses() {
             setDropping(true);
             await api.dropCourse(enrollmentToDrop.id);
             showSuccess(`Successfully dropped ${enrollmentToDrop.courseOffering?.course?.code}`);
-            setEnrollments(enrollments.filter(e => e.id !== enrollmentToDrop.id));
+            const refreshed = await api.getMyCourses({ semester: selectedSemester });
+            setEnrollments(Array.isArray(refreshed) ? refreshed : []);
             setDropDialogOpen(false);
             setEnrollmentToDrop(null);
           } catch (error) {

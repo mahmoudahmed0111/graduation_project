@@ -1,750 +1,632 @@
 import { useAuthStore } from '@/store/authStore';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
-import { 
-  GraduationCap, 
-  BookOpen, 
-  Award, 
-  Calendar, 
-  Clock, 
-  Bell, 
-  FileText, 
+import {
+  GraduationCap,
+  BookOpen,
+  Award,
+  Calendar,
+  Clock,
+  Bell,
+  FileText,
   TrendingUp,
+  TrendingDown,
   CheckCircle2,
   AlertCircle,
-  Building2
+  Building2,
+  Target,
+  Zap,
+  Star,
+  ArrowUpRight,
+  Activity,
+  Trophy,
+  BookMarked,
+  Flame,
 } from 'lucide-react';
-import { IStudent, IEnrollment, IAnnouncement, IAttendanceReport, IAssessment } from '@/types';
-import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
 import { ChartCard } from '@/components/charts';
 import { BarChart } from '@/components/charts/BarChart';
 import { LineChart } from '@/components/charts/LineChart';
 import { PieChart } from '@/components/charts/PieChart';
-import { logger } from '@/lib/logger';
-import { formatDate } from '@/utils/formatters';
+import { AreaChart } from '@/components/charts/AreaChart';
+import { IStudent } from '@/types';
+
+// ============ STATIC DATA ============
+
+const STATS = {
+  gpa: 3.78,
+  gpaDelta: '+0.12',
+  creditsEarned: 87,
+  creditsRequired: 120,
+  creditsDelta: '+15',
+  currentCredits: 18,
+  attendance: 94.2,
+  attendanceDelta: '+2.1',
+  rank: 12,
+  rankTotal: 240,
+  streak: 18,
+  completedAssignments: 47,
+  pendingAssignments: 4,
+};
+
+const MY_COURSES = [
+  { code: 'CS301', title: 'Operating Systems', doctor: 'Dr. Ahmed Hassan', credits: 3, attendance: 96, grade: 'A-', gradePct: 91, color: 'from-blue-500 to-blue-600', progress: 72 },
+  { code: 'CS320', title: 'Computer Networks', doctor: 'Dr. Sara Mohamed', credits: 3, attendance: 92, grade: 'B+', gradePct: 87, color: 'from-purple-500 to-purple-600', progress: 65 },
+  { code: 'MATH201', title: 'Linear Algebra', doctor: 'Dr. Omar Khaled', credits: 4, attendance: 98, grade: 'A', gradePct: 94, color: 'from-emerald-500 to-emerald-600', progress: 80 },
+  { code: 'CS350', title: 'Software Architecture', doctor: 'Dr. Layla Ibrahim', credits: 3, attendance: 89, grade: 'B+', gradePct: 86, color: 'from-orange-500 to-orange-600', progress: 58 },
+  { code: 'ENG210', title: 'Technical Writing', doctor: 'Prof. John Smith', credits: 2, attendance: 95, grade: 'A', gradePct: 93, color: 'from-pink-500 to-pink-600', progress: 78 },
+  { code: 'CS380', title: 'AI Foundations', doctor: 'Dr. Mona Adel', credits: 3, attendance: 94, grade: 'A-', gradePct: 90, color: 'from-cyan-500 to-cyan-600', progress: 70 },
+];
+
+const UPCOMING_ASSESSMENTS = [
+  { id: 'a1', title: 'OS Midterm Exam', course: 'CS301', daysLeft: 2, points: 100, type: 'Exam', submitted: false },
+  { id: 'a2', title: 'Networks Lab Report', course: 'CS320', daysLeft: 4, points: 30, type: 'Lab', submitted: false },
+  { id: 'a3', title: 'Linear Algebra HW 5', course: 'MATH201', daysLeft: 6, points: 25, type: 'Homework', submitted: false },
+  { id: 'a4', title: 'Architecture Diagrams', course: 'CS350', daysLeft: 8, points: 50, type: 'Project', submitted: false },
+  { id: 'a5', title: 'Essay - Tech Ethics', course: 'ENG210', daysLeft: 10, points: 40, type: 'Essay', submitted: false },
+];
+
+const ANNOUNCEMENTS = [
+  { id: 1, title: 'Final exam schedule released', author: 'Registrar', time: '1h ago', priority: 'high' },
+  { id: 2, title: 'Library extended hours during finals', author: 'Library', time: '5h ago', priority: 'medium' },
+  { id: 3, title: 'Career fair next Wednesday', author: 'Career Center', time: '1d ago', priority: 'medium' },
+  { id: 4, title: 'Student discount on Adobe CC', author: 'IT Services', time: '2d ago', priority: 'low' },
+];
+
+const TODAY_SCHEDULE = [
+  { time: '09:00', end: '10:30', course: 'CS301', room: 'Room 204', type: 'Lecture', status: 'done' },
+  { time: '11:00', end: '12:30', course: 'MATH201', room: 'Room 110', type: 'Lecture', status: 'now' },
+  { time: '14:00', end: '15:30', course: 'CS320', room: 'Lab B-3', type: 'Lab', status: 'upcoming' },
+  { time: '16:00', end: '17:00', course: 'ENG210', room: 'Room 405', type: 'Lecture', status: 'upcoming' },
+];
+
+const GPA_TREND = [
+  { semester: 'F22', gpa: 3.42 },
+  { semester: 'S23', gpa: 3.55 },
+  { semester: 'F23', gpa: 3.61 },
+  { semester: 'S24', gpa: 3.68 },
+  { semester: 'F24', gpa: 3.72 },
+  { semester: 'S25', gpa: 3.78 },
+];
+
+const ATTENDANCE_BY_COURSE = MY_COURSES.map((c) => ({ course: c.code, attendance: c.attendance }));
+
+const GRADE_DISTRIBUTION = [
+  { name: 'A / A-', value: 14 },
+  { name: 'B+ / B', value: 9 },
+  { name: 'B-', value: 3 },
+  { name: 'C+', value: 1 },
+];
+
+const CREDITS_BY_YEAR = [
+  { year: 'Year 1', completed: 30, total: 30 },
+  { year: 'Year 2', completed: 30, total: 30 },
+  { year: 'Year 3', completed: 27, total: 30 },
+  { year: 'Year 4', completed: 0, total: 30 },
+];
+
+const STUDY_HOURS = [
+  { week: 'W1', hours: 18 },
+  { week: 'W2', hours: 22 },
+  { week: 'W3', hours: 25 },
+  { week: 'W4', hours: 28 },
+  { week: 'W5', hours: 24 },
+  { week: 'W6', hours: 30 },
+  { week: 'W7', hours: 32 },
+  { week: 'W8', hours: 35 },
+];
+
+const ACHIEVEMENTS = [
+  { icon: Trophy, label: 'Dean\'s List', sub: 'Fall 2024', color: 'from-amber-400 to-amber-600' },
+  { icon: Flame, label: '18-Day Streak', sub: 'Active learner', color: 'from-orange-400 to-red-500' },
+  { icon: Star, label: 'Top 5%', sub: 'In Math 201', color: 'from-purple-400 to-purple-600' },
+  { icon: BookMarked, label: '20+ Books', sub: 'Library reader', color: 'from-emerald-400 to-emerald-600' },
+];
+
+// ============ COMPONENT ============
 
 export function StudentDashboard() {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
   const student = user as IStudent;
-  
-  const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
-  const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
-  const [attendanceReports, setAttendanceReports] = useState<IAttendanceReport[]>([]);
-  const [upcomingAssessments, setUpcomingAssessments] = useState<IAssessment[]>([]);
-  const [transcript, setTranscript] = useState<IEnrollment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const [coursesData, announcementsData, attendanceData, transcriptData] = await Promise.all([
-          api.getMyCourses({ semester: 'current' }).catch(() => []),
-          api.getMyAnnouncements().catch(() => []),
-          api.getMyAttendanceReport().catch(() => []),
-          api.getMyTranscript().catch(() => [])
-        ]);
-
-        setMyCourses(coursesData);
-        setAnnouncements(announcementsData.slice(0, 2)); // Latest 2
-        setAttendanceReports(attendanceData);
-        setTranscript(transcriptData);
-
-        // Fetch assessments for enrolled courses
-        const assessmentPromises = coursesData.map(enrollment => {
-          const courseOfferingId = enrollment.courseOffering?.id || enrollment.courseOffering;
-          if (!courseOfferingId || typeof courseOfferingId !== 'string') return Promise.resolve([]);
-          return api.getCourseAssessments({ courseOffering: courseOfferingId }).catch(() => []);
-        });
-        const allAssessments = (await Promise.all(assessmentPromises)).flat();
-        const upcoming = allAssessments
-          .filter(a => new Date(a.dueDate) > new Date())
-          .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-          .slice(0, 5);
-        setUpcomingAssessments(upcoming);
-      } catch (error) {
-        logger.error('Failed to fetch dashboard data', {
-          context: 'StudentDashboard',
-          error,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  // Update clock every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const isFinalYear = student?.year === 4;
-  const collegeName = student?.department?.college?.name || 'N/A';
-  const departmentName = student?.department?.name || 'N/A';
+  const gpaProgress = (STATS.gpa / 4.0) * 100;
+  const creditsProgress = (STATS.creditsEarned / STATS.creditsRequired) * 100;
 
-  // Calculate current semester credit hours
-  const currentSemesterCredits = myCourses.reduce((sum, enrollment) => 
-    sum + (enrollment.courseOffering?.course?.creditHours || 0), 0
-  );
-
-  // Calculate average attendance
-  const avgAttendance = attendanceReports.length > 0
-    ? attendanceReports.reduce((sum, report) => sum + report.attendancePercentage, 0) / attendanceReports.length
-    : 0;
-
-  const stats = [
+  const statCards = [
     {
-      label: t('student.gpa'),
-      value: student?.gpa?.toFixed(2) || '0.00',
+      label: 'Cumulative GPA',
+      value: STATS.gpa.toFixed(2),
+      delta: STATS.gpaDelta,
+      trend: 'up',
       icon: Award,
-      color: 'text-accent-500',
-      bgColor: 'bg-accent-50',
-      description: 'Cumulative GPA',
+      gradient: 'from-amber-400 to-amber-600',
+      bg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      hint: 'Out of 4.00',
     },
     {
       label: 'Credits Earned',
-      value: student?.creditsEarned || 0,
+      value: STATS.creditsEarned,
+      delta: STATS.creditsDelta,
+      trend: 'up',
       icon: BookOpen,
-      color: 'text-primary-500',
-      bgColor: 'bg-primary-50',
-      description: 'Total credit hours',
-    },
-    {
-      label: 'Current Semester',
-      value: `${currentSemesterCredits} hrs`,
-      icon: Calendar,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      description: 'Enrolled this term',
+      gradient: 'from-blue-500 to-blue-600',
+      bg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      hint: `of ${STATS.creditsRequired} required`,
     },
     {
       label: 'Attendance',
-      value: `${avgAttendance.toFixed(1)}%`,
+      value: `${STATS.attendance}%`,
+      delta: STATS.attendanceDelta,
+      trend: 'up',
       icon: CheckCircle2,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      description: 'Average attendance',
+      gradient: 'from-emerald-500 to-emerald-600',
+      bg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      hint: 'This semester',
+    },
+    {
+      label: 'Class Rank',
+      value: `#${STATS.rank}`,
+      delta: '+3',
+      trend: 'up',
+      icon: Trophy,
+      gradient: 'from-purple-500 to-purple-600',
+      bg: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      hint: `of ${STATS.rankTotal} students`,
     },
   ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-6 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 p-6 lg:p-8 text-white shadow-xl">
+        <div className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-16 -left-8 h-56 w-56 rounded-full bg-accent-400/20 blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {student?.name}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-primary-100">
+            <p className="text-primary-200 text-sm mb-1">Welcome back,</p>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-3">{student?.name || 'Student'}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-primary-100 text-sm">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                <span>{collegeName}</span>
+                <span>{student?.department?.college?.name || 'Faculty of Engineering'}</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
-                <span>{departmentName}</span>
+                <span>{student?.department?.name || 'Computer Science'}</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>Year {student?.year || 1}, Semester {student?.semester || 1}</span>
+                <span>Year {student?.year || 3}, Semester {student?.semester || 2}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-4">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-300/30">
+                <Flame className="h-3.5 w-3.5 text-orange-300" />
+                <span className="text-xs font-semibold">{STATS.streak} day streak</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-300/30">
+                <Star className="h-3.5 w-3.5 text-amber-300" />
+                <span className="text-xs font-semibold">Dean's List</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-5 w-5" />
-                <div className="text-2xl font-bold font-mono">
-                  {currentTime.toLocaleTimeString(
-                    'en-US',
-                    { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }
-                  )}
-                </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-4 border border-white/20">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-5 w-5" />
+              <div className="text-3xl font-bold font-mono tracking-tight">
+                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
               </div>
-              <div className="text-sm text-primary-200">
-                {currentTime.toLocaleDateString(
-                  'en-US',
-                  { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-                )}
-              </div>
+            </div>
+            <div className="text-xs text-primary-200">
+              {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => {
+      {/* Main Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((stat) => {
           const Icon = stat.icon;
+          const TrendIcon = stat.trend === 'up' ? TrendingUp : TrendingDown;
+          const trendColor = stat.trend === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
           return (
-            <Card key={stat.label} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.description}</p>
+            <div
+              key={stat.label}
+              className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+            >
+              <div className={`absolute -top-6 -right-6 h-24 w-24 rounded-full bg-gradient-to-br ${stat.gradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-2.5 rounded-xl ${stat.bg}`}>
+                    <Icon className={`h-5 w-5 ${stat.iconColor}`} />
                   </div>
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
+                  <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${trendColor}`}>
+                    <TrendIcon className="h-3 w-3" />
+                    {stat.delta}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                <p className="text-xs text-gray-500">{stat.hint}</p>
+              </div>
+            </div>
           );
         })}
       </div>
 
+      {/* Progress + Achievements row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* My Courses - Takes 2 columns */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* My Courses */}
-          <Card>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary-600" />
-                My Courses
-              </CardTitle>
-              <Link to="/dashboard/courses/my-courses">
-                <Button variant="secondary" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {myCourses.length === 0 ? (
-                <div className="text-center py-8">
-                  <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">No courses enrolled this semester</p>
-                  <Link to="/dashboard/courses/enroll">
-                    <Button className="mt-4">Browse Courses</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {myCourses.map((enrollment) => {
-                    const course = enrollment.courseOffering?.course;
-                    const courseOfferingId = enrollment.courseOffering?.id || enrollment.courseOffering;
-                    const attendance = attendanceReports.find(
-                      r => r.courseOffering?.id === courseOfferingId || 
-                           (typeof courseOfferingId === 'string' && r.courseOffering?.id === courseOfferingId)
-                    );
-                    return (
-                      <div
-                        key={enrollment.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-gray-900">{course?.code || 'N/A'}</h4>
-                              {course?.creditHours && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">
-                                  {course.creditHours} hrs
-                                </span>
-                              )}
-                              {enrollment.status === 'enrolled' && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                                  Active
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-700 mb-2">{course?.title || 'Course Title'}</p>
-                            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                              {enrollment.courseOffering?.doctors?.[0] && (
-                                <span>Dr. {enrollment.courseOffering.doctors[0].name}</span>
-                              )}
-                              {attendance && (
-                                <span className="flex items-center gap-1">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  {attendance.attendancePercentage.toFixed(0)}% attendance
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {enrollment.grades?.finalLetter && (
-                            <div className="text-right">
-                              <div className="text-2xl font-bold text-primary-600">
-                                {enrollment.grades.finalLetter}
-                              </div>
-                              {enrollment.grades.finalTotal !== undefined && (
-                                <div className="text-xs text-gray-500">
-                                  {enrollment.grades.finalTotal.toFixed(1)}%
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Assessments */}
-          {upcomingAssessments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary-600" />
-                  Upcoming Assessments
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {upcomingAssessments.map((assessment) => {
-                    const daysUntilDue = Math.ceil(
-                      (new Date(assessment.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                    );
-                    const isUrgent = daysUntilDue <= 3;
-                    return (
-                      <div
-                        key={assessment.id}
-                        className={`border rounded-lg p-4 ${
-                          isUrgent ? 'border-red-200 bg-red-50' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-gray-900">{assessment.title}</h4>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                                {assessment.courseOffering.course.code}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">
-                              {assessment.courseOffering.course.title}
-                            </p>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                Due: {formatDate(assessment.dueDate)}
-                              </span>
-                              <span>{assessment.totalPoints} points</span>
-                            </div>
-                          </div>
-                          {isUrgent && (
-                            <AlertCircle className="h-5 w-5 text-red-500" />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Recent Announcements */}
-          <Card>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary-600" />
-                Announcements
-              </CardTitle>
-              <Link to="/announcements">
-                <Button variant="secondary" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {announcements.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">No announcements</p>
-              ) : (
-                <div className="space-y-3">
-                  {announcements.map((announcement) => (
-                    <div
-                      key={announcement.id}
-                      className="border-l-4 border-primary-500 pl-3 py-2 hover:bg-gray-50 rounded-r transition-colors"
-                    >
-                      <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-1">
-                        {announcement.title}
-                      </h4>
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-1">
-                        {announcement.content}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{announcement.author.name}</span>
-                        <span>{formatDate(announcement.createdAt)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Academic Progress */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary-600" />
-                Academic Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">GPA Progress</span>
-                  <span className="text-sm font-semibold">{student?.gpa?.toFixed(2) || '0.00'}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-primary-600 h-2 rounded-full transition-all"
-                    style={{ width: `${((student?.gpa || 0) / 4.0) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Credits Progress</span>
-                  <span className="text-sm font-semibold">
-                    {student?.creditsEarned || 0} / 120
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full transition-all"
-                    style={{ width: `${((student?.creditsEarned || 0) / 120) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="pt-2 border-t">
-                <Link to="/enrollments/transcript">
-                  <Button variant="secondary" className="w-full">
-                    View Full Transcript
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* GPA Trend Chart - Based on transcript data */}
-        <ChartCard 
-          title="GPA Trend" 
-          description="Your GPA progression over semesters"
-        >
-          {(() => {
-            // Calculate GPA per semester from transcript
-            const semesterGPA = transcript.reduce((acc, enrollment) => {
-              const sem = enrollment.semester || 'Unknown';
-              if (!acc[sem]) {
-                acc[sem] = { semester: sem, totalPoints: 0, totalCredits: 0 };
-              }
-              const credits = enrollment.courseOffering?.course?.creditHours || 0;
-              const grade = enrollment.grades?.finalTotal || 0;
-              const points = grade >= 90 ? 4.0 : grade >= 85 ? 3.7 : grade >= 80 ? 3.3 : grade >= 75 ? 3.0 : grade >= 70 ? 2.7 : grade >= 65 ? 2.3 : grade >= 60 ? 2.0 : 1.0;
-              acc[sem].totalPoints += points * credits;
-              acc[sem].totalCredits += credits;
-              return acc;
-            }, {} as Record<string, { semester: string; totalPoints: number; totalCredits: number }>);
-
-            const gpaData = Object.values(semesterGPA)
-              .map(item => ({
-                semester: item.semester,
-                gpa: item.totalCredits > 0 ? (item.totalPoints / item.totalCredits).toFixed(2) : '0.00'
-              }))
-              .sort((a, b) => a.semester.localeCompare(b.semester))
-              .slice(-6); // Last 6 semesters
-
-            // Fallback to example data if no transcript data
-            const chartData = gpaData.length > 0 ? gpaData : [
-              { semester: 'Fall 2023', gpa: '3.5' },
-              { semester: 'Spring 2024', gpa: '3.6' },
-              { semester: 'Fall 2024', gpa: '3.7' },
-              { semester: 'Spring 2025', gpa: '3.75' },
-            ];
-
-            return (
-              <LineChart
-                data={chartData.map(d => ({ ...d, gpa: parseFloat(d.gpa) }))}
-                dataKey="semester"
-                lines={[
-                  { dataKey: 'gpa', name: 'GPA', stroke: '#0055cc' },
-                ]}
-                xAxisLabel="Semester"
-                yAxisLabel="GPA"
-                height={250}
-              />
-            );
-          })()}
-        </ChartCard>
-
-        {/* Grade Distribution - Based on actual grades */}
-        <ChartCard 
-          title="Grade Distribution" 
-          description="Distribution of your course grades"
-        >
-          {(() => {
-            const gradeCounts = transcript.reduce((acc, enrollment) => {
-              const letter = enrollment.grades?.finalLetter || 'N/A';
-              if (letter !== 'N/A') {
-                acc[letter] = (acc[letter] || 0) + 1;
-              }
-              return acc;
-            }, {} as Record<string, number>);
-
-            const pieData = Object.entries(gradeCounts).length > 0
-              ? Object.entries(gradeCounts).map(([name, value]) => ({ name, value }))
-              : [
-                  { name: 'A', value: 8 },
-                  { name: 'B', value: 5 },
-                  { name: 'C', value: 2 },
-                  { name: 'D', value: 1 },
-                ];
-
-            return <PieChart data={pieData} height={250} />;
-          })()}
-        </ChartCard>
-
-        {/* Attendance by Course - Real data */}
-        <ChartCard 
-          title="Attendance by Course" 
-          description="Your attendance percentage per course"
-        >
-          {(() => {
-            // Use real attendance data if available
-            let attendanceData = [];
-            
-            if (attendanceReports.length > 0) {
-              // Use actual attendance reports
-              attendanceData = attendanceReports.map(report => ({
-                course: report.courseOffering?.course?.code || 'N/A',
-                attendance: Math.round(report.attendancePercentage),
-              }));
-            } else if (myCourses.length > 0) {
-              // If no attendance reports, show enrolled courses with placeholder
-              attendanceData = myCourses.map(enrollment => {
-                const courseCode = enrollment.courseOffering?.course?.code || 'N/A';
-                // Try to find attendance from reports by matching course
-                const report = attendanceReports.find(r => 
-                  r.courseOffering?.course?.code === courseCode
-                );
-                return {
-                  course: courseCode,
-                  attendance: report ? Math.round(report.attendancePercentage) : 0,
-                };
-              });
-            } else {
-              // Fallback example data
-              attendanceData = [
-                { course: 'CS101', attendance: 95 },
-                { course: 'CS201', attendance: 88 },
-                { course: 'MATH101', attendance: 92 },
-                { course: 'ENG101', attendance: 85 },
-              ];
-            }
-
-            return attendanceData.length > 0 ? (
-              <BarChart
-                data={attendanceData}
-                dataKey="course"
-                bars={[
-                  { dataKey: 'attendance', name: 'Attendance %', fill: '#10b981' },
-                ]}
-                xAxisLabel="Course"
-                yAxisLabel="Attendance %"
-                height={250}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-[250px] text-gray-500">
-                <p>No attendance data available</p>
-              </div>
-            );
-          })()}
-        </ChartCard>
-
-        {/* Credits Progress - Based on actual credits */}
-        <ChartCard 
-          title="Credits Progress" 
-          description="Your academic progress by year"
-        >
-          {(() => {
-            // Calculate credits per year based on student's total credits earned
-            const totalCredits = student?.creditsEarned || 0;
-            
-            // Distribute credits across years (assuming 30 credits per year)
-            let remaining = totalCredits;
-            const year1Credits = Math.min(30, remaining);
-            remaining = Math.max(0, remaining - 30);
-            const year2Credits = Math.min(30, remaining);
-            remaining = Math.max(0, remaining - 30);
-            const year3Credits = Math.min(30, remaining);
-            remaining = Math.max(0, remaining - 30);
-            const year4Credits = remaining;
-
-            const progressData = [
-              { year: 'Year 1', completed: year1Credits, total: 30 },
-              { year: 'Year 2', completed: year2Credits, total: 30 },
-              { year: 'Year 3', completed: year3Credits, total: 30 },
-              { year: 'Year 4', completed: year4Credits, total: 30 },
-            ];
-
-            return (
-              <BarChart
-                data={progressData}
-                dataKey="year"
-                bars={[
-                  { dataKey: 'completed', name: 'Completed', fill: '#0055cc' },
-                  { dataKey: 'total', name: 'Required', fill: '#e5e7eb' },
-                ]}
-                xAxisLabel="Academic Year"
-                yAxisLabel="Credit Hours"
-                height={250}
-              />
-            );
-          })()}
-        </ChartCard>
-
-        {/* Performance by Course Type */}
-        {transcript.length > 0 && (
-          <ChartCard 
-            title="Performance by Department" 
-            description="Average grades by department"
-          >
-            {(() => {
-              const deptPerformance = transcript.reduce((acc, enrollment) => {
-                const dept = enrollment.courseOffering?.course?.department?.name || 'Other';
-                if (!acc[dept]) {
-                  acc[dept] = { total: 0, count: 0 };
-                }
-                const grade = enrollment.grades?.finalTotal || 0;
-                acc[dept].total += grade;
-                acc[dept].count += 1;
-                return acc;
-              }, {} as Record<string, { total: number; count: number }>);
-
-              const deptData = Object.entries(deptPerformance).map(([name, data]) => ({
-                department: name,
-                average: Math.round(data.total / data.count),
-              }));
-
-              return deptData.length > 0 ? (
-                <BarChart
-                  data={deptData}
-                  dataKey="department"
-                  bars={[
-                    { dataKey: 'average', name: 'Average Grade', fill: '#ffd700' },
-                  ]}
-                  xAxisLabel="Department"
-                  yAxisLabel="Average Grade"
-                  height={250}
-                />
-              ) : null;
-            })()}
-          </ChartCard>
-        )}
-
-        {/* Semester Comparison */}
-        {transcript.length > 0 && (
-          <ChartCard 
-            title="Semester Performance" 
-            description="Credits and GPA by semester"
-          >
-            {(() => {
-              const semData = transcript.reduce((acc, enrollment) => {
-                const sem = enrollment.semester || 'Unknown';
-                if (!acc[sem]) {
-                  acc[sem] = { semester: sem, credits: 0, courses: 0 };
-                }
-                acc[sem].credits += enrollment.courseOffering?.course?.creditHours || 0;
-                acc[sem].courses += 1;
-                return acc;
-              }, {} as Record<string, { semester: string; credits: number; courses: number }>);
-
-              const chartData = Object.values(semData)
-                .sort((a, b) => a.semester.localeCompare(b.semester))
-                .slice(-4);
-
-              return chartData.length > 0 ? (
-                <BarChart
-                  data={chartData}
-                  dataKey="semester"
-                  bars={[
-                    { dataKey: 'credits', name: 'Credit Hours', fill: '#0055cc' },
-                    { dataKey: 'courses', name: 'Courses', fill: '#10b981' },
-                  ]}
-                  xAxisLabel="Semester"
-                  yAxisLabel="Count"
-                  height={250}
-                />
-              ) : null;
-            })()}
-          </ChartCard>
-        )}
-      </div>
-
-      {/* Graduation Project Section (Final Year Only) */}
-      {isFinalYear && (
-        <Card className="border-2 border-accent-300 bg-gradient-to-r from-accent-50 to-white">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-accent-600" />
-                Graduation Project
-              </CardTitle>
-              {!student?.graduationProject && (
-                <Button onClick={() => {/* Handle project modal */}}>
-                  Add Project
-                </Button>
-              )}
-            </div>
+        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary-600" />
+              Academic Progress
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {student?.graduationProject ? (
-              <div className="space-y-2">
-                <p className="font-medium text-gray-900">{student.graduationProject.title}</p>
-                <p className="text-sm text-gray-600">
-                  {student.graduationProject.description}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Supervisor: {student.graduationProject.supervisorName}
-                </p>
-                <span className="inline-block px-3 py-1 text-xs rounded-full bg-primary-100 text-primary-700 font-medium">
-                  {student.graduationProject.status}
-                </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">GPA Progress</span>
+                  <span className="text-sm font-bold text-gray-900">{STATS.gpa.toFixed(2)} / 4.00</span>
+                </div>
+                <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
+                    style={{ width: `${gpaProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{gpaProgress.toFixed(0)}% of perfect score</p>
               </div>
-            ) : (
-              <div className="text-center py-4">
-                <GraduationCap className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 mb-4">No graduation project added yet.</p>
-                <Button onClick={() => {/* Handle project modal */}}>
-                  Add Your Project
-                </Button>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Credits to Graduation</span>
+                  <span className="text-sm font-bold text-gray-900">{STATS.creditsEarned} / {STATS.creditsRequired}</span>
+                </div>
+                <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
+                    style={{ width: `${creditsProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{(STATS.creditsRequired - STATS.creditsEarned)} credits remaining</p>
               </div>
-            )}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Assignments</span>
+                  <span className="text-sm font-bold text-gray-900">{STATS.completedAssignments} done</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
+                      style={{ width: `${(STATS.completedAssignments / (STATS.completedAssignments + STATS.pendingAssignments)) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-orange-600 font-semibold">{STATS.pendingAssignments} pending</span>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Current Load</span>
+                  <span className="text-sm font-bold text-gray-900">{STATS.currentCredits} credits</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs text-gray-600">{MY_COURSES.length} active courses this semester</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
+
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary-600" />
+              Achievements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {ACHIEVEMENTS.map((a) => {
+                const Icon = a.icon;
+                return (
+                  <div key={a.label} className="rounded-xl border border-gray-100 p-3 text-center hover:shadow-md transition-all">
+                    <div className={`mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${a.color} text-white shadow-sm`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-900">{a.label}</p>
+                    <p className="text-[10px] text-gray-500">{a.sub}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Today's schedule + announcements */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary-600" />
+              Today's Schedule
+            </CardTitle>
+            <span className="text-xs text-gray-500">{currentTime.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {TODAY_SCHEDULE.map((s, i) => {
+                const isNow = s.status === 'now';
+                const isDone = s.status === 'done';
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${
+                      isNow
+                        ? 'border-primary-300 bg-primary-50 ring-2 ring-primary-200'
+                        : isDone
+                        ? 'border-gray-100 bg-gray-50 opacity-70'
+                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className={`flex flex-col items-center justify-center min-w-[60px] py-1 rounded-lg ${isNow ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                      <span className="text-[10px] uppercase tracking-wide">{s.time}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="font-semibold text-gray-900">{s.course}</h4>
+                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{s.type}</span>
+                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">Live now</span>}
+                      </div>
+                      <p className="text-xs text-gray-500">{s.time} - {s.end} • {s.room}</p>
+                    </div>
+                    {isDone && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary-600" />
+              Announcements
+            </CardTitle>
+            <Link to="/dashboard/announcements">
+              <Button variant="secondary" size="sm">All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {ANNOUNCEMENTS.map((a) => {
+                const priorityStyles =
+                  a.priority === 'high'
+                    ? 'border-l-red-500 bg-red-50/50'
+                    : a.priority === 'medium'
+                    ? 'border-l-amber-500 bg-amber-50/50'
+                    : 'border-l-gray-300 bg-gray-50/50';
+                return (
+                  <div
+                    key={a.id}
+                    className={`border-l-4 ${priorityStyles} pl-3 py-2 pr-2 rounded-r-lg`}
+                  >
+                    <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-2">{a.title}</h4>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{a.author}</span>
+                      <span>{a.time}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* GPA trend full row */}
+      <ChartCard title="GPA Trend" description="Your GPA progression across semesters">
+        <LineChart
+          data={GPA_TREND}
+          dataKey="semester"
+          lines={[{ dataKey: 'gpa', name: 'GPA', stroke: '#0055cc' }]}
+          height={280}
+        />
+      </ChartCard>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Attendance by Course" description="Your attendance percentage per course">
+          <BarChart
+            data={ATTENDANCE_BY_COURSE}
+            dataKey="course"
+            bars={[{ dataKey: 'attendance', name: 'Attendance %', fill: '#10b981' }]}
+            height={280}
+          />
+        </ChartCard>
+
+        <ChartCard title="Grade Distribution" description="Your overall grade breakdown">
+          <PieChart data={GRADE_DISTRIBUTION} height={280} />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Credits by Year" description="Completed vs required per academic year">
+          <BarChart
+            data={CREDITS_BY_YEAR}
+            dataKey="year"
+            bars={[
+              { dataKey: 'completed', name: 'Completed', fill: '#0055cc' },
+              { dataKey: 'total', name: 'Required', fill: '#e5e7eb' },
+            ]}
+            height={260}
+          />
+        </ChartCard>
+
+        <ChartCard title="Weekly Study Hours" description="Hours spent studying this semester">
+          <AreaChart
+            data={STUDY_HOURS}
+            dataKey="week"
+            areas={[{ dataKey: 'hours', name: 'Hours', fill: '#8b5cf6' }]}
+            height={260}
+          />
+        </ChartCard>
+      </div>
+
+      {/* My Courses + Upcoming Assessments */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary-600" />
+              My Courses
+            </CardTitle>
+            <Link to="/dashboard/courses/my-courses">
+              <Button variant="secondary" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {MY_COURSES.map((c) => (
+                <div
+                  key={c.code}
+                  className="group relative overflow-hidden rounded-xl border border-gray-200 p-4 hover:border-primary-300 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center justify-center h-10 w-10 rounded-lg bg-gradient-to-br ${c.color} text-white text-xs font-bold shadow-sm`}>
+                        {c.code.replace(/[^0-9]/g, '').slice(0, 3)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900">{c.code}</h4>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
+                            {c.credits} hrs
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{c.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{c.doctor}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-primary-600">{c.grade}</div>
+                      <div className="text-xs text-gray-500">{c.gradePct}%</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> {c.attendance}% attendance
+                    </span>
+                    <span className="font-medium text-gray-700">{c.progress}% complete</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${c.color}`}
+                      style={{ width: `${c.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary-600" />
+              Upcoming Assessments
+            </CardTitle>
+            <Link to="/dashboard/assessments">
+              <Button variant="secondary" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {UPCOMING_ASSESSMENTS.map((a) => {
+                const isUrgent = a.daysLeft <= 3;
+                return (
+                  <div
+                    key={a.id}
+                    className={`rounded-xl border p-4 transition-all ${
+                      isUrgent ? 'border-red-200 bg-red-50/50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h4 className="font-semibold text-gray-900">{a.title}</h4>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
+                            {a.course}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                            {a.type}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {a.daysLeft} {a.daysLeft === 1 ? 'day' : 'days'} left
+                          </span>
+                          <span>{a.points} pts</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isUrgent && <AlertCircle className="h-5 w-5 text-red-500" />}
+                        <Button size="sm" variant={isUrgent ? 'primary' : 'secondary'}>
+                          <ArrowUpRight className="h-3 w-3 mr-1" />
+                          Submit
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick activity / motivation footer */}
+      <Card className="rounded-2xl border border-gray-100 bg-gradient-to-br from-primary-50 via-white to-amber-50 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md">
+                <Activity className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">You're on a {STATS.streak}-day learning streak!</p>
+                <p className="text-sm text-gray-600">Keep it up — you're in the top {Math.round((STATS.rank / STATS.rankTotal) * 100)}% of your class.</p>
+              </div>
+            </div>
+            <Link to="/dashboard/courses/my-courses">
+              <Button>
+                Continue Learning
+                <ArrowUpRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

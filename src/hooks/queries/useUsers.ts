@@ -10,10 +10,39 @@ export function usersListQueryKey(params: UserListQueryParams) {
   return [...root, 'list', params] as const;
 }
 
+/** Filters that define “same list” for placeholder reuse (exclude search + page). */
+function usersListStableFingerprint(p: UserListQueryParams): string {
+  return [
+    p.limit ?? '',
+    p.sort ?? '',
+    p.isArchived ?? '',
+    p.role ?? '',
+    p.department_id ?? '',
+    p.college_id ?? '',
+    p.academicStatus ?? '',
+    p.level ?? '',
+    p.fields ?? '',
+  ].join('\0');
+}
+
+function paramsFromUsersListQuery(previousQuery: unknown): UserListQueryParams | undefined {
+  if (!previousQuery || typeof previousQuery !== 'object') return undefined;
+  const key = (previousQuery as { queryKey?: readonly unknown[] }).queryKey;
+  if (!key || key.length < 4 || key[2] !== 'list') return undefined;
+  return key[3] as UserListQueryParams;
+}
+
 export function useUsers(params: UserListQueryParams) {
   return useQuery({
     queryKey: usersListQueryKey(params),
     queryFn: () => usersService.getUsers(params),
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData) return undefined;
+      const prevParams = paramsFromUsersListQuery(previousQuery);
+      if (!prevParams) return undefined;
+      if (usersListStableFingerprint(prevParams) !== usersListStableFingerprint(params)) return undefined;
+      return previousData;
+    },
   });
 }
 

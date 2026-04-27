@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useParams } from 'react-router-dom';
-import { AdminPageShell } from '@/components/admin';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -12,6 +11,7 @@ import { Select2 } from '@/components/ui/Select2';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import {
   useAssignRFID,
+  useBulkActions,
   useDeactivateUser,
   useForceLogoutUser,
   useGraduateUser,
@@ -21,13 +21,15 @@ import {
   useUpdateUser,
   useUpdateUserRole,
   useUser,
+  useMe,
 } from '@/hooks/queries/useUsers';
 import { getApiErrorMessage } from '@/lib/http/client';
 import { phase2CollegeId, phase2DepartmentId, phase2RefLabel, phase2UserIsActive } from '@/lib/phase2UserUi';
+import { listPageLabelForRole, listPathForPhase2Role } from '@/lib/userListPaths';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import type { UserRole } from '@/types';
-import { ArrowLeft, KeyRound, LogOut, Shield, UserCog } from 'lucide-react';
+import { ArrowLeft, KeyRound, LogOut, Shield, User as UserIcon, UserCog } from 'lucide-react';
 
 const phoneRe = /^01[0125]\d{8}$/;
 
@@ -51,18 +53,36 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: 'universityAdmin', label: 'University admin' },
 ];
 
+/** True when the URL `:id` is the signed-in user (handles `id` vs `_id` from auth / `GET /users/me`). */
+function userIdsMatch(
+  routeUserId: string | undefined,
+  authUser: { id?: string } | null | undefined,
+  meUser: { _id?: string } | null | undefined
+): boolean {
+  if (!routeUserId || !authUser) return false;
+  const rid = String(routeUserId).trim();
+  if (!rid) return false;
+  const authId = String(authUser.id ?? '').trim();
+  const authLegacyId = String((authUser as Record<string, unknown>)._id ?? '').trim();
+  if (authId === rid || authLegacyId === rid) return true;
+  if (meUser?._id && String(meUser._id).trim() === rid) return true;
+  return false;
+}
+
 export function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const { user: auth } = useAuthStore();
+  const { user: auth, isAuthenticated } = useAuthStore();
   const { success, error: toastError } = useToastStore();
 
   const isUA = auth?.role === 'universityAdmin';
   const isCA = auth?.role === 'collegeAdmin';
+  const { data: me } = useMe({ enabled: Boolean(isAuthenticated && auth) });
   const { data: u, isLoading, isError, refetch } = useUser(id);
 
   const updateUser = useUpdateUser();
   const deactivate = useDeactivateUser();
   const restore = useRestoreUser();
+  const bulkActions = useBulkActions();
   const unlock = useUnlockUser();
   const forceLogout = useForceLogoutUser();
   const resetPwd = useResetPassword();
@@ -113,7 +133,7 @@ export function UserDetailsPage() {
     setNextRole((u.role as UserRole) ?? 'student');
   }, [u, reset]);
 
-  const isSelf = auth?.id === id;
+  const isSelf = userIdsMatch(id, auth, me ?? null);
   const active = u ? phase2UserIsActive(u) : false;
 
   const onSaveProfile = async (data: EditForm) => {
@@ -146,84 +166,116 @@ export function UserDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center text-gray-500">Loading profile…</div>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500" />
+      </div>
     );
   }
 
   if (isError || !u) {
     return (
-      <AdminPageShell
-        title="User not available"
-        subtitle="The account may not exist, or you may not have access (scoped 404)."
-        breadcrumbs={[{ label: 'User Management' }, { label: 'Users' }]}
-        actions={
-          <Link to="/dashboard/users/directory">
-            <Button type="button" variant="secondary" className="gap-2">
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400">User not available or outside your scope.</p>
+          <Link to="/dashboard/users/students">
+            <Button variant="secondary" className="mt-4 inline-flex items-center gap-2 rounded-xl">
               <ArrowLeft className="h-4 w-4" />
-              Back to directory
+              Back to Students
             </Button>
           </Link>
-        }
-      />
+        </div>
+      </div>
     );
   }
 
   const national = u.realNationalID ?? u.nationalID ?? '—';
+  const listBack = listPathForPhase2Role(String(u.role));
+  const listCrumbLabel = listPageLabelForRole(String(u.role));
 
   return (
-    <AdminPageShell
-      title={u.name}
-      subtitle={u.email}
-      breadcrumbs={[{ label: 'User Management' }, { label: 'Users' }, { label: u.name }]}
-      badge={{
-        label: active ? 'Active' : 'Deactivated',
-        variant: active ? 'success' : 'neutral',
-      }}
-      actions={
-        <Link to="/dashboard/users/directory">
-          <Button type="button" variant="ghost" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Directory
-          </Button>
-        </Link>
-      }
-    >
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm font-medium text-gray-600 dark:text-gray-400"
+        >
+          <span className="shrink-0">User Management</span>
+          <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
+            /
+          </span>
+          <Link to={listBack} className="shrink-0 hover:text-primary-600 dark:hover:text-accent-400">
+            {listCrumbLabel}
+          </Link>
+          <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
+            /
+          </span>
+          <span
+            className="min-w-0 truncate font-semibold text-gray-900 dark:text-gray-100"
+            title={u.name}
+          >
+            {u.name}
+          </span>
+        </nav>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {active ? (
+            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200">
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+              Deactivated
+            </span>
+          )}
+          <Link to={listBack}>
+            <Button variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      <p className="-mt-2 text-sm text-gray-600 dark:text-gray-400">{u.email}</p>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Profile</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-gray-100">
+              <UserIcon className="h-4 w-4 shrink-0 text-gray-500" />
+              Profile
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {u.photo ? (
-              <img src={u.photo} alt="" className="h-32 w-32 rounded-2xl object-cover ring-1 ring-gray-200" />
+              <img src={u.photo} alt="" className="h-32 w-32 rounded-2xl object-cover ring-1 ring-gray-200 dark:ring-gray-700" />
             ) : (
-              <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-gray-100 text-2xl font-semibold text-gray-400">
+              <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-gray-100 text-2xl font-semibold text-gray-400 dark:bg-gray-800 dark:text-gray-500">
                 {u.name.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <p className="text-xs uppercase text-gray-500">Role</p>
-              <p className="font-medium text-gray-900">{u.role}</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Role</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{u.role}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500">College</p>
-              <p className="font-medium text-gray-900">{phase2RefLabel(u.college_id)}</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">College</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{phase2RefLabel(u.college_id)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500">Department</p>
-              <p className="font-medium text-gray-900">{phase2RefLabel(u.department_id)}</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Department</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">{phase2RefLabel(u.department_id)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500">National ID</p>
-              <p className="font-mono text-gray-900">{national}</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">National ID</p>
+              <p className="font-mono text-gray-900 dark:text-gray-100">{national}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500">RFID</p>
-              <p className="font-mono text-gray-900">{u.rfidTag ?? '—'}</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">RFID</p>
+              <p className="font-mono text-gray-900 dark:text-gray-100">{u.rfidTag ?? '—'}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500">Academic</p>
-              <p className="text-gray-900">
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Academic</p>
+              <p className="text-gray-900 dark:text-gray-100">
                 {u.academicStatus ?? '—'}
                 {u.level != null ? ` · Level ${u.level}` : ''}
                 {u.gpa != null ? ` · GPA ${u.gpa}` : ''}
@@ -235,7 +287,7 @@ export function UserDetailsPage() {
         <div className="space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Edit contact</CardTitle>
+              <CardTitle className="text-base text-gray-900 dark:text-gray-100">Edit contact</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit((d) => void onSaveProfile(d))} className="space-y-4">
@@ -249,7 +301,7 @@ export function UserDetailsPage() {
                   onChange={(v) => setValue('department_id', v)}
                 />
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">New photo (optional)</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">New photo (optional)</label>
                   <input
                     id="edit-user-photo"
                     type="file"
@@ -266,66 +318,90 @@ export function UserDetailsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-gray-100">
                 <Shield className="h-4 w-4" />
                 Account control
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {!isSelf && (isUA || isCA) && active && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="gap-2"
-                  onClick={() => id && void run('Deactivate', () => deactivate.mutateAsync(id))}
-                  disabled={deactivate.isPending}
-                >
-                  Deactivate
-                </Button>
-              )}
-              {isUA && !active && (
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={() => id && void run('Restore', () => restore.mutateAsync(id))}
-                  disabled={restore.isPending}
-                >
-                  Restore user
-                </Button>
-              )}
-              {(isUA || isCA) && !isSelf && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="gap-2"
-                  onClick={() => id && void run('Reset password', () => resetPwd.mutateAsync(id))}
-                  disabled={resetPwd.isPending}
-                >
-                  <KeyRound className="h-4 w-4" />
-                  Reset password
-                </Button>
-              )}
-              {isUA && !isSelf && (
-                <>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => id && void run('Unlock account', () => unlock.mutateAsync(id))}
-                    disabled={unlock.isPending}
-                  >
-                    Unlock account
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="gap-2"
-                    onClick={() => id && void run('Force logout', () => forceLogout.mutateAsync(id))}
-                    disabled={forceLogout.isPending}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Force logout
-                  </Button>
-                </>
+            <CardContent>
+              {isSelf ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  You cannot deactivate, reset the password, unlock, force logout, or change the role of your own account
+                  from this page.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {(isUA || isCA) && active && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="gap-2"
+                      onClick={() => id && void run('Deactivate', () => deactivate.mutateAsync(id))}
+                      disabled={deactivate.isPending}
+                    >
+                      Deactivate
+                    </Button>
+                  )}
+                  {!active && isUA && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => id && void run('Activate account', () => restore.mutateAsync(id))}
+                      disabled={restore.isPending}
+                    >
+                      Activate account
+                    </Button>
+                  )}
+                  {!active && isCA && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() =>
+                        id &&
+                        void run('Activate account', () =>
+                          bulkActions.mutateAsync({ action: 'activate', userIds: [id] })
+                        )
+                      }
+                      disabled={bulkActions.isPending}
+                    >
+                      Activate account
+                    </Button>
+                  )}
+                  {(isUA || isCA) && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="gap-2"
+                      onClick={() => id && void run('Reset password', () => resetPwd.mutateAsync(id))}
+                      disabled={resetPwd.isPending}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Reset password
+                    </Button>
+                  )}
+                  {isUA && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => id && void run('Unlock account', () => unlock.mutateAsync(id))}
+                        disabled={unlock.isPending}
+                      >
+                        Unlock account
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="gap-2"
+                        onClick={() => id && void run('Force logout', () => forceLogout.mutateAsync(id))}
+                        disabled={forceLogout.isPending}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Force logout
+                      </Button>
+                    </>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -333,7 +409,7 @@ export function UserDetailsPage() {
           {isUA && !isSelf && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-gray-100">
                   <UserCog className="h-4 w-4" />
                   Role (university admin)
                 </CardTitle>
@@ -366,7 +442,7 @@ export function UserDetailsPage() {
           {isCA && u.role === 'student' && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">College admin actions</CardTitle>
+                <CardTitle className="text-base text-gray-900 dark:text-gray-100">College admin actions</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 <Button type="button" variant="secondary" onClick={() => setRfidOpen(true)}>
@@ -415,6 +491,6 @@ export function UserDetailsPage() {
           </Button>
         </div>
       </Modal>
-    </AdminPageShell>
+    </div>
   );
 }

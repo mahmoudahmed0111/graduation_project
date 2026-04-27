@@ -162,6 +162,9 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
 
   const adminNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+    ...(import.meta.env.DEV
+      ? [{ path: '/dashboard/ui-preview', label: 'UI Preview (Static)', icon: LayoutDashboard } satisfies NavItem]
+      : []),
     { 
       path: '/dashboard/organizational', 
       label: 'University Structure', 
@@ -177,7 +180,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       label: 'User Management', 
       icon: Users,
       children: [
-        { path: '/dashboard/users/directory', label: 'All users', icon: Users },
         { path: '/dashboard/users/students', label: t('nav.students'), icon: GraduationCap },
         { path: '/dashboard/users/doctors', label: t('nav.doctors'), icon: UserCheck },
         { path: '/dashboard/users/tas', label: t('nav.tas'), icon: Users },

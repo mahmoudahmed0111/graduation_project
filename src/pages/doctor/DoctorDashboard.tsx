@@ -1,512 +1,561 @@
 import { useAuthStore } from '@/store/authStore';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Users, 
+import {
+  BookOpen,
+  Users,
   FileText,
   Clock,
   AlertCircle,
   Calendar,
   Bell,
   ClipboardList,
-  Building2
+  Building2,
+  TrendingUp,
+  TrendingDown,
+  GraduationCap,
+  Award,
+  CheckCircle2,
+  Activity,
+  Target,
+  Star,
+  ArrowUpRight,
+  MessageSquare,
 } from 'lucide-react';
-import { IUser, IAnnouncement, IEnrollment, IAssessment } from '@/types';
-import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
 import { ChartCard } from '@/components/charts';
 import { BarChart } from '@/components/charts/BarChart';
 import { PieChart } from '@/components/charts/PieChart';
-import { logger } from '@/lib/logger';
-import { formatDate } from '@/utils/formatters';
+import { LineChart } from '@/components/charts/LineChart';
+import { AreaChart } from '@/components/charts/AreaChart';
+import { IUser } from '@/types';
+
+// ============ STATIC DATA ============
+
+const STATS = {
+  totalCourses: 6,
+  coursesDelta: '+1',
+  totalStudents: 184,
+  studentsDelta: '+12',
+  pendingAssessments: 23,
+  assessmentsDelta: '-4',
+  upcomingClasses: 9,
+  classesDelta: '+2',
+  avgAttendance: 92,
+  avgGrade: 84.5,
+  submissionRate: 96,
+  rating: 4.7,
+};
+
+const MY_COURSES = [
+  { code: 'CS101', title: 'Introduction to Programming', students: 45, creditHours: 3, semester: 'Fall 2026', progress: 68, color: 'from-blue-500 to-blue-600' },
+  { code: 'CS201', title: 'Data Structures & Algorithms', students: 38, creditHours: 4, semester: 'Fall 2026', progress: 72, color: 'from-purple-500 to-purple-600' },
+  { code: 'CS305', title: 'Database Systems', students: 32, creditHours: 3, semester: 'Fall 2026', progress: 55, color: 'from-emerald-500 to-emerald-600' },
+  { code: 'CS410', title: 'Machine Learning', students: 28, creditHours: 3, semester: 'Fall 2026', progress: 48, color: 'from-orange-500 to-orange-600' },
+  { code: 'CS450', title: 'Software Engineering', students: 25, creditHours: 3, semester: 'Fall 2026', progress: 80, color: 'from-pink-500 to-pink-600' },
+  { code: 'CS499', title: 'Senior Capstone', students: 16, creditHours: 4, semester: 'Fall 2026', progress: 35, color: 'from-cyan-500 to-cyan-600' },
+];
+
+const UPCOMING_ASSESSMENTS = [
+  { id: 'a1', title: 'Midterm Exam', course: 'CS201', daysLeft: 2, points: 100, type: 'Exam', submissions: 0, total: 38 },
+  { id: 'a2', title: 'Project Proposal', course: 'CS499', daysLeft: 4, points: 50, type: 'Project', submissions: 8, total: 16 },
+  { id: 'a3', title: 'Lab Assignment 5', course: 'CS101', daysLeft: 5, points: 25, type: 'Lab', submissions: 22, total: 45 },
+  { id: 'a4', title: 'Quiz - SQL Joins', course: 'CS305', daysLeft: 7, points: 20, type: 'Quiz', submissions: 0, total: 32 },
+  { id: 'a5', title: 'ML Homework 3', course: 'CS410', daysLeft: 9, points: 40, type: 'Homework', submissions: 5, total: 28 },
+];
+
+const ANNOUNCEMENTS = [
+  { id: 1, title: 'Faculty meeting rescheduled to Monday 10 AM', author: 'Dean Office', time: '2h ago', priority: 'high' },
+  { id: 2, title: 'New grading system rollout next semester', author: 'Academic Affairs', time: '1d ago', priority: 'medium' },
+  { id: 3, title: 'Research grant applications due May 15', author: 'Research Dept', time: '2d ago', priority: 'medium' },
+  { id: 4, title: 'Library closed for maintenance this weekend', author: 'Library', time: '3d ago', priority: 'low' },
+];
+
+const TODAY_SCHEDULE = [
+  { time: '09:00 - 10:30', course: 'CS101', room: 'Room 204', type: 'Lecture', status: 'done' },
+  { time: '11:00 - 12:30', course: 'CS201', room: 'Lab B-12', type: 'Lab', status: 'now' },
+  { time: '14:00 - 15:30', course: 'CS305', room: 'Room 301', type: 'Lecture', status: 'upcoming' },
+  { time: '16:00 - 17:00', course: 'Office Hours', room: 'Office 412', type: 'Meeting', status: 'upcoming' },
+];
+
+const STUDENT_PERFORMANCE = [
+  { week: 'W1', avg: 78, attendance: 95 },
+  { week: 'W2', avg: 80, attendance: 93 },
+  { week: 'W3', avg: 82, attendance: 91 },
+  { week: 'W4', avg: 79, attendance: 89 },
+  { week: 'W5', avg: 83, attendance: 92 },
+  { week: 'W6', avg: 85, attendance: 94 },
+  { week: 'W7', avg: 84, attendance: 92 },
+  { week: 'W8', avg: 87, attendance: 95 },
+];
+
+const ENROLLMENT_BY_COURSE = MY_COURSES.map(c => ({ course: c.code, students: c.students }));
+
+const ASSESSMENT_DISTRIBUTION = [
+  { name: 'Quizzes', value: 28 },
+  { name: 'Assignments', value: 35 },
+  { name: 'Projects', value: 12 },
+  { name: 'Exams', value: 8 },
+  { name: 'Labs', value: 17 },
+];
+
+const GRADE_DISTRIBUTION = [
+  { grade: 'A', count: 42 },
+  { grade: 'B', count: 68 },
+  { grade: 'C', count: 51 },
+  { grade: 'D', count: 18 },
+  { grade: 'F', count: 5 },
+];
+
+const SUBMISSIONS_TREND = [
+  { month: 'Jan', onTime: 92, late: 8 },
+  { month: 'Feb', onTime: 88, late: 12 },
+  { month: 'Mar', onTime: 94, late: 6 },
+  { month: 'Apr', onTime: 96, late: 4 },
+];
+
+const RECENT_ACTIVITY = [
+  { icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50', text: 'Graded 12 submissions for CS201 Quiz 3', time: '15m ago' },
+  { icon: MessageSquare, color: 'text-blue-600 bg-blue-50', text: 'New question posted in CS101 forum', time: '1h ago' },
+  { icon: FileText, color: 'text-purple-600 bg-purple-50', text: 'Published new material: ML Lecture 7', time: '3h ago' },
+  { icon: Users, color: 'text-orange-600 bg-orange-50', text: '3 new enrollments in CS499', time: '5h ago' },
+  { icon: Award, color: 'text-amber-600 bg-amber-50', text: 'Received teaching excellence nomination', time: '1d ago' },
+];
+
+// ============ COMPONENT ============
 
 export function DoctorDashboard() {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
   const doctor = user as IUser;
-  
-  const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
-  const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
-  const [assessments, setAssessments] = useState<IAssessment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Mock statistics - in real app, these would come from API
-  const [stats, setStats] = useState({
-    totalCourses: 0,
-    totalStudents: 0,
-    pendingAssessments: 0,
-    upcomingClasses: 0,
-  });
-
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const [coursesData, announcementsData] = await Promise.all([
-          api.getMyCourses({ semester: 'current' }).catch(() => []),
-          api.getMyAnnouncements().catch(() => [])
-        ]);
-
-        setMyCourses(coursesData);
-        setAnnouncements(announcementsData.slice(0, 2));
-
-        // Fetch assessments for courses
-        const assessmentPromises = coursesData.map(enrollment => {
-          const courseOfferingId = enrollment.courseOffering?.id || enrollment.courseOffering;
-          if (!courseOfferingId || typeof courseOfferingId !== 'string') return Promise.resolve([]);
-          return api.getCourseAssessments({ courseOffering: courseOfferingId }).catch(() => []);
-        });
-        const allAssessments = (await Promise.all(assessmentPromises)).flat();
-        setAssessments(allAssessments);
-
-        // Calculate statistics
-        const uniqueStudents = new Set(coursesData.map(e => e.student_id));
-        const pendingAssessments = allAssessments.filter(a => new Date(a.dueDate) > new Date()).length;
-
-        setStats({
-          totalCourses: coursesData.length,
-          totalStudents: uniqueStudents.size,
-          pendingAssessments,
-          upcomingClasses: 0, // Would come from schedule API
-        });
-      } catch (error) {
-        logger.error('Failed to fetch dashboard data', {
-          context: 'DoctorDashboard',
-          error,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  // Update clock every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-
   const statCards = [
     {
-      label: t('mock.doctor.myCourses'),
-      value: stats.totalCourses,
+      label: 'My Courses',
+      value: STATS.totalCourses,
+      delta: STATS.coursesDelta,
+      trend: 'up',
       icon: BookOpen,
-      color: 'text-primary-500',
-      bgColor: 'bg-primary-50',
-      description: 'Teaching this semester',
+      gradient: 'from-blue-500 to-blue-600',
+      bg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      hint: 'Teaching this semester',
     },
     {
-      label: t('mock.doctor.totalStudents'),
-      value: stats.totalStudents,
+      label: 'Total Students',
+      value: STATS.totalStudents,
+      delta: STATS.studentsDelta,
+      trend: 'up',
       icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      description: t('mock.doctor.enrolledStudents'),
+      gradient: 'from-purple-500 to-purple-600',
+      bg: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      hint: 'Across all courses',
     },
     {
-      label: t('mock.doctor.pendingAssessments'),
-      value: stats.pendingAssessments,
+      label: 'Pending Reviews',
+      value: STATS.pendingAssessments,
+      delta: STATS.assessmentsDelta,
+      trend: 'down',
       icon: ClipboardList,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      description: t('mock.doctor.toBeGraded'),
+      gradient: 'from-orange-500 to-orange-600',
+      bg: 'bg-orange-50',
+      iconColor: 'text-orange-600',
+      hint: 'To be graded',
     },
     {
-      label: t('mock.doctor.upcomingClasses'),
-      value: stats.upcomingClasses,
+      label: 'Upcoming Classes',
+      value: STATS.upcomingClasses,
+      delta: STATS.classesDelta,
+      trend: 'up',
       icon: Calendar,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      description: 'This week',
+      gradient: 'from-emerald-500 to-emerald-600',
+      bg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      hint: 'This week',
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  const kpiCards = [
+    { label: 'Avg Attendance', value: `${STATS.avgAttendance}%`, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Avg Grade', value: STATS.avgGrade, icon: Target, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Submission Rate', value: `${STATS.submissionRate}%`, icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Rating', value: `${STATS.rating} / 5`, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 lg:p-7 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 p-6 lg:p-8 text-white shadow-xl">
+        <div className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-16 -left-8 h-56 w-56 rounded-full bg-accent-400/20 blur-3xl" />
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{t('mock.doctor.welcomeBack')}, {doctor?.name}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-primary-100">
+            <p className="text-primary-200 text-sm mb-1">Welcome back,</p>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-3">Dr. {doctor?.name || 'Professor'}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-primary-100 text-sm">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                <span>{t('mock.doctor.facultyMember')}</span>
+                <span>Faculty of Computer Science</span>
+              </div>
+              <span className="hidden md:inline">•</span>
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                <span>Senior Lecturer</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>
-                  {new Date().toLocaleDateString(
-                    'en-US',
-                    { month: 'long', year: 'numeric' }
-                  )}
-                </span>
+                <span>Fall Semester 2026</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-5 w-5" />
-                <div className="text-2xl font-bold font-mono">
-                  {currentTime.toLocaleTimeString(
-                    'en-US',
-                    { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }
-                  )}
-                </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-4 border border-white/20">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-5 w-5" />
+              <div className="text-3xl font-bold font-mono tracking-tight">
+                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
               </div>
-              <div className="text-sm text-primary-200">
-                {currentTime.toLocaleDateString(
-                  'en-US',
-                  { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-                )}
-              </div>
+            </div>
+            <div className="text-xs text-primary-200">
+              {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Main Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
+          const TrendIcon = stat.trend === 'up' ? TrendingUp : TrendingDown;
+          const trendColor = stat.trend === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
           return (
-            <Card 
-              key={stat.label} 
-              className="rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            <div
+              key={stat.label}
+              className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.description}</p>
+              <div className={`absolute -top-6 -right-6 h-24 w-24 rounded-full bg-gradient-to-br ${stat.gradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-2.5 rounded-xl ${stat.bg}`}>
+                    <Icon className={`h-5 w-5 ${stat.iconColor}`} />
                   </div>
-                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
+                  <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${trendColor}`}>
+                    <TrendIcon className="h-3 w-3" />
+                    {stat.delta}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
+                <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                <p className="text-xs text-gray-500">{stat.hint}</p>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      {/* First Row: My Courses and Upcoming Assessments side by side */}
+      {/* Secondary KPI Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpiCards.map((k) => {
+          const Icon = k.icon;
+          return (
+            <div key={k.label} className="flex items-center gap-3 rounded-xl bg-white border border-gray-100 p-4 shadow-sm">
+              <div className={`p-2.5 rounded-lg ${k.bg}`}>
+                <Icon className={`h-5 w-5 ${k.color}`} />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">{k.label}</p>
+                <p className="text-lg font-bold text-gray-900">{k.value}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Today's Schedule + Quick Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary-600" />
+              Today's Schedule
+            </CardTitle>
+            <span className="text-xs text-gray-500">{currentTime.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {TODAY_SCHEDULE.map((s, i) => {
+                const isNow = s.status === 'now';
+                const isDone = s.status === 'done';
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${
+                      isNow
+                        ? 'border-primary-300 bg-primary-50 ring-2 ring-primary-200'
+                        : isDone
+                        ? 'border-gray-100 bg-gray-50 opacity-70'
+                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className={`flex flex-col items-center justify-center min-w-[60px] py-1 rounded-lg ${isNow ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                      <span className="text-[10px] uppercase tracking-wide">{s.time.split(' - ')[0]}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="font-semibold text-gray-900">{s.course}</h4>
+                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{s.type}</span>
+                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">Live now</span>}
+                      </div>
+                      <p className="text-xs text-gray-500">{s.time} • {s.room}</p>
+                    </div>
+                    {isDone && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary-600" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {RECENT_ACTIVITY.map((a, i) => {
+                const Icon = a.icon;
+                return (
+                  <div key={i} className="flex gap-3">
+                    <div className={`p-2 rounded-lg h-fit ${a.color}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800 leading-snug">{a.text}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{a.time}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 1: Student Performance Trend (full) */}
+      <ChartCard title="Class Performance Trend" description="Average grade and attendance over the past 8 weeks">
+        <LineChart
+          data={STUDENT_PERFORMANCE}
+          dataKey="week"
+          lines={[
+            { dataKey: 'avg', name: 'Avg Grade', stroke: '#0055cc' },
+            { dataKey: 'attendance', name: 'Attendance %', stroke: '#10b981' },
+          ]}
+          height={280}
+        />
+      </ChartCard>
+
+      {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* My Courses */}
+        <ChartCard title="Student Enrollment by Course" description="Number of students per course">
+          <BarChart
+            data={ENROLLMENT_BY_COURSE}
+            dataKey="course"
+            bars={[{ dataKey: 'students', name: 'Students', fill: '#0055cc' }]}
+            height={280}
+          />
+        </ChartCard>
+
+        <ChartCard title="Assessment Distribution" description="Breakdown of assessment types">
+          <PieChart data={ASSESSMENT_DISTRIBUTION} height={280} />
+        </ChartCard>
+      </div>
+
+      {/* Charts Row 3 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard title="Grade Distribution" description="Letter grades across all courses">
+          <BarChart
+            data={GRADE_DISTRIBUTION}
+            dataKey="grade"
+            bars={[{ dataKey: 'count', name: 'Students', fill: '#8b5cf6' }]}
+            height={260}
+          />
+        </ChartCard>
+
+        <ChartCard title="Submissions Trend" description="On-time vs late submissions">
+          <AreaChart
+            data={SUBMISSIONS_TREND}
+            dataKey="month"
+            areas={[
+              { dataKey: 'onTime', name: 'On Time', fill: '#10b981' },
+              { dataKey: 'late', name: 'Late', fill: '#ef4444' },
+            ]}
+            height={260}
+          />
+        </ChartCard>
+      </div>
+
+      {/* My Courses + Upcoming Assessments */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary-600" />
-              {t('mock.doctor.myCourses')}
+              My Courses
             </CardTitle>
             <Link to="/dashboard/courses/my-courses">
-              <Button variant="secondary" size="sm" className="font-medium">
-                {'View All'}
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {myCourses.length === 0 ? (
-              <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">{t('mock.doctor.noCoursesAssigned')}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {myCourses.map((enrollment) => {
-                  const course = enrollment.courseOffering?.course;
-                  const courseStudents = myCourses.filter(e => 
-                    e.courseOffering?.id === enrollment.courseOffering?.id
-                  ).length;
-                  return (
-                    <div
-                      key={enrollment.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900">
-                              {course?.code || ('N/A')}
-                            </h4>
-                            {course?.creditHours && (
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">
-                                {course.creditHours}{' '}
-                                {'hrs'}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-700 mb-2">
-                            {course?.title || ('Course Title')}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {courseStudents}{' '}
-                              {'students'}
-                            </span>
-                            {enrollment.courseOffering?.semester && (
-                              <span>
-                                {'Semester: '}
-                                {enrollment.courseOffering.semester}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Link to={`/dashboard/roster?course=${enrollment.courseOffering?.id}`}>
-                          <Button variant="secondary" size="sm">
-                            {'View Roster'}
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Assessments */}
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary-600" />
-                {'Upcoming Assessments'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const upcomingAssessments = assessments
-                  .filter(a => new Date(a.dueDate) > new Date())
-                  .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-                  .slice(0, 5);
-
-                // If no real data, use mock data for layout display
-                const dataToRender =
-                  upcomingAssessments.length > 0
-                    ? upcomingAssessments
-                    : [
-                        {
-                          id: 'mock-1',
-                          title:
-                            'Assignment 1 - Introduction to Programming',
-                          courseOffering: {
-                            course: {
-                              code: 'CS101',
-                              title:
-                                'Introduction to Programming',
-                            },
-                          },
-                          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                          totalPoints: 20,
-                        },
-                        {
-                          id: 'mock-2',
-                          title:
-                            'Quiz - Data Structures',
-                          courseOffering: {
-                            course: {
-                              code: 'CS201',
-                              title:
-                                'Data Structures',
-                            },
-                          },
-                          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                          totalPoints: 10,
-                        },
-                      ];
-
-                return (
-                  <div className="space-y-3">
-                    {dataToRender.map((assessment: any) => {
-                      const daysUntilDue = Math.ceil(
-                        (new Date(assessment.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                      );
-                      const isUrgent = daysUntilDue <= 3;
-                      return (
-                        <div
-                          key={assessment.id}
-                          className={`border rounded-lg p-4 ${
-                            isUrgent ? 'border-red-200 bg-red-50' : 'border-gray-200'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-gray-900">{assessment.title}</h4>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                                  {assessment.courseOffering.course.code}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 mb-2">
-                                {assessment.courseOffering.course.title}
-                              </p>
-                              <div className="flex items-center gap-4 text-xs text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {'Due: '}{formatDate(assessment.dueDate)}
-                                </span>
-                                <span>
-                                  {assessment.totalPoints}{' '}
-                                  {'points'}
-                                </span>
-                                {isUrgent && (
-                                  <span className="text-red-600 font-medium">
-                                    {`${daysUntilDue} days left`}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {isUrgent && (
-                              <AlertCircle className="h-5 w-5 text-red-500" />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-      </div>
-
-      {/* Second Row: Announcements */}
-      <div>
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
-          <CardHeader className="flex items-center justify-between pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary-600" />
-              {'Announcements'}
-            </CardTitle>
-            <Link to="/dashboard/announcements">
-              <Button variant="secondary" size="sm" className="font-medium">
-                {'View All'}
-              </Button>
+              <Button variant="secondary" size="sm">View All</Button>
             </Link>
           </CardHeader>
           <CardContent>
-            {announcements.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
-                {'No announcements'}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {announcements.map((announcement) => (
+            <div className="space-y-3">
+              {MY_COURSES.map((c) => (
+                <div
+                  key={c.code}
+                  className="group relative overflow-hidden rounded-xl border border-gray-200 p-4 hover:border-primary-300 hover:shadow-md transition-all"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex items-center justify-center h-10 w-10 rounded-lg bg-gradient-to-br ${c.color} text-white text-xs font-bold shadow-sm`}>
+                        {c.code.replace(/[^0-9]/g, '').slice(0, 3)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900">{c.code}</h4>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
+                            {c.creditHours} hrs
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{c.title}</p>
+                      </div>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-gray-400 group-hover:text-primary-600 transition-colors" />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" /> {c.students} students
+                    </span>
+                    <span className="font-medium text-gray-700">{c.progress}% complete</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${c.color}`}
+                      style={{ width: `${c.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary-600" />
+              Upcoming Assessments
+            </CardTitle>
+            <Link to="/dashboard/assessments">
+              <Button variant="secondary" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {UPCOMING_ASSESSMENTS.map((a) => {
+                const isUrgent = a.daysLeft <= 3;
+                const submissionPct = a.total > 0 ? Math.round((a.submissions / a.total) * 100) : 0;
+                return (
                   <div
-                    key={announcement.id}
-                    className="border-l-4 border-primary-500 pl-3 py-2 hover:bg-gray-50 rounded-r transition-colors"
+                    key={a.id}
+                    className={`rounded-xl border p-4 transition-all ${
+                      isUrgent ? 'border-red-200 bg-red-50/50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   >
-                    <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-1">
-                      {announcement.title}
-                    </h4>
-                    <p className="text-xs text-gray-600 line-clamp-2 mb-1">
-                      {announcement.content}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{announcement.author.name}</span>
-                      <span>{formatDate(announcement.createdAt)}</span>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{a.title}</h4>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
+                            {a.course}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                            {a.type}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {a.daysLeft} {a.daysLeft === 1 ? 'day' : 'days'} left
+                          </span>
+                          <span>{a.points} pts</span>
+                        </div>
+                      </div>
+                      {isUrgent && <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
+                    </div>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-gray-600">Submissions</span>
+                      <span className="font-medium text-gray-800">{a.submissions} / {a.total}</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isUrgent ? 'bg-red-500' : 'bg-primary-500'}`}
+                        style={{ width: `${submissionPct}%` }}
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section (reduced to two main charts) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Student Enrollment by Course */}
-        <ChartCard 
-          title={'Student Enrollment'}
-          description={
-            'Number of students per course'
-          }
-        >
-          {(() => {
-            const enrollmentData = myCourses.reduce((acc, enrollment) => {
-              const courseCode = enrollment.courseOffering?.course?.code || 'N/A';
-              acc[courseCode] = (acc[courseCode] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
-
-            const chartData = Object.entries(enrollmentData).map(([course, count]) => ({
-              course,
-              students: count,
-            }));
-
-            return chartData.length > 0 ? (
-              <BarChart
-                data={chartData}
-                dataKey="course"
-                bars={[
-                  { dataKey: 'students', name: 'Students', fill: '#0055cc' },
-                ]}
-                xAxisLabel={t('mock.doctor.course')}
-                yAxisLabel={t('mock.doctor.students')}
-                height={250}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-[250px] text-gray-500">
-                <p>{t('mock.doctor.noEnrollmentData')}</p>
-              </div>
-            );
-          })()}
-        </ChartCard>
-
-        {/* Assessment Distribution */}
-        <ChartCard 
-          title={'Assessments Overview'}
-          description={
-            'Distribution of assessments by course'
-          }
-        >
-          {(() => {
-            const assessmentData = assessments.reduce((acc, assessment) => {
-              const courseCode = assessment.courseOffering.course.code;
-              acc[courseCode] = (acc[courseCode] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
-
-            const pieData = Object.entries(assessmentData).length > 0
-              ? Object.entries(assessmentData).map(([name, value]) => ({ name, value }))
-              : [
-                  { name: 'CS101', value: 5 },
-                  { name: 'CS201', value: 3 },
-                  { name: 'MATH101', value: 4 },
-                ];
-
-            return <PieChart data={pieData} height={250} />;
-          })()}
-        </ChartCard>
-      </div>
+      {/* Announcements */}
+      <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <CardHeader className="flex items-center justify-between pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary-600" />
+            Announcements
+          </CardTitle>
+          <Link to="/dashboard/announcements">
+            <Button variant="secondary" size="sm">View All</Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {ANNOUNCEMENTS.map((a) => {
+              const priorityStyles =
+                a.priority === 'high'
+                  ? 'border-l-red-500 bg-red-50/50'
+                  : a.priority === 'medium'
+                  ? 'border-l-amber-500 bg-amber-50/50'
+                  : 'border-l-gray-300 bg-gray-50/50';
+              return (
+                <div
+                  key={a.id}
+                  className={`border-l-4 ${priorityStyles} pl-3 py-2.5 pr-3 rounded-r-lg hover:shadow-sm transition-all`}
+                >
+                  <h4 className="font-medium text-sm text-gray-900 mb-1">{a.title}</h4>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>{a.author}</span>
+                    <span>{a.time}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
