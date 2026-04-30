@@ -13,12 +13,12 @@ export async function getCourseCatalogs(
   const response = await apiClient.get('/course-catalog', {
     params: buildQuery(params as Record<string, unknown>),
   });
-  return normalizeListResponse<CourseCatalogRecord>(response, 'courseCatalogs');
+  return normalizeListResponse<CourseCatalogRecord>(response, ['courseCatalogs', 'courses', 'catalogs', 'catalog']);
 }
 
 export async function getCourseCatalog(id: string): Promise<CourseCatalogRecord> {
   const response = await apiClient.get(`/course-catalog/${encodeURIComponent(id)}`);
-  return normalizeSingleResponse<CourseCatalogRecord>(response, 'courseCatalog');
+  return normalizeSingleResponse<CourseCatalogRecord>(response, ['courseCatalog', 'course', 'catalog']);
 }
 
 export async function createCourseCatalog(data: {
@@ -30,7 +30,7 @@ export async function createCourseCatalog(data: {
   prerequisites_ids?: string[];
 }): Promise<CourseCatalogRecord> {
   const response = await apiClient.post('/course-catalog', data);
-  return normalizeSingleResponse<CourseCatalogRecord>(response, 'courseCatalog');
+  return normalizeSingleResponse<CourseCatalogRecord>(response, ['courseCatalog', 'course', 'catalog']);
 }
 
 export async function updateCourseCatalog(
@@ -43,15 +43,15 @@ export async function updateCourseCatalog(
   }
 ): Promise<CourseCatalogRecord> {
   const response = await apiClient.patch(`/course-catalog/${encodeURIComponent(id)}`, data);
-  return normalizeSingleResponse<CourseCatalogRecord>(response, 'courseCatalog');
+  return normalizeSingleResponse<CourseCatalogRecord>(response, ['courseCatalog', 'course', 'catalog']);
 }
 
 export async function archiveCourseCatalog(id: string): Promise<CourseCatalogRecord> {
   const response = await apiClient.patch(`/course-catalog/${encodeURIComponent(id)}/archive`);
-  return normalizeSingleResponse<CourseCatalogRecord>(response, 'courseCatalog');
+  return normalizeSingleResponse<CourseCatalogRecord>(response, ['courseCatalog', 'course', 'catalog']);
 }
 
 export async function restoreCourseCatalog(id: string): Promise<CourseCatalogRecord> {
   const response = await apiClient.patch(`/course-catalog/${encodeURIComponent(id)}/restore`);
-  return normalizeSingleResponse<CourseCatalogRecord>(response, 'courseCatalog');
+  return normalizeSingleResponse<CourseCatalogRecord>(response, ['courseCatalog', 'course', 'catalog']);
 }

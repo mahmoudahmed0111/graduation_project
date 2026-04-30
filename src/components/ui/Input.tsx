@@ -24,8 +24,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           className={cn(
             'input transition-all duration-300',
             error && 'border-red-500 focus:ring-red-500',
-            'hover:border-primary-400 focus:border-primary-500',
-            'focus:ring-2 focus:ring-primary-500/20',
+            // Light mode hover / focus — primary blue.
+            'hover:border-primary-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
+            // Dark mode hover / focus — gold accent (the .input base already
+            // sets dark:bg + border + focus, here we add hover & a brighter
+            // focus ring for visibility on the navy surface).
+            'dark:hover:border-accent-400/60 dark:focus:border-accent-400 dark:focus:ring-accent-400/40',
             className
           )}
           {...props}

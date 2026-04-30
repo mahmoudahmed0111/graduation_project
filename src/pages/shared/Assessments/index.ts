@@ -1,0 +1,1 @@
+export { AssessmentDetail } from './AssessmentDetail';

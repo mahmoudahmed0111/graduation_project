@@ -1,4 +1,4 @@
-import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, ForgotPasswordCredentials, AuthResponse, RefreshTokenResponse, IUniversity, ICourse, ICourseOffering, IEnrollment, PaginatedResponse, IAnnouncement, IAttendanceReport, IAssessment, IMaterial, ISubmission } from '@/types';
+import { IUser, IStudent, LoginStepOneCredentials, LoginStepTwoCredentials, ForgotPasswordCredentials, AuthResponse, RefreshTokenResponse, IUniversity, ICourse, ICourseOffering, IEnrollment, PaginatedResponse, IAnnouncement, IAttendanceReport } from '@/types';
 import { apiClient as axiosInstance } from '@/lib/http/client';
 import * as collegesService from '@/services/colleges.service';
 import * as departmentsService from '@/services/departments.service';
@@ -437,28 +437,10 @@ export const api = {
     return response.data;
   },
 
-  getCourseAssessments: async (params: { courseOffering: string }): Promise<IAssessment[]> => {
-    const response = await axiosInstance.get<IAssessment[]>('/assessments', { params });
-    return response.data;
-  },
-
-  // Materials endpoints
-  getCourseMaterials: async (params?: { courseOffering?: string }): Promise<IMaterial[]> => {
-    const response = await axiosInstance.get<IMaterial[]>('/materials', { params });
-    return response.data;
-  },
-
-  // Assessments endpoints
-  getMyAssessments: async (params?: { courseOffering?: string }): Promise<IAssessment[]> => {
-    const response = await axiosInstance.get<IAssessment[]>('/assessments/my-assessments', { params });
-    return response.data;
-  },
-
-  // Submissions endpoints
-  getMySubmissions: async (params?: { assessment?: string }): Promise<ISubmission[]> => {
-    const response = await axiosInstance.get<ISubmission[]>('/submissions/my-submissions', { params });
-    return response.data;
-  },
+  // Phase 4 modules (Materials/Assessments/Submissions/Gradebook) — see
+  // src/services/{materials,assessments,submissions,gradebook}.service.ts and
+  // the matching usePhase4* hooks. The legacy `api.getCourseMaterials` / etc.
+  // mock methods were removed; pages should use the typed services directly.
 
   // Course Offerings endpoints
   getCourseOfferings: async (params?: { semester?: string; department?: string }): Promise<ICourseOffering[]> => {
@@ -477,54 +459,6 @@ export const api = {
   dropCourse: async (enrollmentId: string): Promise<IEnrollment> => {
     const raw = await enrollmentsService.withdrawEnrollment(enrollmentId);
     return mapPhase3EnrollmentToIEnrollment(raw as Record<string, unknown>);
-  },
-
-  // Doctor-specific endpoints
-  // Materials Management
-  uploadMaterial: async (formData: FormData): Promise<IMaterial> => {
-    const response = await axiosInstance.post<IMaterial>('/materials', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  },
-
-  deleteMaterial: async (materialId: string): Promise<void> => {
-    await axiosInstance.delete(`/materials/${materialId}`);
-  },
-
-  // Assessment Management
-  createAssessment: async (data: {
-    title: string;
-    courseOffering: string;
-    totalPoints: number;
-    dueDate: string;
-    questions: IAssessment['questions'];
-  }): Promise<IAssessment> => {
-    const response = await axiosInstance.post<IAssessment>('/assessments', data);
-    return response.data;
-  },
-
-  updateAssessment: async (assessmentId: string, data: Partial<IAssessment>): Promise<IAssessment> => {
-    const response = await axiosInstance.patch<IAssessment>(`/assessments/${assessmentId}`, data);
-    return response.data;
-  },
-
-  deleteAssessment: async (assessmentId: string): Promise<void> => {
-    await axiosInstance.delete(`/assessments/${assessmentId}`);
-  },
-
-  // Submissions Grading
-  getSubmissionsForGrading: async (params: { assessment?: string; courseOffering?: string }): Promise<ISubmission[]> => {
-    const response = await axiosInstance.get<ISubmission[]>('/submissions/for-grading', { params });
-    return response.data;
-  },
-
-  gradeSubmission: async (submissionId: string, data: {
-    totalScore: number;
-    questionScores: Record<string, number>;
-  }): Promise<ISubmission> => {
-    const response = await axiosInstance.post<ISubmission>(`/submissions/${submissionId}/grade`, data);
-    return response.data;
   },
 
   // Attendance Sessions

@@ -225,6 +225,177 @@ export interface IMaterial {
   uploadedAt: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 4 — LMS & Gradebook Engine
+// Shapes match the actual backend payloads (`_id`, `*_id` fields). Legacy
+// `IMaterial` / `IAssessment` / `ISubmission` above are kept for older mock
+// callers; new code should use the P4 variants.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type Phase4MaterialCategory = 'Lectures' | 'Sheets' | 'Readings' | 'Links';
+
+export interface IPhase4UploaderRef {
+  _id: string;
+  name: string;
+  email: string;
+  role: UserRole | string;
+}
+
+export interface IPhase4Material {
+  _id: string;
+  title: string;
+  description?: string;
+  courseOffering_id: string;
+  college_id: string;
+  category: Phase4MaterialCategory;
+  isExternalLink: boolean;
+  url: string;
+  fileName?: string;
+  fileType?: string;
+  /** Populated on list/detail; raw ObjectId string on create response. */
+  uploadedBy_id: string | IPhase4UploaderRef;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type Phase4QuestionType =
+  | 'MCQ-Single'
+  | 'MCQ-Multiple'
+  | 'TrueFalse'
+  | 'Short-Answer'
+  | 'Paragraph'
+  | 'FileUpload';
+
+export type Phase4SubmissionStatus = 'in_progress' | 'submitted' | 'graded';
+
+export interface IPhase4QuestionOption {
+  _id?: string;
+  text: string;
+  isCorrect?: boolean;
+}
+
+export interface IPhase4Question {
+  _id?: string;
+  questionText: string;
+  questionType: Phase4QuestionType;
+  points: number;
+  isRequired?: boolean;
+  shuffleOptions?: boolean;
+  options?: IPhase4QuestionOption[];
+  modelAnswer?: string;
+  attachments?: string[];
+}
+
+export interface IPhase4AssessmentSettings {
+  shuffleQuestions?: boolean;
+  showGradesImmediately?: boolean;
+  acceptingResponses?: boolean;
+  allowEditAfterSubmit?: boolean;
+  limitToOneResponse?: boolean;
+  confirmationMessage?: string;
+}
+
+export interface IPhase4Assessment {
+  _id: string;
+  title: string;
+  description?: string;
+  courseOffering_id: string;
+  college_id: string;
+  totalPoints: number;
+  dueDate: string;
+  timeLimitMinutes: number | null;
+  questions?: IPhase4Question[];
+  settings?: IPhase4AssessmentSettings;
+  isArchived?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  /** Server-injected for ST list responses. */
+  mySubmission?: {
+    _id: string;
+    status: Phase4SubmissionStatus;
+    totalScore: number | null;
+    startedAt?: string;
+    submittedAt?: string;
+  } | null;
+}
+
+export interface IPhase4Answer {
+  questionId: string;
+  selectedOptionId?: string;
+  selectedOptionIds?: string[];
+  answerText?: string;
+  fileUrl?: string;
+  /** Populated only on staff/graded views. */
+  score?: number;
+  feedback?: string;
+}
+
+export interface IPhase4Submission {
+  _id: string;
+  assessment_id:
+    | string
+    | {
+        _id: string;
+        title: string;
+        totalPoints: number;
+        settings?: IPhase4AssessmentSettings;
+      };
+  student_id:
+    | string
+    | { _id: string; name: string; email: string };
+  gradedBy_id?:
+    | string
+    | { _id: string; name: string; email: string }
+    | null;
+  status: Phase4SubmissionStatus;
+  totalScore: number | null;
+  startedAt?: string;
+  submittedAt?: string;
+  answers: IPhase4Answer[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IPhase4GradingPolicy {
+  attendance: number;
+  midterm: number;
+  assignments: number;
+  project: number;
+  finalExam: number;
+}
+
+export interface IPhase4GradebookEntry {
+  _id: string;
+  student_id:
+    | string
+    | {
+        _id: string;
+        name: string;
+        email: string;
+        level?: number;
+        gpa?: number;
+        earnedCredits?: number;
+        academicStatus?: string;
+      };
+  status: EnrollmentStatus;
+  grades: {
+    attendance: number;
+    midterm: number;
+    assignments: number;
+    project: number;
+    finalExam: number;
+    finalTotal?: number;
+    finalLetter?: string | null;
+  };
+  snapshot?: {
+    courseCode: string;
+    courseTitle: string;
+    creditHours: number;
+  };
+  semesterWorkLocked?: boolean;
+  resultsPublished?: boolean;
+}
+
 export interface IUniversity {
   id: string;
   name: string;

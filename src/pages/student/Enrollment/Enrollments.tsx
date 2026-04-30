@@ -275,34 +275,37 @@ export function Enrollments() {
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Course Code</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Course Title</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Credits</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Grade</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Points</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                    <thead className="bg-gray-50 dark:bg-dark-surface-2">
+                      <tr className="border-b border-gray-200 dark:border-dark-border">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Course Code</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Course Title</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Credits</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Grade</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Points</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="bg-white dark:bg-dark-surface">
                       {semesterData.enrollments.map((enrollment) => {
                         const course = enrollment.courseOffering?.course;
                         const gradeLetter = enrollment.grades?.finalLetter;
                         const gradePoints = gradeLetter ? getGradePoints(gradeLetter) : 0;
                         const credits = course?.creditHours || 0;
                         const points = gradePoints * credits;
-                        
+
                         return (
-                          <tr key={enrollment.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <tr
+                            key={enrollment.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 dark:border-dark-border dark:hover:bg-dark-surface-2"
+                          >
                             <td className="py-3 px-4">
-                              <span className="font-medium text-gray-900">{course?.code}</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">{course?.code}</span>
                             </td>
                             <td className="py-3 px-4">
-                              <span className="text-gray-700">{course?.title}</span>
+                              <span className="text-gray-700 dark:text-gray-300">{course?.title}</span>
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className="text-gray-700">{credits}</span>
+                              <span className="text-gray-700 dark:text-gray-300">{credits}</span>
                             </td>
                             <td className="py-3 px-4 text-center">
                               {gradeLetter ? (
@@ -310,11 +313,11 @@ export function Enrollments() {
                                   {gradeLetter}
                                 </span>
                               ) : (
-                                <span className="text-gray-400">—</span>
+                                <span className="text-gray-400 dark:text-gray-500">—</span>
                               )}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className="text-gray-700">
+                              <span className="text-gray-700 dark:text-gray-300">
                                 {gradeLetter ? points.toFixed(1) : '—'}
                               </span>
                             </td>
@@ -326,7 +329,7 @@ export function Enrollments() {
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-gray-50 font-semibold">
+                      <tr className="bg-gray-50 font-semibold text-gray-900 dark:bg-dark-surface-2 dark:text-gray-100">
                         <td colSpan={2} className="py-3 px-4 text-right">
                           Semester Total:
                         </td>

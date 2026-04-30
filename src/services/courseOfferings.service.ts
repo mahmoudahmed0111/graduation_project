@@ -28,12 +28,12 @@ export async function getCourseOfferings(
   const response = await apiClient.get('/course-offerings', {
     params: buildQuery(params as Record<string, unknown>),
   });
-  return normalizeListResponse<CourseOfferingRecord>(response, 'courseOfferings');
+  return normalizeListResponse<CourseOfferingRecord>(response, ['courseOfferings', 'offerings', 'courses']);
 }
 
 export async function getCourseOffering(id: string): Promise<CourseOfferingRecord> {
   const response = await apiClient.get(`/course-offerings/${encodeURIComponent(id)}`);
-  return normalizeSingleResponse<CourseOfferingRecord>(response, 'courseOffering');
+  return normalizeSingleResponse<CourseOfferingRecord>(response, ['courseOffering', 'offering', 'course']);
 }
 
 export async function getCourseOfferingRoster(
@@ -43,7 +43,7 @@ export async function getCourseOfferingRoster(
   const response = await apiClient.get(`/course-offerings/${encodeURIComponent(offeringId)}/students`, {
     params: buildQuery(params as Record<string, unknown>),
   });
-  return normalizeListResponse<Record<string, unknown>>(response, 'enrollments');
+  return normalizeListResponse<Record<string, unknown>>(response, ['enrollments', 'students']);
 }
 
 export async function getCourseOfferingStudentEnrollment(
@@ -53,7 +53,7 @@ export async function getCourseOfferingStudentEnrollment(
   const response = await apiClient.get(
     `/course-offerings/${encodeURIComponent(offeringId)}/students/${encodeURIComponent(studentId)}`
   );
-  return normalizeSingleResponse<Record<string, unknown>>(response, 'enrollment');
+  return normalizeSingleResponse<Record<string, unknown>>(response, ['enrollment', 'student']);
 }
 
 export async function createCourseOffering(data: {
@@ -66,7 +66,7 @@ export async function createCourseOffering(data: {
   gradingPolicy: GradingPolicy;
 }): Promise<CourseOfferingRecord> {
   const response = await apiClient.post('/course-offerings', data);
-  return normalizeSingleResponse<CourseOfferingRecord>(response, 'courseOffering');
+  return normalizeSingleResponse<CourseOfferingRecord>(response, ['courseOffering', 'offering', 'course']);
 }
 
 export async function updateCourseOffering(
@@ -81,7 +81,7 @@ export async function updateCourseOffering(
   }
 ): Promise<CourseOfferingRecord> {
   const response = await apiClient.patch(`/course-offerings/${encodeURIComponent(id)}`, data);
-  return normalizeSingleResponse<CourseOfferingRecord>(response, 'courseOffering');
+  return normalizeSingleResponse<CourseOfferingRecord>(response, ['courseOffering', 'offering', 'course']);
 }
 
 export async function archiveCourseOffering(id: string): Promise<{ message: string }> {

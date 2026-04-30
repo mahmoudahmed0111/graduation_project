@@ -1,410 +1,288 @@
-import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
-import { ISubmission, IAssessment, IEnrollment } from '@/types';
-import { Card, CardContent } from '@/components/ui/Card';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { CheckCircle2, ClipboardList, MessageSquare, Save } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { 
-  ClipboardList, 
-  FileText,
-  User,
-  BookOpen,
-  Search,
-  Eye,
-  Save
-} from 'lucide-react';
-import { useToastStore } from '@/store/toastStore';
 import { Input } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
-import { logger } from '@/lib/logger';
-import { formatDate } from '@/utils/formatters';
+import { useToastStore } from '@/store/toastStore';
+import { useAssessment, useAssessments } from '@/hooks/queries/usePhase4Assessments';
+import {
+  useAssessmentSubmissions,
+  useGradeSubmission,
+  useSubmission,
+} from '@/hooks/queries/usePhase4Submissions';
+import { useMyTeachingOfferings } from '@/hooks/queries/useMyOfferings';
+import { getApiErrorMessage } from '@/lib/http/client';
+import type { GradeAnswerInput } from '@/services/submissions.service';
+import type { IPhase4Question, Phase4QuestionType } from '@/types';
+
+const OBJECTIVE_TYPES: Phase4QuestionType[] = ['MCQ-Single', 'MCQ-Multiple', 'TrueFalse'];
+const isObjective = (t: Phase4QuestionType) => OBJECTIVE_TYPES.includes(t);
+
+function studentLabel(s: ReturnType<typeof useSubmission>['data']): string {
+  if (!s) return '';
+  const st = s.student_id;
+  if (st && typeof st === 'object') return st.name;
+  return String(st);
+}
 
 export function GradeSubmissions() {
-  const { user } = useAuthStore();
+  const params = useParams<{ offeringId?: string; assessmentId?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { success, error: showError } = useToastStore();
-  const [submissions, setSubmissions] = useState<ISubmission[]>([]);
-  const [assessments, setAssessments] = useState<IAssessment[]>([]);
-  const [_myCourses, setMyCourses] = useState<IEnrollment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedAssessment, setSelectedAssessment] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSubmission, setSelectedSubmission] = useState<ISubmission | null>(null);
-  const [gradingModalOpen, setGradingModalOpen] = useState(false);
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [totalScore, setTotalScore] = useState(0);
-  const [gradingLoading, setGradingLoading] = useState(false);
+  const { offerings, isLoading: offeringsLoading } = useMyTeachingOfferings();
+
+  const [offeringId, setOfferingId] = useState<string>(
+    params.offeringId ?? searchParams.get('offeringId') ?? ''
+  );
+  const [assessmentId, setAssessmentId] = useState<string>(
+    params.assessmentId ?? searchParams.get('assessmentId') ?? ''
+  );
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>('');
+
+  const assessmentsList = useAssessments(offeringId || undefined);
+  const submissionsList = useAssessmentSubmissions(assessmentId || undefined, { status: 'submitted' });
+  const assessment = useAssessment(offeringId, assessmentId);
+  const submissionDetail = useSubmission(selectedSubmissionId || undefined);
+  const grade = useGradeSubmission(selectedSubmissionId);
+
+  const [draft, setDraft] = useState<Record<string, { score?: number; feedback?: string }>>({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [coursesData, assessmentsData] = await Promise.all([
-          api.getMyCourses({ semester: 'current' }).catch(() => []),
-          api.getMyAssessments().catch(() => [])
-        ]);
-        
-        setMyCourses(Array.isArray(coursesData) ? coursesData : []);
-        setAssessments(Array.isArray(assessmentsData) ? assessmentsData : []);
-        
-        // Fetch submissions for all assessments
-        const submissionPromises = assessmentsData.map(assessment => 
-          api.getMySubmissions({ assessment: assessment.id }).catch(() => [])
-        );
-        const allSubmissions = (await Promise.all(submissionPromises)).flat();
-        setSubmissions(allSubmissions);
-      } catch (error) {
-        logger.error('Failed to fetch submissions', {
-          context: 'GradeSubmissions',
-          error,
-        });
-        showError('Failed to load submissions');
-      } finally {
-        setLoading(false);
-      }
-    };
+    const s = submissionDetail.data;
+    if (!s) {
+      setDraft({});
+      return;
+    }
+    const next: Record<string, { score?: number; feedback?: string }> = {};
+    for (const a of s.answers ?? []) next[a.questionId] = { score: a.score, feedback: a.feedback };
+    setDraft(next);
+  }, [submissionDetail.data]);
 
-    fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once on mount
+  const questionsById = useMemo(() => {
+    const map = new Map<string, IPhase4Question>();
+    for (const q of assessment.data?.questions ?? []) {
+      if (q._id) map.set(q._id, q);
+    }
+    return map;
+  }, [assessment.data]);
 
-  // Filter submissions
-  const filteredSubmissions = submissions.filter(submission => {
-    const matchesAssessment = selectedAssessment === 'all' || 
-      submission.assessment.id === selectedAssessment;
-    const matchesStatus = selectedStatus === 'all' || 
-      submission.status === selectedStatus;
-    const matchesSearch = 
-      submission.student_id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesAssessment && matchesStatus && matchesSearch;
-  });
-
-  const openGradingModal = (submission: ISubmission) => {
-    setSelectedSubmission(submission);
-    setTotalScore(submission.totalScore || 0);
-    
-    // Initialize scores from existing answers
-    const initialScores: Record<string, number> = {};
-    submission.answers.forEach((_answer, index) => {
-      initialScores[`answer-${index}`] = 0;
-    });
-    setScores(initialScores);
-    
-    setGradingModalOpen(true);
-  };
-
-  const handleScoreChange = (answerIndex: number, score: number) => {
-    const key = `answer-${answerIndex}`;
-    setScores(prev => ({ ...prev, [key]: score }));
-    
-    // Calculate total
-    const newScores = { ...scores, [key]: score };
-    const total = Object.values(newScores).reduce((sum, s) => sum + s, 0);
-    setTotalScore(total);
-  };
-
-  const handleGradeSubmission = async () => {
-    if (!selectedSubmission) return;
-    
+  const handleSave = async () => {
+    if (!selectedSubmissionId || !submissionDetail.data) return;
+    const payload: GradeAnswerInput[] = [];
+    for (const a of submissionDetail.data.answers ?? []) {
+      const q = questionsById.get(a.questionId);
+      const d = draft[a.questionId];
+      if (!q || !d) continue;
+      if (isObjective(q.questionType)) continue;
+      if (d.score == null || Number.isNaN(Number(d.score))) continue;
+      payload.push({ questionId: a.questionId, score: Number(d.score), feedback: d.feedback });
+    }
+    if (payload.length === 0) {
+      showError('No grades to save.');
+      return;
+    }
     try {
-      setGradingLoading(true);
-      
-      // In real app, call API to grade submission
-      // await api.gradeSubmission(selectedSubmission.id, {
-      //   totalScore,
-      //   questionScores: scores,
-      // });
-      
-      // Update local state
-      setSubmissions(submissions.map(s => 
-        s.id === selectedSubmission.id 
-          ? { ...s, status: 'graded', totalScore, gradedBy: { id: user?.id || '', name: user?.name || '' } }
-          : s
-      ));
-      
-      success(
-        'Submission graded successfully'
-      );
-      setGradingModalOpen(false);
-      setSelectedSubmission(null);
-    } catch (error) {
-      logger.error('Failed to grade submission', {
-        context: 'GradeSubmissions',
-        error,
-      });
-      showError('Failed to grade submission');
-    } finally {
-      setGradingLoading(false);
+      await grade.mutateAsync(payload);
+      success('Grades saved.');
+    } catch (err) {
+      showError(getApiErrorMessage(err, 'Failed to save grades.'));
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      in_progress: { label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
-      submitted: { label: 'Submitted', color: 'bg-blue-100 text-blue-800' },
-      graded: { label: 'Graded', color: 'bg-green-100 text-green-800' },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.submitted;
-    
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full font-medium ${config.color}`}>
-        {config.label}
-      </span>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {'Grade Submissions'}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          {'View and grade student submissions'}
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Grade Submissions</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Manually grade subjective answers</p>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder={'Search by student ID...'}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      {(!params.offeringId || !params.assessmentId) && (
+        <Card>
+          <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Course Offering</label>
+              <select
+                value={offeringId}
+                onChange={(e) => {
+                  setOfferingId(e.target.value);
+                  setAssessmentId('');
+                  setSelectedSubmissionId('');
+                  setSearchParams({ offeringId: e.target.value });
+                }}
+                disabled={offeringsLoading}
+                className="field"
+              >
+                <option value="">{offeringsLoading ? 'Loading…' : 'Select…'}</option>
+                {offerings.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              value={selectedAssessment}
-              onChange={(e) => setSelectedAssessment(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="all">{'All Assessments'}</option>
-              {assessments.map(assessment => (
-                <option key={assessment.id} value={assessment.id}>
-                  {assessment.title} - {assessment.courseOffering.course.code}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="all">{'All Status'}</option>
-              <option value="submitted">{'Submitted'}</option>
-              <option value="graded">{'Graded'}</option>
-              <option value="in_progress">{'In Progress'}</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Submissions Table */}
-      {filteredSubmissions.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">
-              {'No submissions found'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50/80">
-                    <TableHead>{'Student'}</TableHead>
-                    <TableHead>{'Assessment'}</TableHead>
-                    <TableHead>{'Course'}</TableHead>
-                    <TableHead>{'Submitted'}</TableHead>
-                    <TableHead>{'Score'}</TableHead>
-                    <TableHead>{'Status'}</TableHead>
-                    <TableHead>{'Actions'}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSubmissions.map((submission) => (
-                    <TableRow key={submission.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">{submission.student_id}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-400" />
-                          <span>{submission.assessment.title}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{submission.assessment.courseOffering.course.code}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {submission.submittedAt ? (
-                          <span className="text-sm text-gray-600">
-                            {formatDate(submission.submittedAt)}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${
-                          submission.totalScore >= (submission.assessment.totalPoints * 0.8)
-                            ? 'text-green-600'
-                            : submission.totalScore >= (submission.assessment.totalPoints * 0.6)
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
-                        }`}>
-                          {submission.totalScore} / {submission.assessment.totalPoints}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(submission.status)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openGradingModal(submission)}
-                          disabled={submission.status === 'in_progress'}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          {submission.status === 'graded' 
-                            ? ('View')
-                            : ('Grade')
-                          }
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Assessment</label>
+              <select
+                value={assessmentId}
+                onChange={(e) => {
+                  setAssessmentId(e.target.value);
+                  setSelectedSubmissionId('');
+                  setSearchParams({ offeringId, assessmentId: e.target.value });
+                }}
+                disabled={!offeringId || assessmentsList.isLoading}
+                className="field"
+              >
+                <option value="">{assessmentsList.isLoading ? 'Loading…' : 'Select…'}</option>
+                {(assessmentsList.data?.items ?? []).map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.title}
+                  </option>
+                ))}
+              </select>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Grading Modal */}
-      {selectedSubmission && (
-        <Modal
-          isOpen={gradingModalOpen}
-          onClose={() => {
-            setGradingModalOpen(false);
-            setSelectedSubmission(null);
-          }}
-          title={'Grade Submission'}
-        >
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">
-                <strong>{'Assessment:'}</strong> {selectedSubmission.assessment.title}
-              </p>
-              <p className="text-sm text-gray-600 mb-4">
-                <strong>{'Student:'}</strong> {selectedSubmission.student_id}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {selectedSubmission.answers.map((answer, index) => (
-                <Card key={index} className="border">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-sm font-medium">
-                        {'Answer'} {index + 1}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          max={selectedSubmission.assessment.totalPoints}
-                          value={scores[`answer-${index}`] || 0}
-                          onChange={(e) => handleScoreChange(index, Number(e.target.value))}
-                          className="w-20"
-                        />
-                        <span className="text-sm text-gray-500">points</span>
-                      </div>
-                    </div>
-                    {answer.answerText && (
-                      <p className="text-sm text-gray-700 mb-2">{answer.answerText}</p>
+      {!assessmentId ? (
+        <Card>
+          <CardContent className="p-12 text-center text-gray-500">Pick an assessment to view submissions.</CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Submissions awaiting grade</h3>
+            {submissionsList.isLoading ? (
+              <Card>
+                <CardContent className="p-6 text-center text-gray-500">Loading…</CardContent>
+              </Card>
+            ) : (submissionsList.data?.items.length ?? 0) === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center text-gray-500">
+                  <ClipboardList className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  No pending submissions.
+                </CardContent>
+              </Card>
+            ) : (
+              (submissionsList.data?.items ?? []).map((s) => {
+                const studentName = typeof s.student_id === 'object' ? s.student_id.name : 'Student';
+                return (
+                  <button
+                    key={s._id}
+                    onClick={() => setSelectedSubmissionId(s._id)}
+                    className={`w-full text-left rounded-lg border p-3 transition ${
+                      selectedSubmissionId === s._id
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-primary-300'
+                    }`}
+                  >
+                    <div className="font-medium">{studentName}</div>
+                    {s.submittedAt && (
+                      <div className="text-xs text-gray-500">{new Date(s.submittedAt).toLocaleString()}</div>
                     )}
-                    {answer.selectedOptionId && (
-                      <p className="text-sm text-gray-700 mb-2">
-                        {'Selected Option:'} {answer.selectedOptionId}
-                      </p>
-                    )}
-                    {answer.fileUrl && (
-                      <a
-                        href={answer.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary-600 hover:underline"
-                      >
-                        {'View File'}
-                      </a>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-semibold">
-                  {'Total Score:'}
-                </span>
-                <span className="text-lg font-bold text-primary-600">
-                  {totalScore} / {selectedSubmission.assessment.totalPoints}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setGradingModalOpen(false);
-                    setSelectedSubmission(null);
-                  }}
-                  className="flex-1"
-                >
-                  {'Cancel'}
-                </Button>
-                <Button
-                  onClick={handleGradeSubmission}
-                  isLoading={gradingLoading}
-                  className="flex-1"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {'Save Grade'}
-                </Button>
-              </div>
-            </div>
+                  </button>
+                );
+              })
+            )}
           </div>
-        </Modal>
+
+          <div className="lg:col-span-2 space-y-4">
+            {!selectedSubmissionId ? (
+              <Card>
+                <CardContent className="p-12 text-center text-gray-500">Pick a submission to grade.</CardContent>
+              </Card>
+            ) : submissionDetail.isLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+              </div>
+            ) : !submissionDetail.data ? null : (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{studentLabel(submissionDetail.data)}</span>
+                      {submissionDetail.data.status === 'graded' && (
+                        <span className="flex items-center gap-1 text-sm font-normal text-green-700">
+                          <CheckCircle2 className="h-4 w-4" /> Graded
+                        </span>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+
+                {(submissionDetail.data.answers ?? []).map((a, idx) => {
+                  const q = questionsById.get(a.questionId);
+                  if (!q) return null;
+                  const d = draft[a.questionId] ?? {};
+                  const objective = isObjective(q.questionType);
+                  return (
+                    <Card key={a.questionId ?? idx}>
+                      <CardContent className="space-y-3 p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="text-xs uppercase text-gray-500">{q.questionType}</span>
+                            <p className="font-medium mt-1">
+                              Q{idx + 1}. {q.questionText}
+                            </p>
+                          </div>
+                          <span className="text-sm text-gray-500">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                        </div>
+
+                        <div className="text-sm bg-gray-50 rounded p-3">
+                          {a.answerText ??
+                            a.fileUrl ??
+                            (a.selectedOptionIds?.length ? a.selectedOptionIds.join(', ') : a.selectedOptionId ?? '—')}
+                        </div>
+
+                        {objective ? (
+                          <p className="text-sm text-gray-500 italic">Auto-graded · score: {a.score ?? 0}</p>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <Input
+                              label="Score"
+                              type="number"
+                              min={0}
+                              max={q.points}
+                              value={d.score ?? ''}
+                              onChange={(e) =>
+                                setDraft((prev) => ({
+                                  ...prev,
+                                  [a.questionId]: { ...prev[a.questionId], score: Number(e.target.value) },
+                                }))
+                              }
+                            />
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                                <MessageSquare className="h-4 w-4 inline mr-1" /> Feedback
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={d.feedback ?? ''}
+                                onChange={(e) =>
+                                  setDraft((prev) => ({
+                                    ...prev,
+                                    [a.questionId]: { ...prev[a.questionId], feedback: e.target.value },
+                                  }))
+                                }
+                                className="field"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                <Button onClick={handleSave} isLoading={grade.isPending} className="w-full">
+                  <Save className="h-4 w-4 mr-2" /> Save Grades
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
 }
-

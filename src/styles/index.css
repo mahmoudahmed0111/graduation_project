@@ -12,9 +12,15 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100;
+    @apply bg-gray-50 text-gray-900;
     font-family: 'Inter', system-ui, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  /* Brand-aligned page background in dark mode (deep navy-black, matching
+     the Beni-Suef logo identity instead of generic neutral slate). */
+  .dark body {
+    background-color: #0a1428;
+    color: #f3f4f6;
   }
 }
 
@@ -35,15 +41,232 @@
     @apply btn bg-accent-500 text-gray-900 hover:bg-accent-600 focus:ring-accent-500;
   }
 
+  /* ─── Brand-aligned dark mode for buttons ─────────────────────────────
+     Replaces white / light-grey button surfaces with navy panels and gold
+     accents pulled from the Beni-Suef logo. Light mode is unchanged. */
+
+  /* Primary stays blue, but lift it slightly for contrast on the navy
+     surface and use gold for the focus ring (primary blue disappears
+     against the page background in dark mode). */
+  .dark .btn-primary {
+    background-color: #1a74ff;          /* primary-400 — brighter on navy */
+    color: #ffffff;
+  }
+  .dark .btn-primary:hover { background-color: #4d93ff; }     /* primary-300 */
+  .dark .btn-primary:focus { --tw-ring-color: #ffea40; }      /* accent-400 */
+
+  /* Secondary — was bg-gray-200 text-gray-900 (white-ish). Now a navy
+     surface with a gold-tinted border on hover. */
+  .dark .btn-secondary {
+    background-color: #162647;          /* dark-surface-2 */
+    color: #f3f4f6;
+    border: 1px solid #243b6b;          /* dark-border */
+  }
+  .dark .btn-secondary:hover {
+    background-color: #1d3057;          /* dark-elev */
+    border-color: rgb(255 234 64 / 0.6);
+  }
+  .dark .btn-secondary:focus { --tw-ring-color: #ffea40; }
+
+  /* Accent (gold) stays gold but darken text to keep readability. */
+  .dark .btn-accent {
+    background-color: #ffd700;          /* accent-500 */
+    color: #0a1428;
+  }
+  .dark .btn-accent:hover { background-color: #ffea40; }      /* accent-400 */
+
+  /* Tailwind utility overrides for inline button patterns sprinkled across
+     pages (Button.tsx outline/ghost variants + raw className combos). */
+
+  /* outline: border + bg-white + text-gray-700 → navy panel + gold border */
+  .dark .btn.border.border-gray-300.bg-white {
+    background-color: #162647 !important;
+    border-color: #243b6b !important;
+    color: #f3f4f6 !important;
+  }
+  .dark .btn.border.border-gray-300.bg-white:hover {
+    background-color: #1d3057 !important;
+    border-color: rgb(255 234 64 / 0.6) !important;
+  }
+
+  /* ghost: bg-transparent text-gray-700 hover:bg-gray-100 → keep transparent
+     but switch hover to a subtle navy and text to gray-200. */
+  .dark .btn.bg-transparent { color: #e5e7eb !important; }
+  .dark .btn.bg-transparent:hover { background-color: #162647 !important; }
+
+  /* danger button is fine (red) — just brighten the focus ring. */
+  .dark button.bg-red-600:focus { --tw-ring-color: #fca5a5; }
+
+  /* ─── Misc inline button patterns used across pages ─────────────────── */
+
+  /* "Add ___" pill / iconographic buttons that use bg-primary-50 text-primary-700
+     patterns become navy surface with gold accents. */
+  .dark .bg-primary-50 { background-color: rgb(26 116 255 / 0.15) !important; }
+  .dark .text-primary-700 { color: #4d93ff !important; }
+  .dark .text-primary-600 { color: #4d93ff !important; }
+  .dark .border-primary-500 { border-color: #4d93ff !important; }
+
+  /* Toolbar / filter / bare "secondary" white buttons inline */
+  .dark button.bg-white,
+  .dark a.bg-white {
+    background-color: #162647 !important;
+    color: #f3f4f6 !important;
+  }
+  .dark button.bg-white:hover,
+  .dark a.bg-white:hover {
+    background-color: #1d3057 !important;
+  }
+
+  /* hover:bg-gray-50 / hover:bg-gray-100 used everywhere → dark hover */
+  .dark .hover\:bg-gray-50:hover { background-color: #162647 !important; }
+  .dark .hover\:bg-gray-100:hover { background-color: #162647 !important; }
+
+  /* ─── Filter / toolbar wrappers ────────────────────────────────────────
+     Many pages wrap a row of filters inside a panel with `bg-gray-50` or
+     `bg-gray-50/60` in light mode. In dark mode that white-ish surface
+     leaks through if the matching `dark:bg-dark-*` utility didn't reach
+     the JIT in time, so we hard-coat all of them. */
+  .dark .bg-gray-50,
+  .dark .bg-gray-50\/60,
+  .dark .bg-gray-50\/50,
+  .dark .bg-gray-50\/40,
+  .dark .bg-gray-100,
+  .dark .bg-gray-100\/60,
+  .dark .bg-gray-100\/50 {
+    background-color: #0d1a33 !important;   /* between dark-bg and surface */
+  }
+
+  /* Tab/segment "track" backgrounds */
+  .dark .bg-gray-200,
+  .dark .bg-gray-200\/60,
+  .dark .bg-gray-200\/50 {
+    background-color: #162647 !important;
+  }
+
+  /* Light-blue and light-amber info panels (used for empty states / hints) */
+  .dark .bg-blue-50 { background-color: rgb(26 116 255 / 0.12) !important; }
+  .dark .bg-amber-50 { background-color: rgb(255 234 64 / 0.10) !important; }
+  .dark .bg-green-50 { background-color: rgb(34 197 94 / 0.12) !important; }
+  .dark .bg-red-50 { background-color: rgb(239 68 68 / 0.12) !important; }
+
+  /* Borders that are still gray-100/gray-200 in dark mode */
+  .dark .border-gray-100,
+  .dark .border-gray-200 {
+    border-color: #243b6b !important;
+  }
+  /* Divide variants used between table rows and stacks */
+  .dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+  .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #243b6b !important;
+  }
+
   .input {
     @apply w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
-    @apply dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-accent-400 dark:focus:ring-accent-400/30;
+  }
+
+  /* Reusable field control for native <select>, <textarea>, and bespoke
+     <input> elements that don't go through the <Input> component. Light
+     mode unchanged; dark mode aligns to the Beni-Suef brand identity. */
+  .field {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors;
+    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+  }
+
+  .field-sm {
+    @apply rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 transition-colors;
+    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    @apply disabled:bg-gray-100 disabled:text-gray-500;
   }
 
   .card {
     @apply rounded-lg bg-white shadow-sm border border-gray-200 p-6 relative text-gray-700;
-    @apply dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:shadow-black/20;
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  /* Brand-aligned dark mode. We use raw hex values to avoid relying on
+     Tailwind config tokens whose generation can lag behind a dev-server
+     restart. Palette derived from the Beni-Suef logo:
+       #0a1428  page background (deep navy-black)
+       #101e3a  surface (cards / panels)
+       #162647  surface-2 (hover / nested)
+       #1d3057  elev (popovers, focused inputs)
+       #243b6b  border on dark surfaces
+       gold accent-400 = #ffea40
+
+     We use !important to win against the body of @apply utilities that
+     baked `bg-white` / `border-gray-300` into the same selectors. */
+  .dark .input,
+  .dark .field,
+  .dark input.input,
+  .dark .field-sm {
+    background-color: #101e3a !important;
+    border-color: #243b6b !important;
+    color: #f3f4f6 !important;
+  }
+  .dark .input::placeholder,
+  .dark .field::placeholder,
+  .dark .field-sm::placeholder {
+    color: #6b7280 !important;
+  }
+  .dark .input:hover,
+  .dark .field:hover,
+  .dark .field-sm:hover {
+    border-color: rgb(255 234 64 / 0.6) !important;
+  }
+  .dark .input:focus,
+  .dark .field:focus,
+  .dark .field-sm:focus {
+    border-color: #ffea40 !important;
+    --tw-ring-color: rgb(255 234 64 / 0.4);
+  }
+
+  .dark .field-sm:disabled {
+    background-color: #0a1428 !important;
+    color: #6b7280 !important;
+  }
+
+  /* Catch-all for raw <input>, <textarea>, <select> elements that might
+     not have the .input/.field class (e.g. local one-off forms). Restrict
+     to text-like inputs so we don't break checkboxes / radios. */
+  .dark input[type="text"],
+  .dark input[type="search"],
+  .dark input[type="email"],
+  .dark input[type="password"],
+  .dark input[type="number"],
+  .dark input[type="url"],
+  .dark input[type="tel"],
+  .dark input[type="date"],
+  .dark input[type="datetime-local"],
+  .dark input[type="time"],
+  .dark input:not([type]),
+  .dark textarea,
+  .dark select {
+    background-color: #101e3a;
+    border-color: #243b6b;
+    color: #f3f4f6;
+  }
+  .dark input[type="text"]::placeholder,
+  .dark input[type="search"]::placeholder,
+  .dark input[type="email"]::placeholder,
+  .dark input[type="password"]::placeholder,
+  .dark input[type="number"]::placeholder,
+  .dark input[type="url"]::placeholder,
+  .dark input:not([type])::placeholder,
+  .dark textarea::placeholder {
+    color: #6b7280;
+  }
+  /* Inside a popover/menu, raw inputs sit on an elevated surface. */
+  .dark [role="listbox"] input[type="text"],
+  .dark [role="listbox"] input[type="search"],
+  .dark [role="dialog"] input[type="text"] {
+    background-color: #1d3057;
+  }
+
+  .dark .card {
+    background-color: #101e3a;
+    border-color: #243b6b;
+    color: #d1d5db;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4);
   }
 
   .card::before {
@@ -81,8 +304,32 @@
   }
 
   .dark .card::after {
-    background: theme('colors.slate.900');
+    background-color: #101e3a;
   }
+
+  /* Force brand-aligned dark backgrounds on every Tailwind utility that uses
+     the legacy `dark-*` aliases. We target the generated class names (which
+     Tailwind emits for any `dark:bg-dark-*` it sees in tsx) and hard-code
+     the colour, so the behaviour does not depend on the dev server picking
+     up the latest tailwind.config.js. */
+  .dark .dark\:bg-dark-bg { background-color: #0a1428 !important; }
+  .dark .dark\:bg-dark-surface { background-color: #101e3a !important; }
+  .dark .dark\:bg-dark-surface-2 { background-color: #162647 !important; }
+  .dark .dark\:bg-dark-elev { background-color: #1d3057 !important; }
+  .dark .dark\:bg-brand-bg { background-color: #0a1428 !important; }
+  .dark .dark\:bg-brand-surface { background-color: #101e3a !important; }
+  .dark .dark\:bg-brand-surface-2 { background-color: #162647 !important; }
+  .dark .dark\:bg-brand-elev { background-color: #1d3057 !important; }
+
+  .dark .dark\:border-dark-border { border-color: #243b6b !important; }
+  .dark .dark\:border-dark-border-strong { border-color: #2f4e8c !important; }
+  .dark .dark\:border-brand-border { border-color: #243b6b !important; }
+  .dark .dark\:border-brand-border-strong { border-color: #2f4e8c !important; }
+
+  .dark .dark\:hover\:bg-dark-surface-2:hover { background-color: #162647 !important; }
+  .dark .dark\:hover\:bg-brand-surface-2:hover { background-color: #162647 !important; }
+  .dark .dark\:divide-dark-border > :not([hidden]) ~ :not([hidden]) { border-color: #243b6b !important; }
+  .dark .dark\:divide-brand-border > :not([hidden]) ~ :not([hidden]) { border-color: #243b6b !important; }
 
   .card:hover {
     @apply shadow-md;

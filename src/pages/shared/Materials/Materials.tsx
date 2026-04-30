@@ -1,118 +1,155 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
-import { IMaterial, IEnrollment } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { 
-  FileText, 
-  BookOpen,
-  Download,
-  ExternalLink,
-  Search
-} from 'lucide-react';
-import { useToastStore } from '@/store/toastStore';
+import { useEffect, useMemo, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { ArrowRight, BookOpen, Download, ExternalLink, FileText, Search } from 'lucide-react';
+import { AdminPageShell } from '@/components/admin';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { categoryIcons, categoryColors, fileTypeIcons } from '@/constants/ui';
-import { logger } from '@/lib/logger';
+import { Select2 } from '@/components/ui/Select2';
+import { useToastStore } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
+import { categoryColors, categoryIcons } from '@/constants/ui';
+import { listMaterials } from '@/services/materials.service';
+import { materialsListQueryKey } from '@/hooks/queries/usePhase4Materials';
+import { useMyTeachingOfferings } from '@/hooks/queries/useMyOfferings';
+import { api } from '@/lib/api';
+import type { IEnrollment, IPhase4Material } from '@/types';
+
+interface OfferingMeta {
+  id: string;
+  code: string;
+  title: string;
+}
 
 export function Materials() {
-  const { t } = useTranslation();
-  useAuthStore();
+  const { user } = useAuthStore();
   const { error: showError } = useToastStore();
-  const [materials, setMaterials] = useState<IMaterial[]>([]);
-  const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const [enrollments, setEnrollments] = useState<IEnrollment[]>([]);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // Source the user's offerings: students from enrollments, staff from teaching offerings.
+  const isStaff =
+    user?.role === 'doctor' ||
+    user?.role === 'teacher' ||
+    user?.role === 'ta' ||
+    user?.role === 'collegeAdmin' ||
+    user?.role === 'universityAdmin' ||
+    user?.role === 'admin' ||
+    user?.role === 'superAdmin';
+  // The Phase 4 Materials API allows reads for DR/TA/ST/CA. UA is not in that
+  // list, so we skip the per-offering fetch loop and just show offering cards
+  // that deep-link to each offering's materials page.
+  const isUniversityAdmin =
+    user?.role === 'universityAdmin' || user?.role === 'admin' || user?.role === 'superAdmin';
+  const teaching = useMyTeachingOfferings();
 
   useEffect(() => {
-    const fetchData = async () => {
+    if (isStaff) {
+      setEnrollmentsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
       try {
-        setLoading(true);
-        const [coursesData, materialsData] = await Promise.all([
-          api.getMyCourses({ semester: 'current' }).catch(() => []),
-          api.getCourseMaterials().catch(() => [])
-        ]);
-        
-        const coursesArray = Array.isArray(coursesData) ? coursesData : [];
-        const materialsArray = Array.isArray(materialsData) ? materialsData : [];
-        
-        setMyCourses(coursesArray);
-        setMaterials(materialsArray);
-      } catch (error) {
-        logger.error('Failed to fetch materials', {
-          context: 'Materials',
-          error,
-        });
-        showError('Failed to load materials');
-        setMaterials([]);
-        setMyCourses([]);
+        setEnrollmentsLoading(true);
+        const rows = await api.getMyCourses({ semester: 'current' });
+        if (!cancelled) setEnrollments(Array.isArray(rows) ? rows : []);
+      } catch (err) {
+        if (!cancelled) showError('Failed to load your courses.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setEnrollmentsLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, [isStaff, showError]);
 
-    fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- showError stable, fetch once
+  const offerings = useMemo<OfferingMeta[]>(() => {
+    if (isStaff) {
+      return teaching.offerings.map((o) => ({
+        id: o.id,
+        code: o.courseCode ?? '',
+        title: o.courseTitle ?? '',
+      }));
+    }
+    return enrollments
+      .map((e) => {
+        const co = e.courseOffering;
+        if (!co?.id) return null;
+        return { id: co.id, code: co.course?.code ?? '', title: co.course?.title ?? '' };
+      })
+      .filter((x): x is OfferingMeta => Boolean(x));
+  }, [isStaff, teaching.offerings, enrollments]);
 
-  // Filter materials
-  const filteredMaterials = materials.filter(material => {
-    const matchesCourse = selectedCourse === 'all' || 
-      material.courseOffering.id === selectedCourse;
-    const matchesCategory = selectedCategory === 'all' || 
-      material.category === selectedCategory;
-    const matchesSearch = 
-      material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      material.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesCourse && matchesCategory && matchesSearch;
+  // Fetch materials for each offering in parallel.
+  // UA is not authorised on `GET /course-offerings/:id/materials` so we skip
+  // the loop entirely for them and let the aggregated view fall through to
+  // a "browse offerings" UI.
+  const materialQueries = useQueries({
+    queries: offerings.map((o) => ({
+      queryKey: materialsListQueryKey(o.id),
+      queryFn: () => listMaterials(o.id),
+      enabled: Boolean(o.id) && !isUniversityAdmin,
+      retry: false,
+    })),
   });
 
-  // Group materials by course
-  const materialsByCourse = filteredMaterials.reduce((acc, material) => {
-    const courseId = material.courseOffering.id;
-    if (!acc[courseId]) {
-      acc[courseId] = {
-        course: material.courseOffering.course,
-        materials: [],
-      };
-    }
-    acc[courseId].materials.push(material);
-    return acc;
-  }, {} as Record<string, { course: { code: string; title: string }; materials: IMaterial[] }>);
+  const allLoading =
+    enrollmentsLoading || teaching.isLoading || (!isUniversityAdmin && materialQueries.some((q) => q.isLoading));
 
-  const getFileIcon = (material: IMaterial) => {
-    if (material.isExternalLink) {
-      return ExternalLink;
-    }
-    
-    if (material.fileType) {
-      const icon = fileTypeIcons[material.fileType.toLowerCase()];
-      if (icon) return icon;
-    }
-    
-    return FileText;
-  };
+  const offeringsForBrowse = useMemo(() => {
+    if (selectedCourse === 'all') return offerings;
+    return offerings.filter((o) => o.id === selectedCourse);
+  }, [offerings, selectedCourse]);
 
-  if (loading) {
+  const grouped = useMemo(() => {
+    const out: Record<string, { offering: OfferingMeta; materials: IPhase4Material[] }> = {};
+    materialQueries.forEach((q, idx) => {
+      const offering = offerings[idx];
+      if (!offering) return;
+      const items = q.data?.items ?? [];
+      const filtered = items.filter((m) => {
+        const matchesCategory = selectedCategory === 'all' || m.category === selectedCategory;
+        const q1 = searchTerm.trim().toLowerCase();
+        const matchesSearch = !q1 || m.title.toLowerCase().includes(q1) || (m.description ?? '').toLowerCase().includes(q1);
+        return matchesCategory && matchesSearch;
+      });
+      if (selectedCourse !== 'all' && offering.id !== selectedCourse) return;
+      if (filtered.length === 0 && selectedCourse !== 'all' && selectedCourse !== offering.id) return;
+      if (filtered.length === 0) return;
+      out[offering.id] = { offering, materials: filtered };
+    });
+    return out;
+  }, [materialQueries, offerings, searchTerm, selectedCategory, selectedCourse]);
+
+  const totalCount = useMemo(
+    () => Object.values(grouped).reduce((acc, g) => acc + g.materials.length, 0),
+    [grouped]
+  );
+
+  if (allLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <AdminPageShell titleStack={{ section: 'LMS & Gradebook', page: 'Materials' }} subtitle="Loading…">
+        <div className="flex min-h-[320px] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading materials…</p>
+          </div>
+        </div>
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('nav.materials')}</h1>
-        <p className="text-gray-600 mt-1">Access course materials, lectures, and resources</p>
-      </div>
-
-      {/* Filters */}
+    <AdminPageShell
+      titleStack={{ section: 'LMS & Gradebook', page: 'Materials' }}
+      subtitle="Access course materials, lectures, and resources"
+    >
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -120,122 +157,131 @@ export function Materials() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search materials..."
+                placeholder="Search materials…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="all">All Courses</option>
-              {myCourses.map(course => (
-                <option key={course.courseOffering?.id} value={course.courseOffering?.id}>
-                  {course.courseOffering?.course?.code} - {course.courseOffering?.course?.title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            >
-              <option value="all">All Categories</option>
-              <option value="Lectures">Lectures</option>
-              <option value="Sheets">Sheets</option>
-              <option value="Readings">Readings</option>
-              <option value="Links">Links</option>
-            </select>
+            <div className="w-full sm:w-72">
+              <Select2
+                value={selectedCourse}
+                onChange={setSelectedCourse}
+                options={[
+                  { value: 'all', label: 'All courses' },
+                  ...offerings.map((o) => ({ value: o.id, label: `${o.code} — ${o.title}` })),
+                ]}
+                placeholder="All courses"
+              />
+            </div>
+            <div className="w-full sm:w-56">
+              <Select2
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                options={[
+                  { value: 'all', label: 'All categories' },
+                  { value: 'Lectures', label: 'Lectures' },
+                  { value: 'Sheets', label: 'Sheets' },
+                  { value: 'Readings', label: 'Readings' },
+                  { value: 'Links', label: 'Links' },
+                ]}
+                placeholder="All categories"
+                searchable={false}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Materials List */}
-      {filteredMaterials.length === 0 ? (
+      {isUniversityAdmin ? (
+        offeringsForBrowse.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No course offerings available.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Browse materials by course</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-4">
+                As a university admin you don't have direct access to read materials, but you can drill into any
+                course offering's materials page.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {offeringsForBrowse.map((o) => (
+                  <Link
+                    key={o.id}
+                    to={`/dashboard/course-offerings/${o.id}/materials`}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-primary-400 hover:shadow-md transition-all flex items-center justify-between gap-2"
+                  >
+                    <div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{o.code}</div>
+                      <div className="text-sm text-gray-600 line-clamp-2">{o.title}</div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-primary-600 flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )
+      ) : totalCount === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No materials found</p>
+            <p className="text-gray-600">No materials found.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {Object.values(materialsByCourse).map(({ course, materials: courseMaterials }) => (
-            <Card key={course.code}>
+          {Object.values(grouped).map(({ offering, materials }) => (
+            <Card key={offering.id}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-primary-600" />
-                  {course.code} - {course.title}
+                  {offering.code} — {offering.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {courseMaterials.map((material) => {
-                    const CategoryIcon = categoryIcons[material.category];
-                    const FileIcon = getFileIcon(material);
-                    
+                  {materials.map((m) => {
+                    const Icon = categoryIcons[m.category];
                     return (
-                      <div
-                        key={material.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      <Link
+                        key={m._id}
+                        to={`/dashboard/course-offerings/${offering.id}/materials/${m._id}`}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow block"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className={`p-2 rounded-lg ${categoryColors[material.category]}`}>
-                              <CategoryIcon className="h-4 w-4" />
+                            <div className={`p-2 rounded-lg ${categoryColors[m.category]}`}>
+                              <Icon className="h-4 w-4" />
                             </div>
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${categoryColors[material.category]}`}>
-                              {material.category}
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${categoryColors[m.category]}`}>
+                              {m.category}
                             </span>
                           </div>
                         </div>
-                        
-                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                          {material.title}
-                        </h3>
-                        
-                        {material.description && (
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {material.description}
-                          </p>
-                        )}
-                        
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{m.title}</h3>
+                        {m.description && <p className="text-sm text-gray-600 mb-3 line-clamp-2">{m.description}</p>}
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                           <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <FileIcon className="h-4 w-4" />
-                            {material.isExternalLink ? (
-                              <span>External Link</span>
-                            ) : (
-                              <span>{material.fileType?.toUpperCase() || 'File'}</span>
-                            )}
+                            {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                            <span>{m.isExternalLink ? 'Link' : (m.fileType ?? 'File').toUpperCase()}</span>
                           </div>
-                          <a
-                            href={material.url}
-                            target={material.isExternalLink ? '_blank' : undefined}
-                            rel={material.isExternalLink ? 'noopener noreferrer' : undefined}
-                            className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
-                          >
-                            {material.isExternalLink ? (
-                              <>
-                                <ExternalLink className="h-4 w-4" />
-                                Open
-                              </>
-                            ) : (
-                              <>
-                                <Download className="h-4 w-4" />
-                                Download
-                              </>
-                            )}
-                          </a>
+                          <span className="flex items-center gap-1 text-sm text-primary-600 font-medium">
+                            {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+                            {m.isExternalLink ? 'Open' : 'Download'}
+                          </span>
                         </div>
-                        
                         <div className="mt-2 text-xs text-gray-400">
-                          Uploaded {new Date(material.uploadedAt).toLocaleDateString()} by {material.uploadedBy.name}
+                          {new Date(m.createdAt).toLocaleDateString()}
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
@@ -245,13 +291,11 @@ export function Materials() {
         </div>
       )}
 
-      {/* Results Count */}
-      {filteredMaterials.length > 0 && (
-        <div className="text-center text-sm text-gray-600">
-          Showing {filteredMaterials.length} of {materials.length} materials
+      {!isUniversityAdmin && totalCount > 0 && (
+        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Showing {totalCount} materials
         </div>
       )}
-    </div>
+    </AdminPageShell>
   );
 }
-

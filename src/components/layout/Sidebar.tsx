@@ -145,15 +145,16 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
     },
     { path: '/dashboard/enrollments', label: t('nav.enrollments'), icon: GraduationCap },
     { path: '/dashboard/materials', label: t('nav.materials'), icon: FileText },
-    { 
-      path: '/dashboard/assessments', 
-      label: t('nav.assessments'), 
+    {
+      path: '/dashboard/assessments',
+      label: t('nav.assessments'),
       icon: ClipboardList,
       children: [
         { path: '/dashboard/assessments/my-assessments', label: t('nav.myAssessments'), icon: ClipboardList },
         { path: '/dashboard/assessments/submissions', label: t('nav.mySubmissions'), icon: FileText },
       ]
     },
+    { path: '/dashboard/my-grades', label: 'My Grades', icon: GraduationCap },
     { path: '/dashboard/attendance', label: t('nav.attendance'), icon: Clock },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
@@ -194,6 +195,16 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         { path: '/dashboard/academic/catalog', label: 'Course catalog', icon: Library },
         { path: '/dashboard/academic/offerings', label: 'Course offerings', icon: BookOpen },
         { path: '/dashboard/academic/enrollments', label: 'Enrollments', icon: GraduationCap },
+      ],
+    },
+    {
+      path: '/dashboard/lms',
+      label: 'LMS & Gradebook',
+      icon: GraduationCap,
+      children: [
+        { path: '/dashboard/materials', label: t('nav.materials'), icon: FileText },
+        { path: '/dashboard/gradebook', label: 'Gradebook', icon: ClipboardList },
+        { path: '/dashboard/admin/gpa-rebuild', label: 'GPA Rebuild', icon: GraduationCap },
       ],
     },
     { path: '/dashboard/system-settings', label: 'System Settings', icon: Database },
@@ -244,6 +255,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       ]
     },
     { path: '/dashboard/grades', label: t('nav.calculateFinalGrades'), icon: GraduationCap },
+    { path: '/dashboard/gradebook', label: 'Gradebook', icon: ClipboardList },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
     { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3 },

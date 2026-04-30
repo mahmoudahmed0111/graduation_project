@@ -47,8 +47,14 @@ import { Announcements } from './pages/shared/Announcements';
 import { Chatbot } from './pages/shared/Chatbot';
 import { Notifications } from './pages/shared/Notifications';
 import { Profile } from './pages/shared/Profile';
-import { ManageMaterials, UploadMaterial } from './pages/doctor/Materials';
-import { CreateAssessment, GradeSubmissions } from './pages/doctor/Assessments';
+import { ManageMaterials, UploadMaterial, EditMaterial } from './pages/doctor/Materials';
+import { MaterialDetail } from './pages/shared/Materials';
+import { AssessmentDetail } from './pages/shared/Assessments';
+import { CreateAssessment, EditAssessment, AssessmentList, GradeSubmissions } from './pages/doctor/Assessments';
+import { TakeAssessment, SubmissionResult } from './pages/student/Assessments';
+import { CourseGradebook } from './pages/doctor/Gradebook';
+import { FinalExamEntry, StudentGpaRebuild } from './pages/admin/Gradebook';
+import { MyGrades } from './pages/student/Grades';
 import { AttendanceSessions } from './pages/doctor/Attendance';
 import { CalculateFinalGrades } from './pages/doctor/Grades';
 import {
@@ -69,6 +75,7 @@ import {
   AdminEnrollments,
   CreateCatalogCoursePage,
   CreateCourseOfferingPage,
+  EditCourseOfferingPage,
   ForceEnrollPage,
 } from './pages/admin/Academic';
 import {
@@ -203,40 +210,142 @@ function App() {
           <Route path="courses/my-courses" element={<MyCourses />} />
           <Route path="courses/enroll" element={<EnrollCourse />} />
           <Route path="enrollments" element={<Enrollments />} />
+          {/* Materials — aggregated cross-course view + legacy flat routes (Phase 4 wired) */}
           <Route path="materials" element={<Materials />} />
-          <Route 
-            path="materials/upload" 
+          <Route
+            path="materials/upload"
             element={
-              <ProtectedRoute allowedRoles={['doctor']}>
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta']}>
                 <UploadMaterial />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="materials/manage" 
+          <Route
+            path="materials/manage"
             element={
-              <ProtectedRoute allowedRoles={['doctor']}>
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta']}>
                 <ManageMaterials />
               </ProtectedRoute>
-            } 
+            }
           />
+
+          {/* Phase 4 nested per-offering routes */}
+          <Route path="course-offerings/:offeringId/materials" element={<ManageMaterials />} />
+          <Route
+            path="course-offerings/:offeringId/materials/upload"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta']}>
+                <UploadMaterial />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="course-offerings/:offeringId/materials/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta']}>
+                <EditMaterial />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="course-offerings/:offeringId/materials/:id" element={<MaterialDetail />} />
+
+          {/* Assessments */}
           <Route path="assessments/my-assessments" element={<MyAssessments />} />
           <Route path="assessments/submissions" element={<MySubmissions />} />
-          <Route 
-            path="assessments/create" 
+          <Route
+            path="assessments/create"
             element={
-              <ProtectedRoute allowedRoles={['doctor']}>
+              <ProtectedRoute allowedRoles={['doctor', 'teacher']}>
                 <CreateAssessment />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="assessments/grade" 
+          <Route
+            path="assessments/grade"
             element={
-              <ProtectedRoute allowedRoles={['doctor']}>
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta']}>
                 <GradeSubmissions />
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route path="course-offerings/:offeringId/assessments" element={<AssessmentList />} />
+          <Route
+            path="course-offerings/:offeringId/assessments/create"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher']}>
+                <CreateAssessment />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="course-offerings/:offeringId/assessments/:id" element={<AssessmentDetail />} />
+          <Route
+            path="course-offerings/:offeringId/assessments/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher']}>
+                <EditAssessment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="course-offerings/:offeringId/assessments/:id/take"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <TakeAssessment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="course-offerings/:offeringId/assessments/:assessmentId/submissions"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta', 'collegeAdmin', 'universityAdmin', 'admin', 'superAdmin']}>
+                <GradeSubmissions />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Submission detail (read-only result for students) */}
+          <Route path="submissions/:submissionId" element={<SubmissionResult />} />
+
+          {/* Gradebook */}
+          <Route
+            path="course-offerings/:offeringId/gradebook"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta', 'collegeAdmin', 'universityAdmin', 'admin', 'superAdmin']}>
+                <CourseGradebook />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="course-offerings/:offeringId/final-exam"
+            element={
+              <ProtectedRoute allowedRoles={['collegeAdmin', 'universityAdmin', 'admin', 'superAdmin']}>
+                <FinalExamEntry />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/gpa-rebuild"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'admin', 'superAdmin']}>
+                <StudentGpaRebuild />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="my-grades"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <MyGrades />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="gradebook"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta', 'collegeAdmin', 'universityAdmin', 'admin', 'superAdmin']}>
+                <CourseGradebook />
+              </ProtectedRoute>
+            }
           />
           <Route path="attendance" element={<Attendance />} />
           <Route 
@@ -534,6 +643,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
                 <CreateCourseOfferingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="academic/offerings/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
+                <EditCourseOfferingPage />
               </ProtectedRoute>
             }
           />
