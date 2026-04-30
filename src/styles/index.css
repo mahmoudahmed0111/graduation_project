@@ -160,6 +160,105 @@
     border-color: #243b6b !important;
   }
 
+  /* ─── Sidebar — Beni-Suef brand identity (navy + gold) ───────────────
+     The Sidebar component used Tailwind's generic `slate-*` palette in
+     dark mode. We re-paint it with the brand colours via scoped CSS so
+     no component-level changes are needed. */
+
+  /* Sidebar shell */
+  .dark aside {
+    background-color: #0a1428 !important;     /* deep navy (page bg) */
+    border-color: #243b6b !important;
+  }
+
+  /* "MENU" label */
+  .dark aside nav > p {
+    color: #ffd700 !important;                /* brand gold */
+    opacity: 0.7;
+  }
+
+  /* Top-level nav items — base state */
+  .dark aside button,
+  .dark aside a {
+    color: #cbd5e1 !important;                /* slate-300 readable on navy */
+  }
+
+  /* Hover (non-active) — subtle gold-tinted navy */
+  .dark aside button:hover,
+  .dark aside a:hover {
+    background-color: rgb(255 215 0 / 0.10) !important;  /* gold-50 alpha */
+    color: #ffea40 !important;                /* accent-400 */
+  }
+  /* Hover icon → gold */
+  .dark aside button:hover svg,
+  .dark aside a:hover svg {
+    color: #ffea40 !important;
+  }
+
+  /* Focus ring — gold */
+  .dark aside button:focus-visible,
+  .dark aside a:focus-visible {
+    outline: 2px solid #ffea40;
+    outline-offset: -2px;
+  }
+
+  /* Active (current route) — gold gradient pill, gold text */
+  .dark aside .bg-gradient-to-r.from-primary-50 {
+    background-image: linear-gradient(
+      to right,
+      rgb(255 215 0 / 0.18),
+      rgb(255 215 0 / 0.05)
+    ) !important;
+    color: #ffea40 !important;
+    box-shadow: 0 0 0 1px rgb(255 215 0 / 0.20);
+  }
+  .dark aside .bg-gradient-to-r.from-primary-50 svg {
+    color: #ffea40 !important;
+  }
+
+  /* The 1px accent rail at the start of an active item */
+  .dark aside .bg-accent-500 {
+    background-color: #ffd700 !important;
+  }
+
+  /* Chevron arrows */
+  .dark aside .text-slate-400,
+  .dark aside .text-slate-500 {
+    color: #94a3b8 !important;
+  }
+
+  /* User pill at the bottom of the sidebar */
+  .dark aside .border-slate-200\/70,
+  .dark aside .border-slate-800 {
+    border-color: #243b6b !important;
+  }
+  .dark aside .bg-slate-50\/50,
+  .dark aside .bg-slate-950\/30 {
+    background-color: #0d1a33 !important;     /* slightly elevated navy */
+  }
+  /* Hover on the user pill → gold-tinted */
+  .dark aside .hover\:bg-white:hover,
+  .dark aside .hover\:bg-slate-800:hover {
+    background-color: rgb(255 215 0 / 0.10) !important;
+  }
+
+  /* Floating popover that appears next to a collapsed sidebar item */
+  .dark .fixed > div.bg-white.dark\:bg-slate-900,
+  .dark [class*="dark:bg-slate-900"].rounded-lg.shadow-2xl {
+    background-color: #101e3a !important;
+    border-color: #243b6b !important;
+  }
+  .dark .fixed .bg-gray-50.dark\:bg-slate-800\/60 {
+    background-color: #162647 !important;
+  }
+  .dark .fixed a.dark\:hover\:bg-slate-800:hover {
+    background-color: rgb(255 215 0 / 0.10) !important;
+    color: #ffea40 !important;
+  }
+  .dark .fixed a.dark\:hover\:bg-slate-800:hover svg {
+    color: #ffea40 !important;
+  }
+
   .input {
     @apply w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
