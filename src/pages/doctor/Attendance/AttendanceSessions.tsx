@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { IEnrollment, ICourseOffering } from '@/types';
@@ -33,6 +34,7 @@ interface AttendanceSession {
 }
 
 export function AttendanceSessions() {
+  const { t } = useTranslation();
   useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
@@ -72,7 +74,7 @@ export function AttendanceSessions() {
           context: 'AttendanceSessions',
           error,
         });
-        showError('Failed to load data');
+        showError(t('doctor.attendanceSessions.failedLoadData'));
       } finally {
         setLoading(false);
       }
@@ -84,7 +86,7 @@ export function AttendanceSessions() {
   const handleStartSession = async () => {
     if (!selectedCourse || !selectedLocation) {
       showError(
-        'Please select a course and location'
+        t('doctor.attendanceSessions.selectCourseAndLocation')
       );
       return;
     }
@@ -113,7 +115,7 @@ export function AttendanceSessions() {
       
       setSessions([newSession, ...sessions]);
       success(
-        'Attendance session started successfully'
+        t('doctor.attendanceSessions.startedSuccess')
       );
       
       // Reset form
@@ -124,7 +126,7 @@ export function AttendanceSessions() {
         context: 'AttendanceSessions',
         error,
       });
-      showError('Failed to start attendance session');
+      showError(t('doctor.attendanceSessions.failedStart'));
     } finally {
       setStartingSession(false);
     }
@@ -142,14 +144,14 @@ export function AttendanceSessions() {
       ));
       
       success(
-        'Attendance session stopped successfully'
+        t('doctor.attendanceSessions.stoppedSuccess')
       );
     } catch (error) {
       logger.error('Failed to stop session', {
         context: 'AttendanceSessions',
         error,
       });
-      showError('Failed to stop attendance session');
+      showError(t('doctor.attendanceSessions.failedStop'));
     }
   };
 
@@ -169,10 +171,10 @@ export function AttendanceSessions() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {'Manage Attendance Sessions'}
+          {t('doctor.attendanceSessions.title')}
         </h1>
         <p className="text-gray-600 mt-1">
-          {'Start and stop RFID attendance sessions'}
+          {t('doctor.attendanceSessions.subtitle')}
         </p>
       </div>
 
@@ -181,43 +183,43 @@ export function AttendanceSessions() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Radio className="h-5 w-5 text-primary-600" />
-            {'Start New Attendance Session'}
+            {t('doctor.attendanceSessions.startNew')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {'Course'} *
+                {t('doctor.attendanceSessions.course')} *
               </label>
               <Select2
                 value={selectedCourse}
                 onChange={setSelectedCourse}
                 options={[
-                  { value: '', label: 'Select a course...' },
+                  { value: '', label: t('doctor.attendanceSessions.selectCoursePlaceholder') },
                   ...myCourses.map(course => ({
                     value: course.courseOffering?.id || '',
                     label: `${course.courseOffering?.course?.code} - ${course.courseOffering?.course?.title}`,
                   })),
                 ]}
-                placeholder={'Select a course...'}
+                placeholder={t('doctor.attendanceSessions.selectCoursePlaceholder')}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {'Location / RFID Reader'} *
+                {t('doctor.attendanceSessions.locationRfid')} *
               </label>
               <Select2
                 value={selectedLocation}
                 onChange={setSelectedLocation}
                 options={[
-                  { value: '', label: 'Select location...' },
+                  { value: '', label: t('doctor.attendanceSessions.selectLocationPlaceholder') },
                   ...availableLocations.map(loc => ({
                     value: loc,
                     label: loc,
                   })),
                 ]}
-                placeholder={'Select location...'}
+                placeholder={t('doctor.attendanceSessions.selectLocationPlaceholder')}
               />
             </div>
           </div>
@@ -228,7 +230,7 @@ export function AttendanceSessions() {
             className="w-full md:w-auto"
           >
             <Play className="h-4 w-4 mr-2" />
-            {'Start Session'}
+            {t('doctor.attendanceSessions.startSession')}
           </Button>
         </CardContent>
       </Card>
@@ -238,7 +240,7 @@ export function AttendanceSessions() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-600" />
-            {'Active Sessions'} ({activeSessions.length})
+            {t('doctor.attendanceSessions.activeSessions')} ({activeSessions.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {activeSessions.map((session) => (
@@ -250,7 +252,7 @@ export function AttendanceSessions() {
                       <span>{session.courseOffering.course?.code}</span>
                     </CardTitle>
                     <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                      {'Active'}
+                      {t('doctor.attendanceSessions.active')}
                     </span>
                   </div>
                 </CardHeader>
@@ -270,13 +272,13 @@ export function AttendanceSessions() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {'Started:'} {formatDate(session.startTime)}
+                      {t('doctor.attendanceSessions.started')} {formatDate(session.startTime)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4" />
                     <span>
-                      {session.attendedStudents} / {session.totalStudents} {'students'}
+                      {session.attendedStudents} / {session.totalStudents} {t('doctor.attendanceSessions.studentsWord')}
                     </span>
                   </div>
                   <div className="pt-3 border-t border-gray-200">
@@ -287,7 +289,7 @@ export function AttendanceSessions() {
                       size="sm"
                     >
                       <Square className="h-4 w-4 mr-2" />
-                      {'Stop Session'}
+                      {t('doctor.attendanceSessions.stopSession')}
                     </Button>
                   </div>
                 </CardContent>
@@ -302,7 +304,7 @@ export function AttendanceSessions() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-gray-400" />
-            {'Ended Sessions'} ({endedSessions.length})
+            {t('doctor.attendanceSessions.endedSessions')} ({endedSessions.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {endedSessions.map((session) => (
@@ -314,7 +316,7 @@ export function AttendanceSessions() {
                       <span>{session.courseOffering.course?.code}</span>
                     </CardTitle>
                     <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                      {'Ended'}
+                      {t('doctor.attendanceSessions.ended')}
                     </span>
                   </div>
                 </CardHeader>
@@ -330,21 +332,21 @@ export function AttendanceSessions() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="h-4 w-4" />
                     <span>
-                      {'From:'} {formatDate(session.startTime)}
+                      {t('doctor.attendanceSessions.from')} {formatDate(session.startTime)}
                     </span>
                   </div>
                   {session.endTime && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       <span>
-                        {'To:'} {formatDate(session.endTime)}
+                      {t('doctor.attendanceSessions.to')} {formatDate(session.endTime)}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4" />
                     <span>
-                      {session.attendedStudents} / {session.totalStudents} {'students'}
+                      {session.attendedStudents} / {session.totalStudents} {t('doctor.attendanceSessions.studentsWord')}
                     </span>
                   </div>
                 </CardContent>
@@ -360,10 +362,10 @@ export function AttendanceSessions() {
           <CardContent className="p-12 text-center">
             <Radio className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 mb-4">
-              {'No attendance sessions'}
+              {t('doctor.attendanceSessions.noSessions')}
             </p>
             <p className="text-sm text-gray-500">
-              {'Start a new attendance session to begin recording attendance'}
+              {t('doctor.attendanceSessions.noSessionsHint')}
             </p>
           </CardContent>
         </Card>

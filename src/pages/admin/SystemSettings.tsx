@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +13,7 @@ import { usePatchSettings, useSettings } from '@/hooks/queries/useSettings';
 import { FALLBACK_SYSTEM_SETTINGS } from '@/lib/mapSystemSettings';
 
 export function SystemSettings() {
+  const { t } = useTranslation();
   const { success, error: showError } = useToastStore();
   const { data, isLoading, isError, error, refetch } = useSettings();
   const patchSettings = usePatchSettings();
@@ -31,10 +33,10 @@ export function SystemSettings() {
         gradePoints: settings.gradePoints,
         defaultCreditLimit: settings.defaultCreditLimit,
       });
-      success('System settings updated successfully');
+      success(t('admin.systemSettings.updateSuccess'));
     } catch (err) {
       logger.error('Failed to update settings', { context: 'SystemSettings', error: err });
-      showError(getApiErrorMessage(err, 'Failed to update settings'));
+      showError(getApiErrorMessage(err, t('admin.systemSettings.updateFail')));
     }
   };
 
@@ -43,7 +45,7 @@ export function SystemSettings() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.systemSettings.loading')}</p>
         </div>
       </div>
     );
@@ -52,15 +54,15 @@ export function SystemSettings() {
   if (isError) {
     return (
       <AdminPageShell
-        title="System Settings"
-        subtitle="Configure global parameters"
+        title={t('admin.systemSettings.title')}
+        subtitle={t('admin.systemSettings.subtitleShort')}
       >
         <Card>
           <CardContent className="p-6 text-sm text-red-600 dark:text-red-400">
-            {getApiErrorMessage(error, 'Failed to load settings')}
+            {getApiErrorMessage(error, t('admin.systemSettings.loadFail'))}
             <div className="mt-4">
               <Button type="button" variant="secondary" size="sm" onClick={() => void refetch()}>
-                Retry
+                {t('admin.systemSettings.retry')}
               </Button>
             </div>
           </CardContent>
@@ -71,8 +73,8 @@ export function SystemSettings() {
 
   return (
     <AdminPageShell
-      title="System Settings"
-      subtitle="Configure global system parameters. University administrators can update these values."
+      title={t('admin.systemSettings.title')}
+      subtitle={t('admin.systemSettings.subtitle')}
     >
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
@@ -81,27 +83,27 @@ export function SystemSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  Academic Settings
+                  {t('admin.systemSettings.academicSettings')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Current academic year <span className="text-red-500">*</span>
+                    {t('admin.systemSettings.currentAcademicYear')} <span className="text-red-500">*</span>
                   </label>
                   <Input
                     value={settings.currentAcademicYear}
                     onChange={(e) => setSettings({ ...settings, currentAcademicYear: e.target.value })}
-                    placeholder="e.g. 2025-2026"
+                    placeholder={t('admin.systemSettings.yearPlaceholder')}
                     required
                   />
                 </div>
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Current semester <span className="text-red-500">*</span>
+                    {t('admin.systemSettings.currentSemester')} <span className="text-red-500">*</span>
                   </label>
-                  <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">API values: fall or spring</p>
+                  <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">{t('admin.systemSettings.apiValuesHint')}</p>
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -109,7 +111,7 @@ export function SystemSettings() {
                       size="sm"
                       onClick={() => setSettings({ ...settings, currentSemester: 'fall' })}
                     >
-                      Fall
+                      {t('admin.systemSettings.fall')}
                     </Button>
                     <Button
                       type="button"
@@ -117,7 +119,7 @@ export function SystemSettings() {
                       size="sm"
                       onClick={() => setSettings({ ...settings, currentSemester: 'spring' })}
                     >
-                      Spring
+                      {t('admin.systemSettings.spring')}
                     </Button>
                   </div>
                 </div>
@@ -131,7 +133,7 @@ export function SystemSettings() {
                     className="h-4 w-4 rounded text-primary-600"
                   />
                   <label htmlFor="enrollmentOpen" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Enrollment open
+                    {t('admin.systemSettings.enrollmentOpen')}
                   </label>
                 </div>
               </CardContent>
@@ -141,13 +143,13 @@ export function SystemSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5" />
-                  Credit Hour Limits
+                  {t('admin.systemSettings.creditHourLimits')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Good Standing Limit
+                    {t('admin.systemSettings.goodStandingLimit')}
                   </label>
                   <Input
                     type="number"
@@ -168,7 +170,7 @@ export function SystemSettings() {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Probation Limit
+                    {t('admin.systemSettings.probationLimit')}
                   </label>
                   <Input
                     type="number"
@@ -189,7 +191,7 @@ export function SystemSettings() {
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Honors Limit
+                    {t('admin.systemSettings.honorsLimit')}
                   </label>
                   <Input
                     type="number"
@@ -215,7 +217,7 @@ export function SystemSettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="h-5 w-5" />
-                Grade Point Mapping
+                {t('admin.systemSettings.gradePointMapping')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -250,7 +252,7 @@ export function SystemSettings() {
           <div className="flex items-center gap-2">
             <Button type="submit" isLoading={patchSettings.isPending}>
               <Save className="mr-2 h-4 w-4" />
-              Save Settings
+              {t('admin.systemSettings.saveSettings')}
             </Button>
           </div>
         </div>

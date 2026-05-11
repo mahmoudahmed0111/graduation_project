@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, FileQuestion } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -6,6 +7,7 @@ import { useAssessment } from '@/hooks/queries/usePhase4Assessments';
 import { useAuthStore } from '@/store/authStore';
 
 export function AssessmentDetail() {
+  const { t } = useTranslation();
   const { offeringId, id } = useParams<{ offeringId: string; id: string }>();
   const { user } = useAuthStore();
   const detail = useAssessment(offeringId, id);
@@ -21,7 +23,7 @@ export function AssessmentDetail() {
   if (detail.isError || !detail.data) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-red-600">Assessment not found.</CardContent>
+        <CardContent className="p-12 text-center text-red-600">{t('shared.assessmentDetail.notFound')}</CardContent>
       </Card>
     );
   }
@@ -36,14 +38,14 @@ export function AssessmentDetail() {
         to={`/dashboard/course-offerings/${offeringId}/assessments`}
         className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to assessments
+        <ArrowLeft className="h-4 w-4" /> {t('shared.assessmentDetail.backToAssessments')}
       </Link>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{a.title}</span>
-            <span className="text-sm font-normal text-gray-500">{a.totalPoints} pts</span>
+            <span className="text-sm font-normal text-gray-500">{t('shared.assessmentDetail.points', { points: a.totalPoints })}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -53,23 +55,23 @@ export function AssessmentDetail() {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500" />
               <div>
-                <div className="text-gray-500">Due</div>
+                <div className="text-gray-500">{t('shared.assessmentDetail.due')}</div>
                 <div className="font-medium">{new Date(a.dueDate).toLocaleString()}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-gray-500" />
               <div>
-                <div className="text-gray-500">Time limit</div>
-                <div className="font-medium">{a.timeLimitMinutes ? `${a.timeLimitMinutes} min` : 'Untimed'}</div>
+                <div className="text-gray-500">{t('shared.assessmentDetail.timeLimit')}</div>
+                <div className="font-medium">{a.timeLimitMinutes ? t('shared.assessmentDetail.minutes', { minutes: a.timeLimitMinutes }) : t('shared.assessmentDetail.untimed')}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <FileQuestion className="h-4 w-4 text-gray-500" />
               <div>
-                <div className="text-gray-500">Status</div>
+                <div className="text-gray-500">{t('shared.assessmentDetail.status')}</div>
                 <div className="font-medium">
-                  {a.settings?.acceptingResponses === false ? 'Closed' : 'Accepting responses'}
+                  {a.settings?.acceptingResponses === false ? t('shared.assessmentDetail.closed') : t('shared.assessmentDetail.acceptingResponses')}
                 </div>
               </div>
             </div>
@@ -79,15 +81,15 @@ export function AssessmentDetail() {
             <div className="pt-4 border-t border-gray-100">
               {a.mySubmission?.status === 'graded' ? (
                 <Link to={`/dashboard/submissions/${a.mySubmission._id}`}>
-                  <Button>View result</Button>
+                  <Button>{t('shared.assessmentDetail.viewResult')}</Button>
                 </Link>
               ) : a.mySubmission?.status === 'submitted' ? (
                 <Link to={`/dashboard/submissions/${a.mySubmission._id}`}>
-                  <Button variant="outline">View submission (awaiting grade)</Button>
+                  <Button variant="outline">{t('shared.assessmentDetail.viewSubmissionAwaiting')}</Button>
                 </Link>
               ) : (
                 <Link to={`/dashboard/course-offerings/${offeringId}/assessments/${a._id}/take`}>
-                  <Button>{a.mySubmission?.status === 'in_progress' ? 'Resume' : 'Start'}</Button>
+                  <Button>{a.mySubmission?.status === 'in_progress' ? t('shared.assessmentDetail.resume') : t('shared.assessmentDetail.start')}</Button>
                 </Link>
               )}
             </div>
@@ -95,7 +97,7 @@ export function AssessmentDetail() {
 
           {isStaff && Array.isArray(a.questions) && a.questions.length > 0 && (
             <div className="pt-4 border-t border-gray-100 space-y-3">
-              <h3 className="font-semibold">Questions ({a.questions.length})</h3>
+              <h3 className="font-semibold">{t('shared.assessmentDetail.questionsCount', { count: a.questions.length })}</h3>
               {a.questions.map((q, idx) => (
                 <div key={q._id ?? idx} className="border border-gray-200 rounded-lg p-3">
                   <div className="flex items-start justify-between">
@@ -105,7 +107,7 @@ export function AssessmentDetail() {
                         Q{idx + 1}. {q.questionText}
                       </p>
                     </div>
-                    <span className="text-sm text-gray-500">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                    <span className="text-sm text-gray-500">{t('shared.assessmentDetail.pts', { count: q.points })}</span>
                   </div>
                   {q.options && q.options.length > 0 && (
                     <ul className="mt-2 space-y-1 text-sm">
@@ -113,7 +115,7 @@ export function AssessmentDetail() {
                         <li key={o._id ?? oi} className="flex items-center gap-2">
                           <span className="text-gray-400">•</span>
                           <span>{o.text}</span>
-                          {o.isCorrect && <span className="text-xs text-green-600 font-medium">(correct)</span>}
+                          {o.isCorrect && <span className="text-xs text-green-600 font-medium">{t('shared.assessmentDetail.correctMark')}</span>}
                         </li>
                       ))}
                     </ul>

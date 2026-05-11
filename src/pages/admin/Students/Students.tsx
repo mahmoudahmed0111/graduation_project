@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -43,6 +44,7 @@ function mapUserToRow(u: Record<string, unknown>): StudentListRow {
 }
 
 export function Students() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { error: showError } = useToastStore();
   const canManage = user?.role === 'universityAdmin' || user?.role === 'collegeAdmin';
@@ -61,7 +63,7 @@ export function Students() {
         setRows(list.map((u) => mapUserToRow(u as Record<string, unknown>)));
       } catch (error) {
         logger.error('Failed to fetch students', { context: 'Students', error });
-        showError('Failed to load students');
+        showError(t('admin.students.loadFail'));
         setRows([]);
       } finally {
         setLoading(false);
@@ -88,7 +90,7 @@ export function Students() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading students…</p>
+          <p className="mt-4 text-gray-600">{t('admin.students.loading')}</p>
         </div>
       </div>
     );
@@ -98,21 +100,20 @@ export function Students() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Students</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('admin.students.title')}</h1>
           <p className="text-gray-600 mt-1 max-w-2xl">
-            Student accounts in the directory. College admins see students in their college. For aggregated enrollment
-            totals by college, see{' '}
+            {t('admin.students.subtitlePart1')}{' '}
             <Link to="/dashboard/organizational/colleges" className="text-primary-600 hover:underline">
-              Colleges
+              {t('admin.students.collegesLink')}
             </Link>
-            .
+            {t('admin.students.subtitlePart2')}
           </p>
         </div>
         {canManage && (
           <Link to="/dashboard/students/create">
             <Button variant="primary" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Add student
+              {t('admin.students.addStudent')}
             </Button>
           </Link>
         )}
@@ -121,13 +122,13 @@ export function Students() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-5">
-            <p className="text-sm text-gray-600 mb-1">Students listed</p>
+            <p className="text-sm text-gray-600 mb-1">{t('admin.students.studentsListed')}</p>
             <p className="text-3xl font-bold text-gray-900">{rows.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-            <p className="text-sm text-gray-600 mb-1">Matching search</p>
+            <p className="text-sm text-gray-600 mb-1">{t('admin.students.matchingSearch')}</p>
             <p className="text-3xl font-bold text-gray-900">{filtered.length}</p>
           </CardContent>
         </Card>
@@ -137,7 +138,7 @@ export function Students() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            All students
+            {t('admin.students.allStudents')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -145,7 +146,7 @@ export function Students() {
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search name, email, national ID, college, department…"
+                placeholder={t('admin.students.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -156,20 +157,20 @@ export function Students() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>National ID</TableHead>
-                  <TableHead>College</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('admin.students.name')}</TableHead>
+                  <TableHead>{t('admin.students.email')}</TableHead>
+                  <TableHead>{t('admin.students.nationalId')}</TableHead>
+                  <TableHead>{t('admin.students.college')}</TableHead>
+                  <TableHead>{t('admin.students.department')}</TableHead>
+                  <TableHead>{t('admin.students.status')}</TableHead>
+                  <TableHead className="text-right">{t('admin.students.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-12 text-gray-500">
-                      {rows.length === 0 ? 'No students found.' : 'No students match your search.'}
+                      {rows.length === 0 ? t('admin.students.noStudents') : t('admin.students.noMatch')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -192,22 +193,22 @@ export function Students() {
                       <TableCell className="text-sm">{r.departmentName}</TableCell>
                       <TableCell>
                         {r.active ? (
-                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Active</span>
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">{t('admin.students.active')}</span>
                         ) : (
-                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Inactive</span>
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">{t('admin.students.inactive')}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link to={`/dashboard/students/${r.id}`}>
                             <Button variant="ghost" size="sm">
-                              View
+                              {t('admin.students.view')}
                             </Button>
                           </Link>
                           {canManage && (
                             <Link to={`/dashboard/students/${r.id}/edit`}>
                               <Button variant="secondary" size="sm">
-                                Edit
+                                {t('admin.students.edit')}
                               </Button>
                             </Link>
                           )}
@@ -226,8 +227,7 @@ export function Students() {
         <CardContent className="p-5 flex gap-3">
           <GraduationCap className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
           <p className="text-sm text-gray-600">
-            College pages show an aggregated <strong>student count</strong>. This list is the per-student directory for
-            administration.
+            {t('admin.students.footnote')}
           </p>
         </CardContent>
       </Card>

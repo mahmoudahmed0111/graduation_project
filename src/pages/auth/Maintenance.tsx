@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -6,13 +7,14 @@ import { Wrench, Mail, Clock, RefreshCw } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 
 export function Maintenance() {
+  const { t } = useTranslation();
   const { success } = useToastStore();
   const [email, setEmail] = useState('');
 
   const handleNotifyMe = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      success('We\'ll notify you when maintenance is complete!');
+      success(t('authPages.maintenance.notifyToast'));
       setEmail('');
     }
   };
@@ -55,10 +57,10 @@ export function Maintenance() {
           </div>
 
           <CardTitle className="text-center text-4xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent animate-fade-in font-cairo" style={{ animationDelay: '0.3s' }}>
-            Under Maintenance
+            {t('authPages.maintenance.title')}
           </CardTitle>
           <p className="text-center text-lg text-gray-600 mt-4 animate-fade-in" style={{ animationDelay: '0.35s' }}>
-            We're performing scheduled maintenance to improve your experience
+            {t('authPages.maintenance.subtitle')}
           </p>
         </CardHeader>
 
@@ -69,32 +71,32 @@ export function Maintenance() {
               <div className="flex items-center justify-center gap-3 mb-4">
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Estimated Completion Time
+                  {t('authPages.maintenance.estimatedTime')}
                 </h3>
               </div>
               <p className="text-2xl font-bold text-yellow-700 mb-2">
                 {formatTime(maintenanceEndTime)}
               </p>
               <p className="text-sm text-gray-600">
-                We apologize for any inconvenience. The system will be back online shortly.
+                {t('authPages.maintenance.apology')}
               </p>
             </div>
 
             {/* What's happening */}
             <div className="text-left space-y-3">
-              <h3 className="font-semibold text-gray-900">What we're doing:</h3>
+              <h3 className="font-semibold text-gray-900">{t('authPages.maintenance.whatWeDoing')}</h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-600 mt-1">•</span>
-                  <span>Updating system infrastructure</span>
+                  <span>{t('authPages.maintenance.task1')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-600 mt-1">•</span>
-                  <span>Applying security patches</span>
+                  <span>{t('authPages.maintenance.task2')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-yellow-600 mt-1">•</span>
-                  <span>Optimizing performance</span>
+                  <span>{t('authPages.maintenance.task3')}</span>
                 </li>
               </ul>
             </div>
@@ -102,15 +104,15 @@ export function Maintenance() {
             {/* Notify Me Form */}
             <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Get Notified
+                {t('authPages.maintenance.getNotified')}
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Enter your email and we'll notify you when maintenance is complete.
+                {t('authPages.maintenance.getNotifiedDesc')}
               </p>
               <form onSubmit={handleNotifyMe} className="flex gap-2">
                 <Input
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder={t('authPages.maintenance.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="flex-1"
@@ -118,7 +120,7 @@ export function Maintenance() {
                 />
                 <Button type="submit" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  Notify Me
+                  {t('authPages.maintenance.notifyMe')}
                 </Button>
               </form>
             </div>
@@ -131,7 +133,7 @@ export function Maintenance() {
                 className="flex items-center gap-2 mx-auto"
               >
                 <RefreshCw className="h-4 w-4" />
-                Refresh Page
+                {t('authPages.maintenance.refreshPage')}
               </Button>
             </div>
           </div>

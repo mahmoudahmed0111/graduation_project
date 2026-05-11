@@ -35,7 +35,7 @@ export function Layout() {
       <div
         className={cn(
           'transition-all duration-300 ease-in-out',
-          sidebarExpanded ? 'lg:pl-64' : 'lg:pl-16'
+          sidebarExpanded ? 'lg:ps-64' : 'lg:ps-16'
         )}
         style={{
           transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',

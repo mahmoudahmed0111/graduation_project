@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { IEnrollment } from '@/types';
@@ -32,6 +33,7 @@ interface StudentGrade {
 }
 
 export function CalculateFinalGrades() {
+  const { t } = useTranslation();
   useAuthStore();
   const { success, error: showError } = useToastStore();
   const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
@@ -51,7 +53,7 @@ export function CalculateFinalGrades() {
           context: 'CalculateFinalGrades',
           error,
         });
-        showError('Failed to load courses');
+        showError(t('doctor.calculateFinalGrades.failedLoadCourses'));
       }
     };
 
@@ -120,7 +122,7 @@ export function CalculateFinalGrades() {
         context: 'CalculateFinalGrades',
         error,
       });
-      showError('Failed to load students');
+      showError(t('doctor.calculateFinalGrades.failedLoadStudents'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +130,7 @@ export function CalculateFinalGrades() {
 
   const calculateGrades = () => {
     if (!selectedCourse) {
-      showError('Please select a course');
+      showError(t('doctor.calculateFinalGrades.selectCourseError'));
       return;
     }
 
@@ -184,14 +186,14 @@ export function CalculateFinalGrades() {
       // In real app, save grades to backend
       // await api.saveFinalGrades(selectedCourse, students);
       
-      success('Final grades saved successfully');
+      success(t('doctor.calculateFinalGrades.gradesSavedSuccess'));
       setConfirmDialogOpen(false);
     } catch (error) {
       logger.error('Failed to save grades', {
         context: 'CalculateFinalGrades',
         error,
       });
-      showError('Failed to save final grades');
+      showError(t('doctor.calculateFinalGrades.failedSaveGrades'));
     } finally {
       setCalculating(false);
     }
@@ -218,10 +220,10 @@ export function CalculateFinalGrades() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Calculate Final Grades
+            {t('doctor.calculateFinalGrades.title')}
           </h1>
           <p className="text-gray-600 mt-1">
-            Calculate and save final grades for students
+            {t('doctor.calculateFinalGrades.subtitle')}
           </p>
         </div>
         {students.length > 0 && (
@@ -230,18 +232,18 @@ export function CalculateFinalGrades() {
               variant="secondary"
               onClick={() => {
                 // Export functionality
-                success('Exported');
+                success(t('doctor.calculateFinalGrades.exported'));
               }}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export
+              {t('doctor.calculateFinalGrades.export')}
             </Button>
             <Button
               onClick={() => setConfirmDialogOpen(true)}
               disabled={students.length === 0}
             >
               <Save className="h-4 w-4 mr-2" />
-              Save Grades
+              {t('doctor.calculateFinalGrades.saveGrades')}
             </Button>
           </div>
         )}
@@ -252,7 +254,7 @@ export function CalculateFinalGrades() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary-600" />
-            Select Course
+            {t('doctor.calculateFinalGrades.selectCourse')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -262,19 +264,19 @@ export function CalculateFinalGrades() {
                 value={selectedCourse}
                 onChange={setSelectedCourse}
                 options={[
-                  { value: '', label: 'Select a course...' },
+                  { value: '', label: t('doctor.calculateFinalGrades.selectCoursePlaceholder') },
                   ...myCourses.map(course => ({
                     value: course.courseOffering?.id || '',
                     label: `${course.courseOffering?.course?.code} - ${course.courseOffering?.course?.title}`,
                   })),
                 ]}
-                placeholder="Select a course..."
+                placeholder={t('doctor.calculateFinalGrades.selectCoursePlaceholder')}
               />
             </div>
             {selectedCourse && (
               <Button onClick={calculateGrades}>
                 <Calculator className="h-4 w-4 mr-2" />
-                Calculate Grades
+                {t('doctor.calculateFinalGrades.calculateGrades')}
               </Button>
             )}
           </div>
@@ -288,7 +290,7 @@ export function CalculateFinalGrades() {
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <h3 className="font-semibold text-blue-900">
-                Grading Policy
+                {t('doctor.calculateFinalGrades.gradingPolicy')}
               </h3>
             </div>
             {(() => {
@@ -305,31 +307,31 @@ export function CalculateFinalGrades() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                   {policy.attendance && (
                     <div>
-                      <span className="text-gray-600">Attendance:</span>
+                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.attendance')}</span>
                       <span className="font-semibold ml-1">{policy.attendance}%</span>
                     </div>
                   )}
                   {policy.midterm && (
                     <div>
-                      <span className="text-gray-600">Midterm:</span>
+                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.midterm')}</span>
                       <span className="font-semibold ml-1">{policy.midterm}%</span>
                     </div>
                   )}
                   {policy.assignments && (
                     <div>
-                      <span className="text-gray-600">Assignments:</span>
+                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.assignments')}</span>
                       <span className="font-semibold ml-1">{policy.assignments}%</span>
                     </div>
                   )}
                   {policy.project && (
                     <div>
-                      <span className="text-gray-600">Project:</span>
+                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.project')}</span>
                       <span className="font-semibold ml-1">{policy.project}%</span>
                     </div>
                   )}
                   {policy.finalExam && (
                     <div>
-                      <span className="text-gray-600">Final Exam:</span>
+                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.finalExam')}</span>
                       <span className="font-semibold ml-1">{policy.finalExam}%</span>
                     </div>
                   )}
@@ -350,7 +352,7 @@ export function CalculateFinalGrades() {
           <CardContent className="p-12 text-center">
             <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">
-              Select a course to view students
+              {t('doctor.calculateFinalGrades.selectCourseToView')}
             </p>
           </CardContent>
         </Card>
@@ -361,14 +363,14 @@ export function CalculateFinalGrades() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead>Student</TableHead>
-                    <TableHead>Attendance</TableHead>
-                    <TableHead>Midterm</TableHead>
-                    <TableHead>Assignments</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Final Exam</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Letter</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colStudent')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colAttendance')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colMidterm')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colAssignments')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colProject')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colFinalExam')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colTotal')}</TableHead>
+                    <TableHead>{t('doctor.calculateFinalGrades.colLetter')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -409,10 +411,10 @@ export function CalculateFinalGrades() {
         isOpen={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
         onConfirm={handleSaveGrades}
-        title="Save Final Grades"
-        message="Are you sure you want to save the final grades? Student records will be updated."
-        confirmText="Save"
-        cancelText="Cancel"
+        title={t('doctor.calculateFinalGrades.confirmTitle')}
+        message={t('doctor.calculateFinalGrades.confirmMessage')}
+        confirmText={t('doctor.calculateFinalGrades.confirmSave')}
+        cancelText={t('doctor.calculateFinalGrades.confirmCancel')}
         isLoading={calculating}
       />
     </div>

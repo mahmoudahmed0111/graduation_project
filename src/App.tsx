@@ -23,7 +23,6 @@ import { TermsOfUse as PublicTerms } from './pages/public/TermsOfUse';
 import { Sitemap as PublicSitemap } from './pages/public/Sitemap';
 import { Login } from './pages/auth/Login';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
-import { OTP } from './pages/auth/OTP';
 import { ResetPassword } from './pages/auth/ResetPassword';
 import { ComingSoon } from './pages/auth/ComingSoon';
 import { Error403 } from './pages/auth/Error403';
@@ -148,11 +147,8 @@ function App() {
           path="/forgot-password"
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
         />
-        <Route
-          path="/otp"
-          element={<OTP />}
-        />
-        <Route
+        <Route path="/otp" element={<Navigate to="/login" replace />} />
+<Route
           path="/reset-password/:token"
           element={<ResetPassword />}
         />

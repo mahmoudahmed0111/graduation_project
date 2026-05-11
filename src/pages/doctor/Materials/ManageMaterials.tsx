@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   FileText,
@@ -37,6 +38,7 @@ function uploaderName(material: IPhase4Material): string {
 }
 
 export function ManageMaterials() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const params = useParams<{ offeringId?: string }>();
   const { user } = useAuthStore();
@@ -80,24 +82,24 @@ export function ManageMaterials() {
     if (!confirmTarget) return;
     try {
       await remove.mutateAsync(confirmTarget._id);
-      success('Material deleted.');
+      success(t('doctor.manageMaterials.deleted'));
       setConfirmTarget(null);
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to delete material.'));
+      showError(getApiErrorMessage(err, t('doctor.manageMaterials.failedDelete')));
     }
   };
 
   const offeringSelector = !params.offeringId && (
     <Card>
       <CardContent className="p-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Course Offering</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.manageMaterials.courseOffering')}</label>
         <select
           value={pickerOfferingId}
           onChange={(e) => setPickerOfferingId(e.target.value)}
           disabled={offeringsLoading}
           className="field"
         >
-          <option value="">{offeringsLoading ? 'Loading offerings…' : 'Select a course offering…'}</option>
+          <option value="">{offeringsLoading ? t('doctor.manageMaterials.loadingOfferings') : t('doctor.manageMaterials.selectOffering')}</option>
           {offerings.map((o) => (
             <option key={o.id} value={o.id}>
               {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
@@ -113,14 +115,14 @@ export function ManageMaterials() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Manage Materials</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Upload, edit, and delete course resources</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.manageMaterials.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.manageMaterials.subtitle')}</p>
         </div>
         {offeringId && (
           <Link to={`/dashboard/course-offerings/${offeringId}/materials/upload`}>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Upload Material
+              {t('doctor.manageMaterials.uploadMaterial')}
             </Button>
           </Link>
         )}
@@ -132,7 +134,7 @@ export function ManageMaterials() {
         <Card>
           <CardContent className="p-12 text-center">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Select a course offering to view its materials.</p>
+            <p className="text-gray-600">{t('doctor.manageMaterials.selectToView')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -144,7 +146,7 @@ export function ManageMaterials() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder="Search materials…"
+                    placeholder={t('doctor.manageMaterials.searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -157,7 +159,7 @@ export function ManageMaterials() {
                 >
                   {CATEGORY_OPTIONS.map((c) => (
                     <option key={c} value={c}>
-                      {c === 'all' ? 'All categories' : c}
+                      {c === 'all' ? t('doctor.manageMaterials.allCategories') : c}
                     </option>
                   ))}
                 </select>
@@ -172,7 +174,7 @@ export function ManageMaterials() {
           ) : list.isError ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <p className="text-red-600">Failed to load materials.</p>
+                <p className="text-red-600">{t('doctor.manageMaterials.failedLoad')}</p>
               </CardContent>
             </Card>
           ) : filtered.length === 0 ? (
@@ -214,7 +216,7 @@ export function ManageMaterials() {
                               onClick={() =>
                                 navigate(`/dashboard/course-offerings/${offeringId}/materials/${material._id}/edit`)
                               }
-                              title="Edit"
+                              title={t('doctor.manageMaterials.edit')}
                             >
                               <Pencil className="h-4 w-4 text-gray-600" />
                             </Button>
@@ -223,7 +225,7 @@ export function ManageMaterials() {
                               size="sm"
                               className="h-8 w-8 p-0"
                               onClick={() => setConfirmTarget(material)}
-                              title="Delete"
+                              title={t('doctor.manageMaterials.delete')}
                             >
                               <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
@@ -242,7 +244,7 @@ export function ManageMaterials() {
                           {material.isExternalLink ? (
                             <>
                               <ExternalLink className="h-4 w-4" />
-                              <span>External link</span>
+                              <span>{t('doctor.manageMaterials.externalLink')}</span>
                             </>
                           ) : (
                             <>
@@ -258,7 +260,7 @@ export function ManageMaterials() {
                           className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
                         >
                           {material.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-                          {material.isExternalLink ? 'Open' : 'Download'}
+                          {material.isExternalLink ? t('doctor.manageMaterials.open') : t('doctor.manageMaterials.download')}
                         </a>
                       </div>
 
@@ -278,9 +280,9 @@ export function ManageMaterials() {
         isOpen={Boolean(confirmTarget)}
         onClose={() => setConfirmTarget(null)}
         onConfirm={handleDelete}
-        title="Delete material"
-        message={`Delete "${confirmTarget?.title}"? This cannot be undone.`}
-        confirmText="Delete"
+        title={t('doctor.manageMaterials.confirmDeleteTitle')}
+        message={t('doctor.manageMaterials.confirmDeleteMessage', { title: confirmTarget?.title })}
+        confirmText={t('doctor.manageMaterials.delete')}
         variant="danger"
         isLoading={remove.isPending}
       />

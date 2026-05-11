@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AdminDataTableShell, AdminPageShell } from '@/components/admin';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
@@ -24,13 +25,13 @@ import {
 import { getApiErrorMessage } from '@/lib/http/client';
 import { formatPrerequisites, p3Id, p3RefName } from '@/lib/phase3Ui';
 
-const ARCHIVE_FILTERS = [
-  { value: 'false', label: 'Active' },
-  { value: 'true', label: 'Archived' },
-  { value: 'all', label: 'All' },
-];
-
 export function CourseCatalog() {
+  const { t } = useTranslation();
+  const ARCHIVE_FILTERS = [
+    { value: 'false', label: t('admin.courseCatalog.active') },
+    { value: 'true', label: t('admin.courseCatalog.archived') },
+    { value: 'all', label: t('admin.courseCatalog.all') },
+  ];
   const { user } = useAuthStore();
   const isUA = user?.role === 'universityAdmin';
   const { success, error: showError } = useToastStore();
@@ -51,7 +52,7 @@ export function CourseCatalog() {
   const collegeOptions = useMemo(() => {
     const items = collegesData?.items ?? [];
     return [
-      { value: '', label: 'All colleges' },
+      { value: '', label: t('admin.courseCatalog.allColleges') },
       ...items.map((c) => {
         const r = c as Record<string, unknown>;
         return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
@@ -67,7 +68,7 @@ export function CourseCatalog() {
   const departmentOptions = useMemo(() => {
     const items = departmentsData?.items ?? [];
     return [
-      { value: '', label: 'All departments' },
+      { value: '', label: t('admin.courseCatalog.allDepartments') },
       ...items.map((d) => {
         const r = d as Record<string, unknown>;
         return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
@@ -111,11 +112,11 @@ export function CourseCatalog() {
 
   if (isLoading) {
     return (
-      <AdminPageShell titleStack={{ section: 'Academic', page: 'Course catalog' }} subtitle="Loading…">
+      <AdminPageShell titleStack={{ section: t('admin.courseCatalog.section'), page: t('admin.courseCatalog.page') }} subtitle={t('admin.courseCatalog.loadingShort')}>
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading course catalog…</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.courseCatalog.loading')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -124,14 +125,14 @@ export function CourseCatalog() {
 
   if (isError) {
     return (
-      <AdminPageShell titleStack={{ section: 'Academic', page: 'Course catalog' }} subtitle="Could not load data">
+      <AdminPageShell titleStack={{ section: t('admin.courseCatalog.section'), page: t('admin.courseCatalog.page') }} subtitle={t('admin.courseCatalog.loadFailSubtitle')}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load course catalog</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.courseCatalog.loadFail')}</p>
           <p className="mt-1 text-sm text-red-600 dark:text-red-300">
-            Check permissions, API URL, or try again.
+            {t('admin.courseCatalog.loadFailHint')}
           </p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-            Retry
+            {t('admin.courseCatalog.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -139,14 +140,14 @@ export function CourseCatalog() {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'Academic', page: 'Course catalog' }}>
+    <AdminPageShell titleStack={{ section: t('admin.courseCatalog.section'), page: t('admin.courseCatalog.page') }}>
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full min-w-0 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search code, title, description…"
+                placeholder={t('admin.courseCatalog.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -157,7 +158,7 @@ export function CourseCatalog() {
                 <Link to="/dashboard/academic/catalog/create">
                   <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
                     <Plus className="h-4 w-4" />
-                    Add course
+                    {t('admin.courseCatalog.addCourse')}
                   </Button>
                 </Link>
               </div>
@@ -167,11 +168,11 @@ export function CourseCatalog() {
         <CardContent className="space-y-6">
           <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {isUA && (
-              <Select2 label="College" options={collegeOptions} value={collegeId} onChange={setCollegeId} />
+              <Select2 label={t('admin.courseCatalog.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
             )}
-            <Select2 label="Department" options={departmentOptions} value={departmentId} onChange={setDepartmentId} />
+            <Select2 label={t('admin.courseCatalog.department')} options={departmentOptions} value={departmentId} onChange={setDepartmentId} />
             <Select2
-              label="Record status"
+              label={t('admin.courseCatalog.recordStatus')}
               options={ARCHIVE_FILTERS}
               value={isArchived}
               onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
@@ -182,20 +183,20 @@ export function CourseCatalog() {
           {items.length === 0 ? (
             <div className="py-12 text-center">
               <Library className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
-              <p className="text-gray-500 dark:text-gray-400">No courses match these filters.</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('admin.courseCatalog.noResults')}</p>
             </div>
           ) : (
             <AdminDataTableShell>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Credits</TableHead>
-                    <TableHead>Prerequisites</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-end">Actions</TableHead>
+                    <TableHead>{t('admin.courseCatalog.code')}</TableHead>
+                    <TableHead>{t('admin.courseCatalog.title')}</TableHead>
+                    <TableHead>{t('admin.courseCatalog.department')}</TableHead>
+                    <TableHead>{t('admin.courseCatalog.credits')}</TableHead>
+                    <TableHead>{t('admin.courseCatalog.prerequisites')}</TableHead>
+                    <TableHead>{t('admin.courseCatalog.status')}</TableHead>
+                    <TableHead className="text-end">{t('admin.courseCatalog.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -229,7 +230,7 @@ export function CourseCatalog() {
                                 : 'inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
                             }
                           >
-                            {archived ? 'Archived' : 'Active'}
+                            {archived ? t('admin.courseCatalog.archived') : t('admin.courseCatalog.active')}
                           </span>
                         </TableCell>
                         <TableCell className="text-end">
@@ -240,7 +241,7 @@ export function CourseCatalog() {
                                   type="button"
                                   variant="secondary"
                                   size="sm"
-                                  title="Edit"
+                                  title={t('admin.courseCatalog.edit')}
                                   className="inline-flex items-center gap-1 rounded-xl"
                                   onClick={() => setEditRow(course)}
                                 >
@@ -251,7 +252,7 @@ export function CourseCatalog() {
                                     type="button"
                                     variant="secondary"
                                     size="sm"
-                                    title="Archive"
+                                    title={t('admin.courseCatalog.archive')}
                                     className="inline-flex items-center gap-1 rounded-xl"
                                     onClick={() => setArchiveTarget(course)}
                                   >
@@ -262,13 +263,13 @@ export function CourseCatalog() {
                                     type="button"
                                     variant="secondary"
                                     size="sm"
-                                    title="Restore"
+                                    title={t('admin.courseCatalog.restore')}
                                     className="inline-flex items-center gap-1 rounded-xl"
                                     onClick={() => {
                                       void (async () => {
                                         try {
                                           await restoreMut.mutateAsync(id);
-                                          success('Course restored.');
+                                          success(t('admin.courseCatalog.restoredToast'));
                                           void refetch();
                                         } catch (e) {
                                           showError(getApiErrorMessage(e));
@@ -294,7 +295,7 @@ export function CourseCatalog() {
           {items.length > 0 && (
             <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4 dark:border-dark-border sm:flex-row sm:justify-between">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Page {data?.currentPage ?? page} of {totalPages} · {data?.totalResults ?? items.length} courses
+                {t('admin.courseCatalog.pageInfo', { current: data?.currentPage ?? page, total: totalPages, count: data?.totalResults ?? items.length })}
               </p>
               <Pagination currentPage={data?.currentPage ?? page} totalPages={totalPages} onPageChange={setPage} />
             </div>
@@ -320,7 +321,7 @@ export function CourseCatalog() {
           onUpdate={async (payload) => {
             try {
               await updateMut.mutateAsync({ id: p3Id(editRow), data: payload });
-              success('Course updated.');
+              success(t('admin.courseCatalog.updatedToast'));
               setEditRow(null);
             } catch (e) {
               showError(getApiErrorMessage(e));
@@ -338,7 +339,7 @@ export function CourseCatalog() {
           void (async () => {
             try {
               await archiveMut.mutateAsync(p3Id(archiveTarget));
-              success('Course archived.');
+              success(t('admin.courseCatalog.archivedToast'));
               setArchiveTarget(null);
               void refetch();
             } catch (e) {
@@ -346,9 +347,9 @@ export function CourseCatalog() {
             }
           })();
         }}
-        title="Archive course"
-        message={`Archive "${String(archiveTarget?.title ?? '')}"? Active offerings must be cleared first.`}
-        confirmText="Archive"
+        title={t('admin.courseCatalog.archiveCourse')}
+        message={t('admin.courseCatalog.archiveConfirm', { title: String(archiveTarget?.title ?? '') })}
+        confirmText={t('admin.courseCatalog.archive')}
         variant="danger"
       />
     </AdminPageShell>
@@ -381,6 +382,7 @@ function CatalogEditModal({
   }) => Promise<void>;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
@@ -414,34 +416,34 @@ function CatalogEditModal({
   };
 
   return (
-    <Modal isOpen={open} onClose={onClose} title="Edit catalog course" size="lg">
+    <Modal isOpen={open} onClose={onClose} title={t('admin.courseCatalog.editModalTitle')} size="lg">
       <div className="space-y-4">
         {detailLoading ? (
-          <p className="text-sm text-amber-700 dark:text-amber-300">Loading latest course from server…</p>
+          <p className="text-sm text-amber-700 dark:text-amber-300">{t('admin.courseCatalog.loadingLatest')}</p>
         ) : null}
         {detailError ? (
           <p className="text-sm text-amber-800 dark:text-amber-200">
-            Could not refresh this course from the server. Showing list data — save may fail if the record changed.
+            {t('admin.courseCatalog.refreshFail')}
           </p>
         ) : null}
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Code and department cannot be changed (API allowlist). Update title, description, credits, or prerequisites.
+          {t('admin.courseCatalog.editHint')}
         </p>
-        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Input label="Code (read-only)" value={code} disabled />
-        <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <Input label={t('admin.courseCatalog.title')} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input label={t('admin.courseCatalog.codeReadOnly')} value={code} disabled />
+        <Input label={t('admin.courseCatalog.description')} value={description} onChange={(e) => setDescription(e.target.value)} />
         <Input
-          label="Credit hours"
+          label={t('admin.courseCatalog.creditHours')}
           type="number"
           min={1}
           value={creditHours}
           onChange={(e) => setCreditHours(e.target.value)}
         />
         <div>
-          <p className="mb-2 text-sm font-medium text-gray-700">Prerequisites</p>
+          <p className="mb-2 text-sm font-medium text-gray-700">{t('admin.courseCatalog.prerequisites')}</p>
           <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-2">
             {prerequisiteOptions.length === 0 ? (
-              <p className="text-sm text-gray-500">No other courses loaded for selection.</p>
+              <p className="text-sm text-gray-500">{t('admin.courseCatalog.noOtherCourses')}</p>
             ) : (
               prerequisiteOptions.map((o) => (
                 <label key={o.value} className="flex items-center gap-2 text-sm">
@@ -458,7 +460,7 @@ function CatalogEditModal({
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t('admin.courseCatalog.cancel')}
           </Button>
           <Button
             type="button"
@@ -475,7 +477,7 @@ function CatalogEditModal({
               });
             }}
           >
-            {loading ? 'Saving…' : 'Save'}
+            {loading ? t('admin.courseCatalog.saving') : t('admin.courseCatalog.save')}
           </Button>
         </div>
       </div>

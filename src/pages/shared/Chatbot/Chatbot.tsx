@@ -41,7 +41,7 @@ export function Chatbot() {
     {
       id: '1',
       role: 'assistant',
-      content: `Hello! I'm your AI assistant. I can help you with:\n\n• Your grades and academic performance\n• Attendance information\n• Course schedules and details\n• University policies and regulations\n• General questions about your studies\n\nWhat would you like to know?`,
+      content: t('shared.chatbot.welcomeMessage'),
       timestamp: new Date(),
     },
   ]);
@@ -99,7 +99,7 @@ export function Chatbot() {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim() || (attachments.length > 0 ? '📎 Attachment' : ''),
+      content: input.trim() || (attachments.length > 0 ? t('shared.chatbot.attachmentLabel') : ''),
       timestamp: new Date(),
       attachments: [...attachments],
     };
@@ -126,12 +126,12 @@ export function Chatbot() {
         context: 'Chatbot',
         error,
       });
-      showError('Failed to get response from AI assistant');
-      
+      showError(t('shared.chatbot.failedResponse'));
+
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again or rephrase your question.',
+        content: t('shared.chatbot.errorReply'),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -150,49 +150,49 @@ export function Chatbot() {
     // Personal queries (would fetch from database in real implementation)
     if (lowerQuestion.includes('grade') || lowerQuestion.includes('score')) {
       if (lowerQuestion.includes('cs101') || lowerQuestion.includes('introduction to programming')) {
-        return `Based on your current enrollment, here's your grade information for CS101 - Introduction to Programming:\n\n• Current Status: Enrolled\n• Attendance: 95%\n• Midterm: 18/20 (90%)\n• Assignments: 19/20 (95%)\n• Project: 9/10 (90%)\n• Final Exam: Not yet taken\n\nYour overall progress is excellent! Keep up the good work.`;
+        return t('shared.chatbot.replyGradeCs101');
       }
       if (lowerQuestion.includes('cs201') || lowerQuestion.includes('data structures')) {
-        return `Here's your grade information for CS201 - Data Structures:\n\n• Current Status: Enrolled\n• Attendance: 88%\n• Midterm: 22/25 (88%)\n• Assignments: 14/15 (93%)\n• Project: 9.5/10 (95%)\n• Final Exam: Not yet taken\n\nYou're doing well! Make sure to maintain good attendance.`;
+        return t('shared.chatbot.replyGradeCs201');
       }
-      return `I can help you check your grades! Please specify which course you'd like to know about (e.g., "What is my grade in CS101?"). I can also show you your overall GPA and transcript information.`;
+      return t('shared.chatbot.replyGradeGeneric');
     }
 
     if (lowerQuestion.includes('attendance') || lowerQuestion.includes('present')) {
-      return `Here's your attendance summary:\n\n• CS101 - Introduction to Programming: 95% (19/20 sessions)\n• CS201 - Data Structures: 88% (16/18 sessions)\n\nOverall Attendance: 91.6%\n\nYour attendance is excellent! Keep maintaining this level. If you need details for a specific course, just ask!`;
+      return t('shared.chatbot.replyAttendance');
     }
 
     if (lowerQuestion.includes('gpa') || lowerQuestion.includes('cgpa') || lowerQuestion.includes('grade point')) {
-      return `Your current academic standing:\n\n• Cumulative GPA (CGPA): 3.75\n• Current Semester GPA: 3.70\n• Total Credits Earned: 10\n• Semesters Completed: 1\n\nYou're maintaining a strong academic record! Great job!`;
+      return t('shared.chatbot.replyGpa');
     }
 
     if (lowerQuestion.includes('schedule') || lowerQuestion.includes('class time') || lowerQuestion.includes('when is')) {
-      return `Here's your current class schedule:\n\n**CS101 - Introduction to Programming**\n• Sunday: 10:00 AM - 12:00 PM (Hall 501)\n• Tuesday: 10:00 AM - 12:00 PM (Lab 201)\n\n**CS201 - Data Structures**\n• Monday: 2:00 PM - 4:00 PM (Hall 502)\n\nWould you like more details about a specific course?`;
+      return t('shared.chatbot.replySchedule');
     }
 
     if (lowerQuestion.includes('course') && (lowerQuestion.includes('enroll') || lowerQuestion.includes('register'))) {
-      return `To enroll in a course:\n\n1. Go to "Courses" → "Enroll in Course"\n2. Browse available courses for the current semester\n3. Check prerequisites and credit limits\n4. Click "Enroll in Course" on your desired course\n\nMake sure enrollment is open and you meet all prerequisites. Need help with a specific course?`;
+      return t('shared.chatbot.replyEnroll');
     }
 
     if (lowerQuestion.includes('assignment') || lowerQuestion.includes('homework') || lowerQuestion.includes('due')) {
-      return `Here are your upcoming assignments:\n\n• CS101 - Assignment 1: Basic Algorithms (Due: October 5th)\n• CS201 - Quiz: Data Structures Basics (Due: October 20th)\n\nYou can view all your assessments in "Assessments" → "My Assessments". Would you like details about a specific assignment?`;
+      return t('shared.chatbot.replyAssignments');
     }
 
     // General queries
     if (lowerQuestion.includes('library') || lowerQuestion.includes('book')) {
-      return `The university library is open:\n• Monday - Friday: 8:00 AM - 10:00 PM\n• Saturday - Sunday: 9:00 AM - 6:00 PM\n\nDuring exam periods, hours are extended to 11:00 PM. You can access digital resources 24/7 through the library portal.`;
+      return t('shared.chatbot.replyLibrary');
     }
 
     if (lowerQuestion.includes('policy') || lowerQuestion.includes('rule') || lowerQuestion.includes('regulation')) {
-      return `Here are some key university policies:\n\n• **Attendance**: Minimum 75% required to sit for final exams\n• **Grading**: Letter grades (A+, A, B+, B, C+, C, D, F)\n• **Credit Limits**: Based on academic status (Good Standing: 18, Probation: 12, Honors: 21)\n• **Prerequisites**: Must be passed before enrolling in advanced courses\n\nFor specific policies, please refer to the student handbook or contact your academic advisor.`;
+      return t('shared.chatbot.replyPolicy');
     }
 
     if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {
-      return `Hello! How can I help you today? I can assist with:\n\n• Your grades and academic performance\n• Attendance information\n• Course schedules\n• University policies\n• And much more!\n\nWhat would you like to know?`;
+      return t('shared.chatbot.replyHello');
     }
 
     // Default response
-    return `I understand you're asking about "${question}". Let me help you with that.\n\nI can assist with:\n• Your personal academic information (grades, attendance, GPA)\n• Course schedules and enrollment\n• Assignments and assessments\n• University policies and regulations\n• General questions about your studies\n\nCould you please rephrase your question or be more specific? For example:\n• "What is my grade in CS101?"\n• "What is my attendance percentage?"\n• "When is my next class?"`;
+    return t('shared.chatbot.replyDefault', { question });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -207,7 +207,7 @@ export function Chatbot() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">{t('nav.chatbot')}</h1>
-        <p className="text-gray-600 mt-1">Ask me anything about your studies, grades, or university information</p>
+        <p className="text-gray-600 mt-1">{t('shared.chatbot.subtitle')}</p>
       </div>
 
       {/* Chat Container */}
@@ -218,8 +218,8 @@ export function Chatbot() {
               <Bot className="h-6 w-6 text-primary-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">AI Assistant</CardTitle>
-              <p className="text-sm text-gray-600">Always here to help</p>
+              <CardTitle className="text-lg">{t('shared.chatbot.assistantName')}</CardTitle>
+              <p className="text-sm text-gray-600">{t('shared.chatbot.alwaysHere')}</p>
             </div>
           </div>
         </CardHeader>
@@ -320,7 +320,7 @@ export function Chatbot() {
                 <div className="bg-gray-100 rounded-lg p-4">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-                    <span className="text-sm text-gray-600">Thinking...</span>
+                    <span className="text-sm text-gray-600">{t('shared.chatbot.thinking')}</span>
                   </div>
                 </div>
               </div>
@@ -394,7 +394,7 @@ export function Chatbot() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
                 className="px-3"
-                title="Attach file or photo"
+                title={t('shared.chatbot.attachTitle')}
               >
                 <Paperclip className="h-5 w-5 text-gray-600" />
               </Button>
@@ -402,7 +402,7 @@ export function Chatbot() {
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Ask me anything..."
+                placeholder={t('shared.chatbot.inputPlaceholder')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -420,13 +420,13 @@ export function Chatbot() {
                 ) : (
                   <>
                     <Send className="h-5 w-5 mr-2" />
-                    Send
+                    {t('shared.chatbot.send')}
                   </>
                 )}
               </Button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              Press Enter to send • Attach files or photos • Ask about grades, attendance, schedules, or policies
+              {t('shared.chatbot.helperHint')}
             </p>
           </div>
         </CardContent>
@@ -435,40 +435,40 @@ export function Chatbot() {
       {/* Quick Suggestions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <button
-          onClick={() => setInput('What is my grade in CS101?')}
+          onClick={() => setInput(t('shared.chatbot.suggestGradeQuery'))}
           className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
           disabled={isLoading}
         >
           <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">Check Grades</p>
-          <p className="text-xs text-gray-600">View course grades</p>
+          <p className="font-medium text-gray-900">{t('shared.chatbot.checkGrades')}</p>
+          <p className="text-xs text-gray-600">{t('shared.chatbot.viewCourseGrades')}</p>
         </button>
         <button
-          onClick={() => setInput('What is my attendance percentage?')}
+          onClick={() => setInput(t('shared.chatbot.suggestAttendanceQuery'))}
           className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
           disabled={isLoading}
         >
           <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">Attendance</p>
-          <p className="text-xs text-gray-600">Check attendance</p>
+          <p className="font-medium text-gray-900">{t('shared.chatbot.attendance')}</p>
+          <p className="text-xs text-gray-600">{t('shared.chatbot.checkAttendance')}</p>
         </button>
         <button
-          onClick={() => setInput('What is my class schedule?')}
+          onClick={() => setInput(t('shared.chatbot.suggestScheduleQuery'))}
           className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
           disabled={isLoading}
         >
           <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">Schedule</p>
-          <p className="text-xs text-gray-600">View class times</p>
+          <p className="font-medium text-gray-900">{t('shared.chatbot.schedule')}</p>
+          <p className="text-xs text-gray-600">{t('shared.chatbot.viewClassTimes')}</p>
         </button>
         <button
-          onClick={() => setInput('What is my GPA?')}
+          onClick={() => setInput(t('shared.chatbot.suggestGpaQuery'))}
           className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
           disabled={isLoading}
         >
           <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">GPA</p>
-          <p className="text-xs text-gray-600">Academic standing</p>
+          <p className="font-medium text-gray-900">{t('shared.chatbot.gpa')}</p>
+          <p className="text-xs text-gray-600">{t('shared.chatbot.academicStanding')}</p>
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { INotification } from '@/types';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -18,6 +19,7 @@ import { formatTimeAgo, formatDate } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
 export function Notifications() {
+  const { t } = useTranslation();
   useAuthStore();
   const { error: showError, success } = useToastStore();
   const [notifications, setNotifications] = useState<INotification[]>([]);
@@ -33,8 +35,8 @@ export function Notifications() {
         const mockNotifications: INotification[] = [
           {
             id: '1',
-            title: 'New Assignment Posted',
-            message: 'A new assignment has been posted for CS101 - Introduction to Programming. The assignment is due on March 15, 2024.',
+            title: t('shared.notifications.mock1Title'),
+            message: t('shared.notifications.mock1Message'),
             type: 'info',
             read: false,
             createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
@@ -42,8 +44,8 @@ export function Notifications() {
           },
           {
             id: '2',
-            title: 'Grade Updated',
-            message: 'Your grade for Midterm Exam in CS201 - Data Structures has been updated. Check your transcript for details.',
+            title: t('shared.notifications.mock2Title'),
+            message: t('shared.notifications.mock2Message'),
             type: 'success',
             read: false,
             createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
@@ -51,8 +53,8 @@ export function Notifications() {
           },
           {
             id: '3',
-            title: 'Course Enrollment Reminder',
-            message: 'Reminder: Course enrollment period ends in 3 days. Make sure to enroll in your required courses.',
+            title: t('shared.notifications.mock3Title'),
+            message: t('shared.notifications.mock3Message'),
             type: 'warning',
             read: true,
             createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
@@ -60,8 +62,8 @@ export function Notifications() {
           },
           {
             id: '4',
-            title: 'Announcement',
-            message: 'New university announcement: Spring semester registration is now open.',
+            title: t('shared.notifications.mock4Title'),
+            message: t('shared.notifications.mock4Message'),
             type: 'info',
             read: true,
             createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
@@ -69,8 +71,8 @@ export function Notifications() {
           },
           {
             id: '5',
-            title: 'Attendance Warning',
-            message: 'Your attendance in CS301 is below 75%. Please attend classes regularly.',
+            title: t('shared.notifications.mock5Title'),
+            message: t('shared.notifications.mock5Message'),
             type: 'error',
             read: true,
             createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -83,7 +85,7 @@ export function Notifications() {
           context: 'Notifications',
           error,
         });
-        showError('Failed to load notifications');
+        showError(t('shared.notifications.failedLoad'));
         setNotifications([]);
       } finally {
         setLoading(false);
@@ -91,7 +93,7 @@ export function Notifications() {
     };
 
     fetchNotifications();
-  }, [showError]);
+  }, [showError, t]);
 
   const filteredNotifications = notifications.filter(notification => {
     if (filter === 'unread') return !notification.read;
@@ -107,13 +109,13 @@ export function Notifications() {
       setNotifications(prev =>
         prev.map(n => (n.id === id ? { ...n, read: true } : n))
       );
-      success('Notification marked as read');
+      success(t('shared.notifications.markedRead'));
     } catch (error) {
       logger.error('Failed to mark notification as read', {
         context: 'Notifications',
         error,
       });
-      showError('Failed to update notification');
+      showError(t('shared.notifications.failedUpdate'));
     }
   };
 
@@ -121,13 +123,13 @@ export function Notifications() {
     try {
       // In real app: await api.markAllNotificationsAsRead()
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      success('All notifications marked as read');
+      success(t('shared.notifications.allMarkedRead'));
     } catch (error) {
       logger.error('Failed to mark all notifications as read', {
         context: 'Notifications',
         error,
       });
-      showError('Failed to update notifications');
+      showError(t('shared.notifications.failedUpdateAll'));
     }
   };
 
@@ -135,13 +137,13 @@ export function Notifications() {
     try {
       // In real app: await api.deleteNotification(id)
       setNotifications(prev => prev.filter(n => n.id !== id));
-      success('Notification deleted');
+      success(t('shared.notifications.deleted'));
     } catch (error) {
       logger.error('Failed to delete notification', {
         context: 'Notifications',
         error,
       });
-      showError('Failed to delete notification');
+      showError(t('shared.notifications.failedDelete'));
     }
   };
 
@@ -176,7 +178,7 @@ export function Notifications() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading notifications...</p>
+          <p className="mt-4 text-gray-600">{t('shared.notifications.loading')}</p>
         </div>
       </div>
     );
@@ -187,9 +189,9 @@ export function Notifications() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('shared.notifications.title')}</h1>
           <p className="text-gray-600 mt-1">
-            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
+            {unreadCount > 0 ? t('shared.notifications.unreadCount', { count: unreadCount }) : t('shared.notifications.allCaughtUp')}
           </p>
         </div>
         {unreadCount > 0 && (
@@ -199,7 +201,7 @@ export function Notifications() {
             className="flex items-center gap-2"
           >
             <CheckCheck className="h-4 w-4" />
-            Mark all as read
+            {t('shared.notifications.markAllAsRead')}
           </Button>
         )}
       </div>
@@ -211,21 +213,21 @@ export function Notifications() {
           size="sm"
           onClick={() => setFilter('all')}
         >
-          All ({notifications.length})
+          {t('shared.notifications.filterAll', { count: notifications.length })}
         </Button>
         <Button
           variant={filter === 'unread' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => setFilter('unread')}
         >
-          Unread ({unreadCount})
+          {t('shared.notifications.filterUnread', { count: unreadCount })}
         </Button>
         <Button
           variant={filter === 'read' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => setFilter('read')}
         >
-          Read ({notifications.length - unreadCount})
+          {t('shared.notifications.filterRead', { count: notifications.length - unreadCount })}
         </Button>
       </div>
 
@@ -236,13 +238,13 @@ export function Notifications() {
             <div className="text-center">
               <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-lg font-semibold text-gray-900 mb-1">
-                {filter === 'unread' ? 'No unread notifications' : 
-                 filter === 'read' ? 'No read notifications' : 
-                 'No notifications'}
+                {filter === 'unread' ? t('shared.notifications.emptyUnread') :
+                 filter === 'read' ? t('shared.notifications.emptyRead') :
+                 t('shared.notifications.emptyAll')}
               </p>
               <p className="text-sm text-gray-500">
-                {filter === 'unread' ? 'You\'re all caught up!' : 
-                 'Notifications will appear here'}
+                {filter === 'unread' ? t('shared.notifications.allCaughtUp') :
+                 t('shared.notifications.willAppear')}
               </p>
             </div>
           </CardContent>
@@ -294,7 +296,7 @@ export function Notifications() {
                             }
                           }}
                         >
-                          View Details
+                          {t('shared.notifications.viewDetails')}
                         </Button>
                       )}
                       {!notification.read && (
@@ -303,7 +305,7 @@ export function Notifications() {
                           size="sm"
                           onClick={() => handleMarkAsRead(notification.id)}
                         >
-                          Mark as read
+                          {t('shared.notifications.markAsRead')}
                         </Button>
                       )}
                       <Button

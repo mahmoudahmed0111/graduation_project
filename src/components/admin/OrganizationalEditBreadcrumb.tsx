@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export interface OrganizationalEditBreadcrumbSegment {
   label: string;
@@ -11,9 +12,10 @@ export interface OrganizationalEditBreadcrumbSegment {
  * Same trail pattern as college detail: University Structure / … / … / Edit
  */
 export function OrganizationalEditBreadcrumb({ segments }: { segments: OrganizationalEditBreadcrumbSegment[] }) {
+  const { t } = useTranslation();
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={t('chrome.breadcrumb.label')}
       className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm font-medium text-gray-600 dark:text-gray-400"
     >
       {segments.map((seg, i) => {

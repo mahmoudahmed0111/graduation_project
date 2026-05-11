@@ -43,7 +43,7 @@ export function ResetPassword() {
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token?.trim()) {
-      showError('Invalid or missing reset link. Please request a new one.');
+      showError(t('authPages.resetPassword.invalidLinkRequestNew'));
       return;
     }
     setIsLoading(true);
@@ -59,7 +59,7 @@ export function ResetPassword() {
       navigate('/dashboard');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      const message = axiosError?.response?.data?.message || 'Invalid or expired link. Please request a new password reset.';
+      const message = axiosError?.response?.data?.message || t('authPages.resetPassword.invalidOrExpired');
       showError(message);
     } finally {
       setIsLoading(false);
@@ -71,12 +71,12 @@ export function ResetPassword() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <p className="text-center text-gray-600 mb-4">Invalid or missing reset link.</p>
+            <p className="text-center text-gray-600 mb-4">{t('authPages.resetPassword.invalidOrMissing')}</p>
             <Link to="/forgot-password">
-              <Button variant="outline" className="w-full">Request new reset link</Button>
+              <Button variant="outline" className="w-full">{t('authPages.resetPassword.requestNewLink')}</Button>
             </Link>
             <Link to="/login" className="block mt-3 text-center text-sm text-primary-600 hover:underline">
-              Back to Login
+              {t('auth.backToLogin')}
             </Link>
           </CardContent>
         </Card>
@@ -109,7 +109,7 @@ export function ResetPassword() {
             {t('auth.resetPasswordTitle') || 'Reset Your Password'}
           </CardTitle>
           <p className="text-center text-sm text-gray-500 mt-2">
-            Enter your new password below.
+            {t('authPages.resetPassword.enterNewPassword')}
           </p>
         </CardHeader>
         <CardContent className="pt-2">
@@ -128,7 +128,7 @@ export function ResetPassword() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="text-gray-400 hover:text-primary-500 p-1.5 rounded-lg hover:bg-gray-100"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('authPages.resetPassword.hidePassword') : t('authPages.resetPassword.showPassword')}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>

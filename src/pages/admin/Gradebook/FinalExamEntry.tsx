@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Save, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -25,6 +26,7 @@ function studentId(e: IPhase4GradebookEntry): string {
 }
 
 export function FinalExamEntry() {
+  const { t } = useTranslation();
   const { offeringId } = useParams<{ offeringId: string }>();
   const { success, error: showError, info } = useToastStore();
   const offering = useCourseOffering(offeringId);
@@ -61,14 +63,14 @@ export function FinalExamEntry() {
       .filter(([, d]) => d.dirty && d.value !== '')
       .map(([sid, d]) => ({ studentId: sid, finalExam: Number(d.value) }));
     if (payload.length === 0) {
-      info('Nothing to save.');
+      info(t('admin.finalExamEntry.nothingToSave'));
       return;
     }
     try {
       const res = await patch.mutateAsync(payload);
-      success(`Updated ${res.updated} student(s).`);
+      success(t('admin.finalExamEntry.updatedToast', { count: res.updated }));
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to save final exam grades.'));
+      showError(getApiErrorMessage(err, t('admin.finalExamEntry.saveFail')));
     }
   };
 
@@ -77,25 +79,25 @@ export function FinalExamEntry() {
     if (!offeringId) return;
     try {
       const res = await publish.mutateAsync();
-      success(`Published. ${res.passed} passed, ${res.failed} failed.`);
+      success(t('admin.finalExamEntry.publishedToast', { passed: res.passed, failed: res.failed }));
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to publish results.'));
+      showError(getApiErrorMessage(err, t('admin.finalExamEntry.publishFail')));
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Final Exam Entry</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.finalExamEntry.title')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Cap: {finalCap}. Requires semester work locked, blocked after publish.
+          {t('admin.finalExamEntry.capInfo', { cap: finalCap })}
         </p>
       </div>
 
       {!semesterWorkLocked && (
         <Card>
           <CardContent className="p-6 text-amber-700 bg-amber-50 border border-amber-200 rounded">
-            Semester work must be locked before final exam grades can be entered.
+            {t('admin.finalExamEntry.lockRequired')}
           </CardContent>
         </Card>
       )}
@@ -107,19 +109,19 @@ export function FinalExamEntry() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Students ({gradebook.data?.items.length ?? 0})</CardTitle>
+            <CardTitle>{t('admin.finalExamEntry.studentsCount', { count: gradebook.data?.items.length ?? 0 })}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-dark-surface-2">
                   <tr className="text-left border-b border-gray-200 dark:border-dark-border">
-                    <th className="py-2 pr-4 px-2 text-gray-700 dark:text-gray-300">Student</th>
-                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">Attendance</th>
-                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">Midterm</th>
-                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">Assignments</th>
-                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">Project</th>
-                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">Final Exam *</th>
+                    <th className="py-2 pr-4 px-2 text-gray-700 dark:text-gray-300">{t('admin.finalExamEntry.student')}</th>
+                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">{t('admin.finalExamEntry.attendance')}</th>
+                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">{t('admin.finalExamEntry.midterm')}</th>
+                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">{t('admin.finalExamEntry.assignments')}</th>
+                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">{t('admin.finalExamEntry.project')}</th>
+                    <th className="py-2 pr-2 text-gray-700 dark:text-gray-300">{t('admin.finalExamEntry.finalExam')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-dark-surface">
@@ -164,7 +166,7 @@ export function FinalExamEntry() {
 
       <div className="flex flex-wrap gap-3">
         <Button onClick={handleSave} disabled={!semesterWorkLocked || resultsPublished || dirtyCount === 0} isLoading={patch.isPending}>
-          <Save className="h-4 w-4 mr-2" /> Save final exam ({dirtyCount})
+          <Save className="h-4 w-4 mr-2" /> {t('admin.finalExamEntry.saveFinal', { count: dirtyCount })}
         </Button>
         <Button
           variant="primary"
@@ -172,7 +174,7 @@ export function FinalExamEntry() {
           disabled={!semesterWorkLocked || resultsPublished}
           isLoading={publish.isPending}
         >
-          <Send className="h-4 w-4 mr-2" /> Publish Results
+          <Send className="h-4 w-4 mr-2" /> {t('admin.finalExamEntry.publishResults')}
         </Button>
       </div>
 
@@ -180,9 +182,9 @@ export function FinalExamEntry() {
         isOpen={confirmPublish}
         onClose={() => setConfirmPublish(false)}
         onConfirm={handlePublish}
-        title="Publish results"
-        message="This computes finalTotal/letter, sets pass/fail, rebuilds GPA & credits. Cannot be reversed via API."
-        confirmText="Publish"
+        title={t('admin.finalExamEntry.publishResults')}
+        message={t('admin.finalExamEntry.publishConfirm')}
+        confirmText={t('admin.finalExamEntry.publish')}
         variant="danger"
       />
     </div>

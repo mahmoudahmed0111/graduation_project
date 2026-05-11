@@ -36,7 +36,7 @@ export function Announcements() {
           context: 'Announcements',
           error,
         });
-        showError('Failed to load announcements');
+        showError(t('shared.announcements.failedLoad'));
         setAnnouncements([]);
       } finally {
         setLoading(false);
@@ -77,7 +77,7 @@ export function Announcements() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">{t('nav.announcements')}</h1>
-        <p className="text-gray-600 mt-1">Stay updated with university news and course announcements</p>
+        <p className="text-gray-600 mt-1">{t('shared.announcements.subtitle')}</p>
       </div>
 
       {/* Filters */}
@@ -88,7 +88,7 @@ export function Announcements() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search announcements..."
+                placeholder={t('shared.announcements.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -99,11 +99,11 @@ export function Announcements() {
               onChange={(e) => setSelectedScope(e.target.value)}
               className="field"
             >
-              <option value="all">All Announcements</option>
-              <option value="Global">Global</option>
-              <option value="College">College</option>
-              <option value="Department">Department</option>
-              <option value="Course">Course</option>
+              <option value="all">{t('shared.announcements.scopeAll')}</option>
+              <option value="Global">{t('shared.announcements.scopeGlobal')}</option>
+              <option value="College">{t('shared.announcements.scopeCollege')}</option>
+              <option value="Department">{t('shared.announcements.scopeDepartment')}</option>
+              <option value="Course">{t('shared.announcements.scopeCourse')}</option>
             </select>
           </div>
         </CardContent>
@@ -114,7 +114,7 @@ export function Announcements() {
         <Card>
           <CardContent className="p-12 text-center">
             <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No announcements found</p>
+            <p className="text-gray-600">{t('shared.announcements.noAnnouncements')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -150,7 +150,7 @@ export function Announcements() {
                         <span>{formatTimeAgo(announcement.createdAt)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span>By {announcement.author.name}</span>
+                        <span>{t('shared.announcements.by', { name: announcement.author.name })}</span>
                       </div>
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export function Announcements() {
       {/* Results Count */}
       {sortedAnnouncements.length > 0 && (
         <div className="text-center text-sm text-gray-600">
-          Showing {sortedAnnouncements.length} of {announcements.length} announcement(s)
+          {t('shared.announcements.showingOf', { shown: sortedAnnouncements.length, total: announcements.length })}
         </div>
       )}
     </div>

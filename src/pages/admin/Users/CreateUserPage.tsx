@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -31,11 +32,11 @@ const baseSchema = z.object({
 type FormData = z.infer<typeof baseSchema>;
 
 const ROLE_OPTIONS_ALL = [
-  { value: 'student', label: 'Student' },
-  { value: 'ta', label: 'Teaching assistant' },
-  { value: 'doctor', label: 'Doctor' },
-  { value: 'collegeAdmin', label: 'College admin' },
-  { value: 'universityAdmin', label: 'University admin' },
+  { value: 'student', labelKey: 'admin.createUserPage.roleStudent' },
+  { value: 'ta', labelKey: 'admin.createUserPage.roleTa' },
+  { value: 'doctor', labelKey: 'admin.createUserPage.roleDoctor' },
+  { value: 'collegeAdmin', labelKey: 'admin.createUserPage.roleCollegeAdmin' },
+  { value: 'universityAdmin', labelKey: 'admin.createUserPage.roleUniversityAdmin' },
 ] as const;
 
 export type CreateUserPageProps = {
@@ -48,6 +49,7 @@ export type CreateUserPageProps = {
 };
 
 export function CreateUserPage(props?: CreateUserPageProps) {
+  const { t } = useTranslation();
   const { defaultRole = 'student', lockRole = false, cancelReturnPath } = props ?? {};
   const navigate = useNavigate();
   const { user: auth } = useAuthStore();
@@ -111,13 +113,13 @@ export function CreateUserPage(props?: CreateUserPageProps) {
   const departmentOptions = useMemo(() => {
     const items = departmentsData?.items ?? [];
     return [
-      { value: '', label: 'None' },
+      { value: '', label: t('admin.createUserPage.none') },
       ...items.map((d) => {
         const rec = d as Record<string, unknown>;
         return { value: String(rec._id ?? rec.id ?? ''), label: String(rec.name ?? '') };
       }),
     ];
-  }, [departmentsData?.items]);
+  }, [departmentsData?.items, t]);
 
   const onSubmit = async (data: FormData) => {
     const fd = new FormData();
@@ -134,7 +136,7 @@ export function CreateUserPage(props?: CreateUserPageProps) {
 
     try {
       const created = await createUser.mutateAsync(fd);
-      success('User created. Credentials are emailed to the user.');
+      success(t('admin.createUserPage.createdToast'));
       navigate(listPathForPhase2Role(String(created.role)));
     } catch (e) {
       toastError(getApiErrorMessage(e));
@@ -146,7 +148,7 @@ export function CreateUserPage(props?: CreateUserPageProps) {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading colleges…</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.createUserPage.loadingColleges')}</p>
         </div>
       </div>
     );
@@ -159,15 +161,15 @@ export function CreateUserPage(props?: CreateUserPageProps) {
           <Link to={cancelTo}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-1 h-4 w-4" />
-              Back
+              {t('admin.createUserPage.back')}
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create user</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createUserPage.title')}</h1>
         </div>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load colleges</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.createUserPage.collegesLoadFail')}</p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetchColleges()}>
-            Retry
+            {t('admin.createUserPage.retry')}
           </Button>
         </div>
       </div>
@@ -180,11 +182,11 @@ export function CreateUserPage(props?: CreateUserPageProps) {
         <Link to={cancelTo}>
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            {t('admin.createUserPage.back')}
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create user</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createUserPage.title')}</h1>
         </div>
       </div>
 
@@ -192,17 +194,17 @@ export function CreateUserPage(props?: CreateUserPageProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <UserPlus className="h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
-            Details
+            {t('admin.createUserPage.details')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            A temporary password is generated on the server and sent to the user by email.
+            {t('admin.createUserPage.tempPasswordHint')}
           </p>
           <form onSubmit={handleSubmit((d) => void onSubmit(d))} className="space-y-4">
             {isUA && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.collegeRequired')}</label>
                 <Select2
                   value={collegeId ?? ''}
                   onChange={(v) => {
@@ -215,32 +217,32 @@ export function CreateUserPage(props?: CreateUserPageProps) {
               </div>
             )}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Full name *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.fullNameRequired')}</label>
               <Input {...register('name')} error={errors.name?.message} />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.emailRequired')}</label>
                 <Input type="email" {...register('email')} error={errors.email?.message} />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.phoneRequired')}</label>
                 <Input placeholder="01xxxxxxxxx" {...register('phoneNumber')} error={errors.phoneNumber?.message} />
               </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                National ID (14 digits) *
+                {t('admin.createUserPage.nationalIdRequired')}
               </label>
               <Input {...register('nationalID')} error={errors.nationalID?.message} />
             </div>
             {!lockRole && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Role *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.roleRequired')}</label>
                 <Select2
                   value={watch('role')}
                   onChange={(v) => setValue('role', v as FormData['role'])}
-                  options={roleOptions.map((o) => ({ value: o.value, label: o.label }))}
+                  options={roleOptions.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
                   error={errors.role?.message}
                   searchable={false}
                 />
@@ -248,7 +250,7 @@ export function CreateUserPage(props?: CreateUserPageProps) {
             )}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Department (optional)
+                {t('admin.createUserPage.departmentOptional')}
               </label>
               <Select2
                 value={watch('department_id') ?? ''}
@@ -258,7 +260,7 @@ export function CreateUserPage(props?: CreateUserPageProps) {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Photo (optional)</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.photoOptional')}</label>
               <input
                 id="create-user-photo"
                 type="file"
@@ -273,7 +275,7 @@ export function CreateUserPage(props?: CreateUserPageProps) {
               className="w-full sm:w-auto"
             >
               <Save className="mr-2 h-4 w-4" />
-              {createUser.isPending ? 'Saving…' : 'Create'}
+              {createUser.isPending ? t('admin.createUserPage.saving') : t('admin.createUserPage.create')}
             </Button>
           </form>
         </CardContent>

@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useState, useEffect } from 'react';
@@ -127,6 +128,7 @@ const ACHIEVEMENTS = [
 // ============ COMPONENT ============
 
 export function StudentDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const student = user as IStudent;
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -141,7 +143,7 @@ export function StudentDashboard() {
 
   const statCards = [
     {
-      label: 'Cumulative GPA',
+      label: t('student.studentDashboard.cumulativeGpa'),
       value: STATS.gpa.toFixed(2),
       delta: STATS.gpaDelta,
       trend: 'up',
@@ -149,10 +151,10 @@ export function StudentDashboard() {
       gradient: 'from-amber-400 to-amber-600',
       bg: 'bg-amber-50',
       iconColor: 'text-amber-600',
-      hint: 'Out of 4.00',
+      hint: t('student.studentDashboard.outOf400'),
     },
     {
-      label: 'Credits Earned',
+      label: t('student.studentDashboard.creditsEarned'),
       value: STATS.creditsEarned,
       delta: STATS.creditsDelta,
       trend: 'up',
@@ -160,10 +162,10 @@ export function StudentDashboard() {
       gradient: 'from-blue-500 to-blue-600',
       bg: 'bg-blue-50',
       iconColor: 'text-blue-600',
-      hint: `of ${STATS.creditsRequired} required`,
+      hint: t('student.studentDashboard.ofRequired', { required: STATS.creditsRequired }),
     },
     {
-      label: 'Attendance',
+      label: t('student.studentDashboard.attendanceLabel'),
       value: `${STATS.attendance}%`,
       delta: STATS.attendanceDelta,
       trend: 'up',
@@ -171,10 +173,10 @@ export function StudentDashboard() {
       gradient: 'from-emerald-500 to-emerald-600',
       bg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
-      hint: 'This semester',
+      hint: t('student.studentDashboard.thisSemester'),
     },
     {
-      label: 'Class Rank',
+      label: t('student.studentDashboard.classRank'),
       value: `#${STATS.rank}`,
       delta: '+3',
       trend: 'up',
@@ -182,7 +184,7 @@ export function StudentDashboard() {
       gradient: 'from-purple-500 to-purple-600',
       bg: 'bg-purple-50',
       iconColor: 'text-purple-600',
-      hint: `of ${STATS.rankTotal} students`,
+      hint: t('student.studentDashboard.ofStudents', { total: STATS.rankTotal }),
     },
   ];
 
@@ -194,32 +196,32 @@ export function StudentDashboard() {
         <div className="absolute -bottom-16 -left-8 h-56 w-56 rounded-full bg-accent-400/20 blur-3xl" />
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <p className="text-primary-200 text-sm mb-1">Welcome back,</p>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-3">{student?.name || 'Student'}</h1>
+            <p className="text-primary-200 text-sm mb-1">{t('student.studentDashboard.welcomeBack')}</p>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-3">{student?.name || t('student.studentDashboard.studentFallback')}</h1>
             <div className="flex flex-wrap items-center gap-4 text-primary-100 text-sm">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                <span>{student?.department?.college?.name || 'Faculty of Engineering'}</span>
+                <span>{student?.department?.college?.name || t('student.studentDashboard.facultyFallback')}</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
-                <span>{student?.department?.name || 'Computer Science'}</span>
+                <span>{student?.department?.name || t('student.studentDashboard.departmentFallback')}</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>Year {student?.year || 3}, Semester {student?.semester || 2}</span>
+                <span>{t('student.studentDashboard.yearSemester', { year: student?.year || 3, semester: student?.semester || 2 })}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-4">
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-300/30">
                 <Flame className="h-3.5 w-3.5 text-orange-300" />
-                <span className="text-xs font-semibold">{STATS.streak} day streak</span>
+                <span className="text-xs font-semibold">{t('student.studentDashboard.dayStreak', { count: STATS.streak })}</span>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-300/30">
                 <Star className="h-3.5 w-3.5 text-amber-300" />
-                <span className="text-xs font-semibold">Dean's List</span>
+                <span className="text-xs font-semibold">{t('student.studentDashboard.deansList')}</span>
               </div>
             </div>
           </div>
@@ -274,14 +276,14 @@ export function StudentDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-primary-600" />
-              Academic Progress
+              {t('student.studentDashboard.academicProgress')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">GPA Progress</span>
+                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.gpaProgress')}</span>
                   <span className="text-sm font-bold text-gray-900">{STATS.gpa.toFixed(2)} / 4.00</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
@@ -290,11 +292,11 @@ export function StudentDashboard() {
                     style={{ width: `${gpaProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{gpaProgress.toFixed(0)}% of perfect score</p>
+                <p className="text-xs text-gray-500 mt-1">{t('student.studentDashboard.percentOfPerfect', { pct: gpaProgress.toFixed(0) })}</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Credits to Graduation</span>
+                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.creditsToGraduation')}</span>
                   <span className="text-sm font-bold text-gray-900">{STATS.creditsEarned} / {STATS.creditsRequired}</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
@@ -303,12 +305,12 @@ export function StudentDashboard() {
                     style={{ width: `${creditsProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{(STATS.creditsRequired - STATS.creditsEarned)} credits remaining</p>
+                <p className="text-xs text-gray-500 mt-1">{t('student.studentDashboard.creditsRemaining', { count: STATS.creditsRequired - STATS.creditsEarned })}</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Assignments</span>
-                  <span className="text-sm font-bold text-gray-900">{STATS.completedAssignments} done</span>
+                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.assignments')}</span>
+                  <span className="text-sm font-bold text-gray-900">{t('student.studentDashboard.doneCount', { count: STATS.completedAssignments })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
@@ -317,17 +319,17 @@ export function StudentDashboard() {
                       style={{ width: `${(STATS.completedAssignments / (STATS.completedAssignments + STATS.pendingAssignments)) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs text-orange-600 font-semibold">{STATS.pendingAssignments} pending</span>
+                  <span className="text-xs text-orange-600 font-semibold">{t('student.studentDashboard.pendingCount', { count: STATS.pendingAssignments })}</span>
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Current Load</span>
-                  <span className="text-sm font-bold text-gray-900">{STATS.currentCredits} credits</span>
+                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.currentLoad')}</span>
+                  <span className="text-sm font-bold text-gray-900">{t('student.studentDashboard.creditsCount', { count: STATS.currentCredits })}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Zap className="h-4 w-4 text-amber-500" />
-                  <span className="text-xs text-gray-600">{MY_COURSES.length} active courses this semester</span>
+                  <span className="text-xs text-gray-600">{t('student.studentDashboard.activeCoursesThisSemester', { count: MY_COURSES.length })}</span>
                 </div>
               </div>
             </div>
@@ -338,7 +340,7 @@ export function StudentDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary-600" />
-              Achievements
+              {t('student.studentDashboard.achievements')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -366,7 +368,7 @@ export function StudentDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary-600" />
-              Today's Schedule
+              {t('student.studentDashboard.todaysSchedule')}
             </CardTitle>
             <span className="text-xs text-gray-500">{currentTime.toLocaleDateString('en-US', { weekday: 'long' })}</span>
           </CardHeader>
@@ -393,7 +395,7 @@ export function StudentDashboard() {
                       <div className="flex items-center gap-2 mb-0.5">
                         <h4 className="font-semibold text-gray-900">{s.course}</h4>
                         <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{s.type}</span>
-                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">Live now</span>}
+                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">{t('student.studentDashboard.liveNow')}</span>}
                       </div>
                       <p className="text-xs text-gray-500">{s.time} - {s.end} • {s.room}</p>
                     </div>
@@ -409,10 +411,10 @@ export function StudentDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary-600" />
-              Announcements
+              {t('student.studentDashboard.announcements')}
             </CardTitle>
             <Link to="/dashboard/announcements">
-              <Button variant="secondary" size="sm">All</Button>
+              <Button variant="secondary" size="sm">{t('student.studentDashboard.all')}</Button>
             </Link>
           </CardHeader>
           <CardContent>
@@ -443,49 +445,49 @@ export function StudentDashboard() {
       </div>
 
       {/* GPA trend full row */}
-      <ChartCard title="GPA Trend" description="Your GPA progression across semesters">
+      <ChartCard title={t('student.studentDashboard.gpaTrendTitle')} description={t('student.studentDashboard.gpaTrendDesc')}>
         <LineChart
           data={GPA_TREND}
           dataKey="semester"
-          lines={[{ dataKey: 'gpa', name: 'GPA', stroke: '#0055cc' }]}
+          lines={[{ dataKey: 'gpa', name: t('student.studentDashboard.gpa'), stroke: '#0055cc' }]}
           height={280}
         />
       </ChartCard>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Attendance by Course" description="Your attendance percentage per course">
+        <ChartCard title={t('student.studentDashboard.attendanceByCourseTitle')} description={t('student.studentDashboard.attendanceByCourseDesc')}>
           <BarChart
             data={ATTENDANCE_BY_COURSE}
             dataKey="course"
-            bars={[{ dataKey: 'attendance', name: 'Attendance %', fill: '#10b981' }]}
+            bars={[{ dataKey: 'attendance', name: t('student.studentDashboard.attendancePct'), fill: '#10b981' }]}
             height={280}
           />
         </ChartCard>
 
-        <ChartCard title="Grade Distribution" description="Your overall grade breakdown">
+        <ChartCard title={t('student.studentDashboard.gradeDistributionTitle')} description={t('student.studentDashboard.gradeDistributionDesc')}>
           <PieChart data={GRADE_DISTRIBUTION} height={280} />
         </ChartCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Credits by Year" description="Completed vs required per academic year">
+        <ChartCard title={t('student.studentDashboard.creditsByYearTitle')} description={t('student.studentDashboard.creditsByYearDesc')}>
           <BarChart
             data={CREDITS_BY_YEAR}
             dataKey="year"
             bars={[
-              { dataKey: 'completed', name: 'Completed', fill: '#0055cc' },
-              { dataKey: 'total', name: 'Required', fill: '#e5e7eb' },
+              { dataKey: 'completed', name: t('student.studentDashboard.completed'), fill: '#0055cc' },
+              { dataKey: 'total', name: t('student.studentDashboard.required'), fill: '#e5e7eb' },
             ]}
             height={260}
           />
         </ChartCard>
 
-        <ChartCard title="Weekly Study Hours" description="Hours spent studying this semester">
+        <ChartCard title={t('student.studentDashboard.weeklyStudyHoursTitle')} description={t('student.studentDashboard.weeklyStudyHoursDesc')}>
           <AreaChart
             data={STUDY_HOURS}
             dataKey="week"
-            areas={[{ dataKey: 'hours', name: 'Hours', fill: '#8b5cf6' }]}
+            areas={[{ dataKey: 'hours', name: t('student.studentDashboard.hours'), fill: '#8b5cf6' }]}
             height={260}
           />
         </ChartCard>
@@ -497,10 +499,10 @@ export function StudentDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary-600" />
-              My Courses
+              {t('student.studentDashboard.myCourses')}
             </CardTitle>
             <Link to="/dashboard/courses/my-courses">
-              <Button variant="secondary" size="sm">View All</Button>
+              <Button variant="secondary" size="sm">{t('student.studentDashboard.viewAll')}</Button>
             </Link>
           </CardHeader>
           <CardContent>
@@ -519,7 +521,7 @@ export function StudentDashboard() {
                         <div className="flex items-center gap-2">
                           <h4 className="font-semibold text-gray-900">{c.code}</h4>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
-                            {c.credits} hrs
+                            {t('student.studentDashboard.hrsCount', { count: c.credits })}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600">{c.title}</p>
@@ -533,9 +535,9 @@ export function StudentDashboard() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                     <span className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" /> {c.attendance}% attendance
+                      <CheckCircle2 className="h-3 w-3" /> {t('student.studentDashboard.pctAttendance', { pct: c.attendance })}
                     </span>
-                    <span className="font-medium text-gray-700">{c.progress}% complete</span>
+                    <span className="font-medium text-gray-700">{t('student.studentDashboard.pctComplete', { pct: c.progress })}</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
                     <div
@@ -553,10 +555,10 @@ export function StudentDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary-600" />
-              Upcoming Assessments
+              {t('student.studentDashboard.upcomingAssessments')}
             </CardTitle>
             <Link to="/dashboard/assessments">
-              <Button variant="secondary" size="sm">View All</Button>
+              <Button variant="secondary" size="sm">{t('student.studentDashboard.viewAll')}</Button>
             </Link>
           </CardHeader>
           <CardContent>
@@ -584,16 +586,16 @@ export function StudentDashboard() {
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {a.daysLeft} {a.daysLeft === 1 ? 'day' : 'days'} left
+                            {t('student.studentDashboard.daysLeft', { count: a.daysLeft })}
                           </span>
-                          <span>{a.points} pts</span>
+                          <span>{t('student.studentDashboard.ptsCount', { count: a.points })}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {isUrgent && <AlertCircle className="h-5 w-5 text-red-500" />}
                         <Button size="sm" variant={isUrgent ? 'primary' : 'secondary'}>
                           <ArrowUpRight className="h-3 w-3 mr-1" />
-                          Submit
+                          {t('student.studentDashboard.submit')}
                         </Button>
                       </div>
                     </div>
@@ -614,13 +616,13 @@ export function StudentDashboard() {
                 <Activity className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">You're on a {STATS.streak}-day learning streak!</p>
-                <p className="text-sm text-gray-600">Keep it up — you're in the top {Math.round((STATS.rank / STATS.rankTotal) * 100)}% of your class.</p>
+                <p className="font-semibold text-gray-900">{t('student.studentDashboard.streakMessage', { count: STATS.streak })}</p>
+                <p className="text-sm text-gray-600">{t('student.studentDashboard.topPercentMessage', { pct: Math.round((STATS.rank / STATS.rankTotal) * 100) })}</p>
               </div>
             </div>
             <Link to="/dashboard/courses/my-courses">
               <Button>
-                Continue Learning
+                {t('student.studentDashboard.continueLearning')}
                 <ArrowUpRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>

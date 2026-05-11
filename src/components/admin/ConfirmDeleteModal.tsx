@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 export interface ConfirmDeleteModalProps {
@@ -22,6 +23,7 @@ export function ConfirmDeleteModal({
   onCancel,
   loading = false,
 }: ConfirmDeleteModalProps) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -29,7 +31,7 @@ export function ConfirmDeleteModal({
       <button
         type="button"
         className="absolute inset-0 bg-black/50 backdrop-blur-[1px] dark:bg-black/60"
-        aria-label="Close"
+        aria-label={t('chrome.modal.close')}
         onClick={loading ? undefined : onCancel}
       />
       <div

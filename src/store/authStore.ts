@@ -35,9 +35,15 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       loginStepOne: async (credentials: LoginStepOneCredentials) => {
-        await authApi.loginStepOne(credentials);
+        const response = await authApi.loginStepOne(credentials);
+        inMemoryToken = response.accessToken;
+        set({
+          user: response.user,
+          accessToken: response.accessToken,
+          isAuthenticated: true,
+        });
         if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.setItem(PENDING_LOGIN_EMAIL_KEY, credentials.email);
+          sessionStorage.removeItem(PENDING_LOGIN_EMAIL_KEY);
         }
       },
 

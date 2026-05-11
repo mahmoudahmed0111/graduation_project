@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -14,6 +15,7 @@ import { getApiErrorMessage } from '@/lib/http/client';
 import { p3Id } from '@/lib/phase3Ui';
 
 export function CreateCatalogCoursePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const isUA = user?.role === 'universityAdmin';
@@ -32,7 +34,7 @@ export function CreateCatalogCoursePage() {
   const collegeOptions = useMemo(() => {
     const items = collegesData?.items ?? [];
     return [
-      { value: '', label: 'Select college…' },
+      { value: '', label: t('admin.createCatalogCoursePage.selectCollege') },
       ...items.map((c) => {
         const r = c as Record<string, unknown>;
         return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
@@ -48,7 +50,7 @@ export function CreateCatalogCoursePage() {
   const departmentOptions = useMemo(() => {
     const items = departmentsData?.items ?? [];
     return [
-      { value: '', label: 'Select department…' },
+      { value: '', label: t('admin.createCatalogCoursePage.selectDepartment') },
       ...items.map((d) => {
         const r = d as Record<string, unknown>;
         return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
@@ -84,11 +86,11 @@ export function CreateCatalogCoursePage() {
     e.preventDefault();
     const ch = Number(creditHours);
     if (!title.trim() || !code.trim() || !Number.isFinite(ch) || ch < 1) {
-      showError('Title, code, and valid credit hours are required.');
+      showError(t('admin.createCatalogCoursePage.titleCodeRequired'));
       return;
     }
     if (!department_id) {
-      showError('Select a department.');
+      showError(t('admin.createCatalogCoursePage.selectDepartmentError'));
       return;
     }
     try {
@@ -100,7 +102,7 @@ export function CreateCatalogCoursePage() {
         department_id,
         prerequisites_ids: selectedPrereq.length ? selectedPrereq : undefined,
       });
-      success('Course created.');
+      success(t('admin.createCatalogCoursePage.courseCreated'));
       navigate('/dashboard/academic/catalog');
     } catch (err) {
       showError(getApiErrorMessage(err));
@@ -113,11 +115,11 @@ export function CreateCatalogCoursePage() {
         <Link to="/dashboard/academic/catalog">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            {t('admin.createCatalogCoursePage.back')}
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add catalog course</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createCatalogCoursePage.title')}</h1>
         </div>
       </div>
 
@@ -125,7 +127,7 @@ export function CreateCatalogCoursePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Library className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            Details
+            {t('admin.createCatalogCoursePage.details')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -133,7 +135,7 @@ export function CreateCatalogCoursePage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {isUA && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College *</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.collegeRequired')}</label>
                   <Select2
                     options={collegeOptions}
                     value={collegeId}
@@ -146,7 +148,7 @@ export function CreateCatalogCoursePage() {
                 </div>
               )}
               <div className={isUA ? undefined : 'md:col-span-2'}>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Department *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.departmentRequired')}</label>
                 <Select2
                   options={departmentOptions}
                   value={department_id}
@@ -157,32 +159,31 @@ export function CreateCatalogCoursePage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.titleRequired')}</label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Code *</label>
-                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. CS301" required />
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.codeRequired')}</label>
+                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder={t('admin.createCatalogCoursePage.codePlaceholder')} required />
               </div>
               <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.description')}</label>
                 <Input value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Credit hours *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.creditHoursRequired')}</label>
                 <Input type="number" min={1} value={creditHours} onChange={(e) => setCreditHours(e.target.value)} required />
               </div>
               <div className="md:col-span-2">
-                <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Prerequisites (optional)</p>
+                <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCatalogCoursePage.prerequisitesOptional')}</p>
                 <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                  Other courses in this department that a student must complete before they can enroll in this new
-                  course. Leave empty if there are no prior-course requirements.
+                  {t('admin.createCatalogCoursePage.prerequisitesHelp')}
                 </p>
                 <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-dark-border">
                   {!department_id ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Select a department to load other courses.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('admin.createCatalogCoursePage.selectDeptHint')}</p>
                   ) : prerequisiteOptions.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No other courses in this department.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('admin.createCatalogCoursePage.noOtherCourses')}</p>
                   ) : (
                     prerequisiteOptions.map((o) => (
                       <label key={o.value} className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
@@ -201,7 +202,7 @@ export function CreateCatalogCoursePage() {
             </div>
             <Button type="submit" variant="primary" disabled={createMut.isPending} className="w-full sm:w-auto">
               <Save className="mr-2 h-4 w-4" />
-              {createMut.isPending ? 'Saving…' : 'Create'}
+              {createMut.isPending ? t('admin.createCatalogCoursePage.saving') : t('admin.createCatalogCoursePage.create')}
             </Button>
           </form>
         </CardContent>

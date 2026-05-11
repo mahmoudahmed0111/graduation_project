@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +11,7 @@ import { useToastStore } from '@/store/toastStore';
 import { Lock } from 'lucide-react';
 
 export function ChangePasswordPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, setUser } = useAuthStore();
   const { success, error: toastError } = useToastStore();
@@ -21,19 +23,19 @@ export function ChangePasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toastError('All fields are required.');
+      toastError(t('shared.accountChangePassword.errAllFields'));
       return;
     }
     if (newPassword.length < 8) {
-      toastError('New password must be at least 8 characters.');
+      toastError(t('shared.accountChangePassword.errMinLen'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toastError('New passwords do not match.');
+      toastError(t('shared.accountChangePassword.errMismatch'));
       return;
     }
     if (currentPassword === newPassword) {
-      toastError('Choose a different new password.');
+      toastError(t('shared.accountChangePassword.errSameAsCurrent'));
       return;
     }
     setLoading(true);
@@ -42,7 +44,7 @@ export function ChangePasswordPage() {
       if (user) {
         setUser({ ...user, requiresPasswordChange: false });
       }
-      success('Password updated. You can continue using the app.');
+      success(t('shared.accountChangePassword.passwordUpdated'));
       navigate('/dashboard', { replace: true });
     } catch (err) {
       toastError(getApiErrorMessage(err));
@@ -57,39 +59,39 @@ export function ChangePasswordPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
             <Lock className="h-5 w-5 text-primary-600" />
-            Change password
+            {t('shared.accountChangePassword.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {user?.requiresPasswordChange && (
             <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Your administrator requires you to set a new password before accessing other features.
+              {t('shared.accountChangePassword.adminRequiresChange')}
             </p>
           )}
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <Input
-              label="Current password"
+              label={t('shared.accountChangePassword.currentPassword')}
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               autoComplete="current-password"
             />
             <Input
-              label="New password"
+              label={t('shared.accountChangePassword.newPassword')}
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               autoComplete="new-password"
             />
             <Input
-              label="Confirm new password"
+              label={t('shared.accountChangePassword.confirmNewPassword')}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
             />
             <Button type="submit" variant="primary" className="w-full" disabled={loading}>
-              {loading ? 'Saving…' : 'Update password'}
+              {loading ? t('shared.accountChangePassword.saving') : t('shared.accountChangePassword.updatePassword')}
             </Button>
           </form>
         </CardContent>

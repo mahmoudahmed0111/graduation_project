@@ -43,7 +43,7 @@ export function AllCourses() {
           context: 'AllCourses',
           error,
         });
-        showError('Failed to load courses');
+        showError(t('shared.allCourses.failedLoad'));
         setOfferings([]);
       } finally {
         setLoading(false);
@@ -79,12 +79,12 @@ export function AllCourses() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t('nav.allCourses')}</h1>
-          <p className="text-gray-600 mt-1">Browse available courses for the current semester</p>
+          <p className="text-gray-600 mt-1">{t('shared.allCourses.subtitle')}</p>
         </div>
         <Link to="/dashboard/courses/enroll">
           <Button variant="primary">
             <BookOpen className="h-4 w-4 mr-2" />
-            Enroll in Course
+            {t('shared.allCourses.enrollInCourse')}
           </Button>
         </Link>
       </div>
@@ -103,7 +103,7 @@ export function AllCourses() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search by course code or title..."
+                placeholder={t('shared.allCourses.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -114,7 +114,7 @@ export function AllCourses() {
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="field"
             >
-              <option value="">All Departments</option>
+              <option value="">{t('shared.allCourses.allDepartments')}</option>
               {departments.map(dept => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
@@ -128,7 +128,7 @@ export function AllCourses() {
         <Card>
           <CardContent className="p-12 text-center">
             <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No courses found matching your criteria</p>
+            <p className="text-gray-600">{t('shared.allCourses.noCourses')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -143,7 +143,7 @@ export function AllCourses() {
                         {offering.course.code}
                       </span>
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {offering.course.creditHours} Credits
+                        {t('shared.allCourses.credits', { count: offering.course.creditHours })}
                       </span>
                     </div>
                     <CardTitle className="text-lg mb-2">{offering.course.title}</CardTitle>
@@ -157,7 +157,7 @@ export function AllCourses() {
                   <div className="flex items-start gap-2">
                     <User className="h-4 w-4 text-gray-400 mt-0.5" />
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500">Instructors</p>
+                      <p className="text-xs text-gray-500">{t('shared.allCourses.instructors')}</p>
                       <p className="text-sm text-gray-700">
                         {offering.doctors.map(d => d.name).join(', ')}
                       </p>
@@ -186,7 +186,7 @@ export function AllCourses() {
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-gray-400" />
                     <span className="text-gray-600">
-                      {offering.maxSeats} seats available
+                      {t('shared.allCourses.seatsAvailable', { count: offering.maxSeats })}
                     </span>
                   </div>
                 </div>
@@ -194,7 +194,7 @@ export function AllCourses() {
                 {/* Action Button */}
                 <Link to={`/dashboard/courses/enroll?offering=${offering.id}`} className="block mt-4">
                   <Button variant="primary" className="w-full" size="sm">
-                    View Details
+                    {t('shared.allCourses.viewDetails')}
                   </Button>
                 </Link>
               </CardContent>
@@ -205,7 +205,7 @@ export function AllCourses() {
 
           {/* Results Count */}
           <div className="text-center text-sm text-gray-600">
-            Showing {filteredOfferings.length} of {offerings.length} courses
+            {t('shared.allCourses.showingOf', { shown: filteredOfferings.length, total: offerings.length })}
           </div>
         </>
       )}

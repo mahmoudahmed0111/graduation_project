@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -11,16 +12,16 @@ import { api, getApiErrorMessage } from '@/lib/api';
 import { OrganizationalEditBreadcrumb } from '@/components/admin';
 import { useInvalidateLocations } from '@/hooks/queries/useLocations';
 
-const TYPE_OPTS = [
-  { value: 'lecture_hall', label: 'Lecture hall' },
-  { value: 'lab', label: 'Lab' },
-  { value: 'section_room', label: 'Section room' },
-  { value: 'auditorium', label: 'Auditorium' },
-];
-
 const FORM_ID = 'edit-location-form';
 
 export function EditLocation() {
+  const { t } = useTranslation();
+  const TYPE_OPTS = [
+    { value: 'lecture_hall', label: t('admin.editLocation.lectureHall') },
+    { value: 'lab', label: t('admin.editLocation.lab') },
+    { value: 'section_room', label: t('admin.editLocation.sectionRoom') },
+    { value: 'auditorium', label: t('admin.editLocation.auditorium') },
+  ];
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const invalidateLocations = useInvalidateLocations();
@@ -67,7 +68,7 @@ export function EditLocation() {
         });
       } catch (error) {
         logger.error('Failed to load location', { context: 'EditLocation', error });
-        showError('Could not load location');
+        showError(t('admin.editLocation.loadFail'));
         navigate('/dashboard/organizational/locations');
       } finally {
         setLoading(false);
@@ -81,7 +82,7 @@ export function EditLocation() {
     if (!id) return;
     const cap = Number(form.capacity);
     if (!form.name.trim() || !Number.isFinite(cap) || cap < 0) {
-      showError('Name and valid capacity are required');
+      showError(t('admin.editLocation.nameCapacityRequired'));
       return;
     }
     try {
@@ -97,12 +98,12 @@ export function EditLocation() {
         ...(form.roomNumber.trim() ? { roomNumber: form.roomNumber.trim() } : {}),
         ...(form.readerId.trim() ? { readerId: form.readerId.trim() } : {}),
       });
-      success('Location updated');
+      success(t('admin.editLocation.updated'));
       invalidateLocations();
       navigate('/dashboard/organizational/locations');
     } catch (error) {
       logger.error('Failed to update location', { context: 'EditLocation', error });
-      showError(getApiErrorMessage(error, 'Failed to update location'));
+      showError(getApiErrorMessage(error, t('admin.editLocation.updateFail')));
     } finally {
       setSaving(false);
     }
@@ -120,10 +121,10 @@ export function EditLocation() {
     <div className="space-y-6">
       <OrganizationalEditBreadcrumb
         segments={[
-          { label: 'University Structure' },
-          { label: 'Locations', href: '/dashboard/organizational/locations' },
-          { label: form.name.trim() || 'Location' },
-          { label: 'Edit' },
+          { label: t('admin.editLocation.section') },
+          { label: t('admin.editLocation.locations'), href: '/dashboard/organizational/locations' },
+          { label: form.name.trim() || t('admin.editLocation.locationFallback') },
+          { label: t('admin.editLocation.edit') },
         ]}
       />
 
@@ -131,13 +132,13 @@ export function EditLocation() {
         <CardContent className="py-4">
           <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.college')}</label>
               <Input value={collegeLabel} readOnly className="bg-gray-50 text-gray-700 dark:bg-slate-800/50 dark:text-gray-300" />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.nameRequired')}</label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -145,7 +146,7 @@ export function EditLocation() {
                 />
               </div>
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Capacity *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.capacityRequired')}</label>
                 <Input
                   type="number"
                   min={0}
@@ -158,7 +159,7 @@ export function EditLocation() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Type *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.typeRequired')}</label>
                 <Select2
                   value={form.type}
                   onChange={(v) =>
@@ -171,7 +172,7 @@ export function EditLocation() {
                 />
               </div>
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Building</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.building')}</label>
                 <Input
                   value={form.building}
                   onChange={(e) => setForm((p) => ({ ...p, building: e.target.value }))}
@@ -181,7 +182,7 @@ export function EditLocation() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Floor</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.floor')}</label>
                 <Input
                   type="number"
                   value={form.floor}
@@ -189,7 +190,7 @@ export function EditLocation() {
                 />
               </div>
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Room number</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.roomNumber')}</label>
                 <Input
                   value={form.roomNumber}
                   onChange={(e) => setForm((p) => ({ ...p, roomNumber: e.target.value }))}
@@ -199,7 +200,7 @@ export function EditLocation() {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Reader ID</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editLocation.readerId')}</label>
                 <Input
                   value={form.readerId}
                   onChange={(e) => setForm((p) => ({ ...p, readerId: e.target.value }))}
@@ -213,7 +214,7 @@ export function EditLocation() {
       <div className="flex flex-wrap justify-end gap-2">
         <Link to="/dashboard/organizational/locations">
           <Button type="button" variant="secondary" className="rounded-xl">
-            Cancel
+            {t('admin.editLocation.cancel')}
           </Button>
         </Link>
         <Button
@@ -223,7 +224,7 @@ export function EditLocation() {
           className="inline-flex items-center gap-2 rounded-xl"
         >
           <Save className="h-4 w-4" />
-          Save
+          {t('admin.editLocation.save')}
         </Button>
       </div>
     </div>

@@ -538,3 +538,96 @@
   }
 }
 
+/* ─── RTL support ──────────────────────────────────────────────────────
+   When <html dir="rtl"> is set (Arabic), flip the physical-direction
+   utility classes used across the app so layouts mirror correctly
+   without touching every component. */
+@layer utilities {
+  /* Arabic body font fallback */
+  html[dir="rtl"] body { font-family: 'Tajawal', 'Cairo', 'Inter', system-ui, sans-serif; }
+
+  /* Text alignment flips */
+  html[dir="rtl"] .text-left  { text-align: right !important; }
+  html[dir="rtl"] .text-right { text-align: left  !important; }
+
+  /* Sidebar position + content offset use logical Tailwind classes
+     (start-0, border-e, lg:ps-64, lg:ps-16) which auto-flip with dir,
+     so no overrides are needed for those. */
+  /* Mobile (below lg): closed sidebar slides off the right edge */
+  @media (max-width: 1023.98px) {
+    html[dir="rtl"] aside.-translate-x-full { transform: translateX(100%) !important; }
+  }
+  /* Desktop (lg+): sidebar always visible at translateX(0), regardless of mobile -translate-x-full */
+  @media (min-width: 1024px) {
+    html[dir="rtl"] aside.lg\:translate-x-0 { transform: translateX(0) !important; }
+  }
+  /* Active-route accent rail moves to the right edge */
+  html[dir="rtl"] aside .left-0.h-6.w-1 { left: auto !important; right: 0 !important; border-radius: 9999px 0 0 9999px !important; }
+
+  /* Margins */
+  html[dir="rtl"] .ml-1  { margin-left: 0 !important; margin-right: 0.25rem !important; }
+  html[dir="rtl"] .ml-2  { margin-left: 0 !important; margin-right: 0.5rem  !important; }
+  html[dir="rtl"] .ml-3  { margin-left: 0 !important; margin-right: 0.75rem !important; }
+  html[dir="rtl"] .ml-4  { margin-left: 0 !important; margin-right: 1rem    !important; }
+  html[dir="rtl"] .ml-6  { margin-left: 0 !important; margin-right: 1.5rem  !important; }
+  html[dir="rtl"] .ml-auto { margin-left: 0 !important; margin-right: auto !important; }
+  html[dir="rtl"] .mr-1  { margin-right: 0 !important; margin-left: 0.25rem !important; }
+  html[dir="rtl"] .mr-2  { margin-right: 0 !important; margin-left: 0.5rem  !important; }
+  html[dir="rtl"] .mr-3  { margin-right: 0 !important; margin-left: 0.75rem !important; }
+  html[dir="rtl"] .mr-4  { margin-right: 0 !important; margin-left: 1rem    !important; }
+  html[dir="rtl"] .mr-6  { margin-right: 0 !important; margin-left: 1.5rem  !important; }
+  html[dir="rtl"] .mr-auto { margin-right: 0 !important; margin-left: auto !important; }
+
+  /* Padding */
+  html[dir="rtl"] .pl-2  { padding-left: 0 !important; padding-right: 0.5rem  !important; }
+  html[dir="rtl"] .pl-3  { padding-left: 0 !important; padding-right: 0.75rem !important; }
+  html[dir="rtl"] .pl-4  { padding-left: 0 !important; padding-right: 1rem    !important; }
+  html[dir="rtl"] .pl-6  { padding-left: 0 !important; padding-right: 1.5rem  !important; }
+  html[dir="rtl"] .pl-8  { padding-left: 0 !important; padding-right: 2rem    !important; }
+  html[dir="rtl"] .pl-10 { padding-left: 0 !important; padding-right: 2.5rem  !important; }
+  html[dir="rtl"] .pl-12 { padding-left: 0 !important; padding-right: 3rem    !important; }
+  html[dir="rtl"] .pl-16 { padding-left: 0 !important; padding-right: 4rem    !important; }
+  html[dir="rtl"] .pl-20 { padding-left: 0 !important; padding-right: 5rem    !important; }
+  html[dir="rtl"] .pl-24 { padding-left: 0 !important; padding-right: 6rem    !important; }
+  html[dir="rtl"] .pr-2  { padding-right: 0 !important; padding-left: 0.5rem  !important; }
+  html[dir="rtl"] .pr-3  { padding-right: 0 !important; padding-left: 0.75rem !important; }
+  html[dir="rtl"] .pr-4  { padding-right: 0 !important; padding-left: 1rem    !important; }
+  html[dir="rtl"] .pr-6  { padding-right: 0 !important; padding-left: 1.5rem  !important; }
+  html[dir="rtl"] .pr-8  { padding-right: 0 !important; padding-left: 2rem    !important; }
+  html[dir="rtl"] .pr-10 { padding-right: 0 !important; padding-left: 2.5rem  !important; }
+  html[dir="rtl"] .pr-12 { padding-right: 0 !important; padding-left: 3rem    !important; }
+  html[dir="rtl"] .pr-16 { padding-right: 0 !important; padding-left: 4rem    !important; }
+  html[dir="rtl"] .pr-20 { padding-right: 0 !important; padding-left: 5rem    !important; }
+  html[dir="rtl"] .pr-24 { padding-right: 0 !important; padding-left: 6rem    !important; }
+
+  /* Absolute positioning (icons inside inputs etc.) */
+  html[dir="rtl"] .left-0  { left: auto !important; right: 0    !important; }
+  html[dir="rtl"] .left-1  { left: auto !important; right: 0.25rem !important; }
+  html[dir="rtl"] .left-2  { left: auto !important; right: 0.5rem  !important; }
+  html[dir="rtl"] .left-3  { left: auto !important; right: 0.75rem !important; }
+  html[dir="rtl"] .left-4  { left: auto !important; right: 1rem    !important; }
+  html[dir="rtl"] .right-0 { right: auto !important; left: 0       !important; }
+  html[dir="rtl"] .right-1 { right: auto !important; left: 0.25rem !important; }
+  html[dir="rtl"] .right-2 { right: auto !important; left: 0.5rem  !important; }
+  html[dir="rtl"] .right-3 { right: auto !important; left: 0.75rem !important; }
+  html[dir="rtl"] .right-4 { right: auto !important; left: 1rem    !important; }
+
+  /* Borders */
+  html[dir="rtl"] .border-l { border-left: 0 !important; border-right: 1px solid; }
+  html[dir="rtl"] .border-r { border-right: 0 !important; border-left: 1px solid; }
+  html[dir="rtl"] .rounded-l-lg, html[dir="rtl"] .rounded-l-md, html[dir="rtl"] .rounded-l-full { border-radius: 0 !important; border-top-right-radius: 0.5rem !important; border-bottom-right-radius: 0.5rem !important; }
+  html[dir="rtl"] .rounded-r-lg, html[dir="rtl"] .rounded-r-md, html[dir="rtl"] .rounded-r-full { border-radius: 0 !important; border-top-left-radius: 0.5rem !important; border-bottom-left-radius: 0.5rem !important; }
+  html[dir="rtl"] .rounded-r-full { border-radius: 0 !important; border-top-left-radius: 9999px !important; border-bottom-left-radius: 9999px !important; }
+
+  /* Float */
+  html[dir="rtl"] .float-left  { float: right !important; }
+  html[dir="rtl"] .float-right { float: left  !important; }
+
+  /* Flex row reverse — keep visual order matching reading order */
+  html[dir="rtl"] .flex-row { flex-direction: row !important; }
+
+  /* Space-x utilities are already logical via `[class*="space-x"]` in
+     Tailwind v3 when `dir` is set, but make sure the negation works. */
+}
+
+

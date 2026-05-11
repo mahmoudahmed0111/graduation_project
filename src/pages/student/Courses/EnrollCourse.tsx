@@ -66,7 +66,7 @@ export function EnrollCourse() {
           context: 'EnrollCourse',
           error,
         });
-        showError('Failed to load courses');
+        showError(t('student.enrollCourse.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -143,13 +143,13 @@ export function EnrollCourse() {
     // Check prerequisites
     const prereqCheck = checkPrerequisites(offering);
     if (!prereqCheck.met) {
-      showError(`Prerequisites not met: ${prereqCheck.missing.join(', ')}`);
+      showError(t('student.enrollCourse.prereqNotMet', { list: prereqCheck.missing.join(', ') }));
       return;
     }
 
     // Check credit limit
     if (!canEnroll(offering)) {
-      showError(`Credit limit exceeded. Current: ${currentCredits}/${creditLimit} hours`);
+      showError(t('student.enrollCourse.creditLimitExceeded', { current: currentCredits, limit: creditLimit }));
       return;
     }
 
@@ -160,7 +160,7 @@ export function EnrollCourse() {
     try {
       setEnrolling(true);
       await api.enrollInCourse({ courseOffering: offering.id });
-      showSuccess(`Successfully enrolled in ${offering.course.code}`);
+      showSuccess(t('student.enrollCourse.enrollSuccess', { code: offering.course.code }));
       
       // Refresh enrollments
       const updatedEnrollments = await api.getMyCourses({ semester: 'current' });
@@ -179,7 +179,7 @@ export function EnrollCourse() {
         context: 'EnrollCourse',
         error,
       });
-      showError(error.response?.data?.message || 'Failed to enroll in course');
+      showError(error.response?.data?.message || t('student.enrollCourse.enrollFailed'));
     } finally {
       setEnrolling(false);
     }
@@ -200,12 +200,12 @@ export function EnrollCourse() {
         <Link to="/dashboard/courses/all">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {t('student.enrollCourse.back')}
           </Button>
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t('nav.enrollInCourse')}</h1>
-          <p className="text-gray-600 mt-1">Enroll in courses for the current semester</p>
+          <p className="text-gray-600 mt-1">{t('student.enrollCourse.subtitle')}</p>
         </div>
       </div>
 
@@ -216,16 +216,16 @@ export function EnrollCourse() {
             <div className="flex items-center gap-3">
               <Info className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-blue-900">Credit Hour Limit</p>
+                <p className="text-sm font-medium text-blue-900">{t('student.enrollCourse.creditHourLimit')}</p>
                 <p className="text-xs text-blue-700">
-                  Current: {currentCredits} / {creditLimit} hours 
-                  ({student?.academicStatus ? `Status: ${student.academicStatus.replace('_', ' ')}` : ''})
+                  {t('student.enrollCourse.currentHours', { current: currentCredits, limit: creditLimit })}
+                  {student?.academicStatus ? ` (${t('student.enrollCourse.status')}: ${student.academicStatus.replace('_', ' ')})` : ''}
                 </p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-sm font-semibold text-blue-900">
-                {creditLimit - currentCredits} hours remaining
+                {t('student.enrollCourse.hoursRemaining', { count: creditLimit - currentCredits })}
               </p>
             </div>
           </div>
@@ -243,7 +243,7 @@ export function EnrollCourse() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     type="text"
-                    placeholder="Search courses..."
+                    placeholder={t('student.enrollCourse.searchCoursesPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -254,7 +254,7 @@ export function EnrollCourse() {
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                   className="field"
                 >
-                  <option value="">All Departments</option>
+                  <option value="">{t('student.enrollCourse.allDepartments')}</option>
                   {departments.map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
@@ -268,7 +268,7 @@ export function EnrollCourse() {
             <Card>
               <CardContent className="p-12 text-center">
                 <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No available courses found</p>
+                <p className="text-gray-600">{t('student.enrollCourse.noCoursesFound')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -293,16 +293,16 @@ export function EnrollCourse() {
                               {offering.course.code}
                             </span>
                             <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                              {offering.course.creditHours} Credits
+                              {t('student.enrollCourse.creditsCount', { count: offering.course.creditHours })}
                             </span>
                             {!canEnrollInThis && (
                               <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                                Credit Limit
+                                {t('student.enrollCourse.creditLimitBadge')}
                               </span>
                             )}
                             {!prereqCheck.met && (
                               <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                                Prerequisites
+                                {t('student.enrollCourse.prerequisitesBadge')}
                               </span>
                             )}
                           </div>
@@ -355,15 +355,15 @@ export function EnrollCourse() {
                 {/* Basic Info */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Credit Hours</span>
+                    <span className="text-gray-600">{t('student.enrollCourse.creditHours')}</span>
                     <span className="font-medium">{selectedOffering.course.creditHours}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Department</span>
+                    <span className="text-gray-600">{t('student.enrollCourse.department')}</span>
                     <span className="font-medium">{selectedOffering.course.department.name}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Semester</span>
+                    <span className="text-gray-600">{t('student.enrollCourse.semester')}</span>
                     <span className="font-medium">{selectedOffering.semester}</span>
                   </div>
                 </div>
@@ -371,7 +371,7 @@ export function EnrollCourse() {
                 {/* Instructors */}
                 {selectedOffering.doctors.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Instructors</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('student.enrollCourse.instructors')}</p>
                     <div className="space-y-1">
                       {selectedOffering.doctors.map((doctor, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
@@ -386,7 +386,7 @@ export function EnrollCourse() {
                 {/* Schedule */}
                 {selectedOffering.schedule.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Schedule</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('student.enrollCourse.schedule')}</p>
                     <div className="space-y-2">
                       {selectedOffering.schedule.map((session, idx) => (
                         <div key={idx} className="flex items-start gap-2 text-sm text-gray-600">
@@ -411,7 +411,7 @@ export function EnrollCourse() {
                 {/* Prerequisites */}
                 {selectedOffering.course.prerequisites && selectedOffering.course.prerequisites.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Prerequisites</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('student.enrollCourse.prerequisites')}</p>
                     <div className="space-y-1">
                       {selectedOffering.course.prerequisites.map((prereq, idx) => {
                         const isMet = myEnrollments.some(
@@ -443,7 +443,7 @@ export function EnrollCourse() {
                     if (!prereqCheck.met) {
                       return (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-sm text-red-800 font-medium mb-1">Prerequisites Not Met</p>
+                          <p className="text-sm text-red-800 font-medium mb-1">{t('student.enrollCourse.prereqsNotMetTitle')}</p>
                           <ul className="text-xs text-red-700 list-disc list-inside">
                             {prereqCheck.missing.map((missing, idx) => (
                               <li key={idx}>{missing}</li>
@@ -457,7 +457,7 @@ export function EnrollCourse() {
                       return (
                         <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
                           <p className="text-sm text-orange-800">
-                            Credit limit would be exceeded ({currentCredits + selectedOffering.course.creditHours} / {creditLimit})
+                            {t('student.enrollCourse.creditLimitWouldExceed', { total: currentCredits + selectedOffering.course.creditHours, limit: creditLimit })}
                           </p>
                         </div>
                       );
@@ -466,7 +466,7 @@ export function EnrollCourse() {
                     return (
                       <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                         <p className="text-sm text-green-800 font-medium">
-                          ✓ Eligible to enroll
+                          {t('student.enrollCourse.eligibleToEnroll')}
                         </p>
                       </div>
                     );
@@ -481,7 +481,7 @@ export function EnrollCourse() {
                   disabled={enrolling || !canEnroll(selectedOffering) || !checkPrerequisites(selectedOffering).met}
                   isLoading={enrolling}
                 >
-                  {enrolling ? 'Enrolling...' : 'Enroll in Course'}
+                  {enrolling ? t('student.enrollCourse.enrolling') : t('student.enrollCourse.enrollInCourse')}
                 </Button>
               </CardContent>
             </Card>
@@ -489,7 +489,7 @@ export function EnrollCourse() {
             <Card>
               <CardContent className="p-8 text-center">
                 <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Select a course to view details</p>
+                <p className="text-gray-600">{t('student.enrollCourse.selectCourseHint')}</p>
               </CardContent>
             </Card>
           )}

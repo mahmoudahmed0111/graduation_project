@@ -109,7 +109,7 @@ export function ForgotPassword() {
                 {t('common.success')}
               </h3>
               <p className="text-gray-600 mb-6">
-                {t('auth.resetPassword')} - Reset link has been sent to your email
+                {t('auth.resetLinkSent')}
               </p>
               <Link to="/login">
                 <Button className="w-full">

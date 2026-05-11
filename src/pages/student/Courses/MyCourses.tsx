@@ -45,7 +45,7 @@ export function MyCourses() {
           context: 'MyCourses',
           error,
         });
-        showError('Failed to load your courses');
+        showError(t('student.myCourses.loadFailed'));
         setEnrollments([]);
       } finally {
         setLoading(false);
@@ -61,27 +61,27 @@ export function MyCourses() {
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
             <CheckCircle2 className="h-3 w-3" />
-            Passed
+            {t('student.myCourses.passed')}
           </span>
         );
       case 'failed':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
             <XCircle className="h-3 w-3" />
-            Failed
+            {t('student.myCourses.failed')}
           </span>
         );
       case 'enrolled':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <Clock className="h-3 w-3" />
-            Enrolled
+            {t('student.myCourses.enrolled')}
           </span>
         );
       case 'withdrawn':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            Withdrawn
+            {t('student.myCourses.withdrawn')}
           </span>
         );
       default:
@@ -112,7 +112,7 @@ export function MyCourses() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t('nav.myCourses')}</h1>
-          <p className="text-gray-600 mt-1">View your enrolled courses and academic progress</p>
+          <p className="text-gray-600 mt-1">{t('student.myCourses.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -120,13 +120,13 @@ export function MyCourses() {
             onChange={(e) => setSelectedSemester(e.target.value)}
             className="field"
           >
-            <option value="current">Current Semester</option>
-            <option value="all">All Semesters</option>
+            <option value="current">{t('student.myCourses.currentSemester')}</option>
+            <option value="all">{t('student.myCourses.allSemesters')}</option>
           </select>
           <Link to="/dashboard/courses/all">
             <Button variant="outline">
               <BookOpen className="h-4 w-4 mr-2" />
-              Browse Courses
+              {t('student.myCourses.browseCourses')}
             </Button>
           </Link>
         </div>
@@ -139,7 +139,7 @@ export function MyCourses() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Courses</p>
+                  <p className="text-sm text-gray-600">{t('student.myCourses.totalCourses')}</p>
                   <p className="text-2xl font-bold text-gray-900">{enrollments.length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-primary-600" />
@@ -150,7 +150,7 @@ export function MyCourses() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Credit Hours</p>
+                  <p className="text-sm text-gray-600">{t('student.myCourses.creditHours')}</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {enrollments.reduce((sum, e) => 
                       sum + (e.courseOffering?.course?.creditHours || 0), 0
@@ -165,7 +165,7 @@ export function MyCourses() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Average Grade</p>
+                  <p className="text-sm text-gray-600">{t('student.myCourses.averageGrade')}</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {enrollments
                       .filter(e => e.grades?.finalLetter)
@@ -197,10 +197,10 @@ export function MyCourses() {
         <Card>
           <CardContent className="p-12 text-center">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">You haven't enrolled in any courses yet</p>
+            <p className="text-gray-600 mb-4">{t('student.myCourses.noEnrolledCourses')}</p>
             <Link to="/dashboard/courses/all">
               <Button variant="primary">
-                Browse Available Courses
+                {t('student.myCourses.browseAvailableCourses')}
               </Button>
             </Link>
           </CardContent>
@@ -221,13 +221,13 @@ export function MyCourses() {
                           {course?.code}
                         </span>
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          {course?.creditHours} Credits
+                          {t('student.myCourses.creditsCount', { count: course?.creditHours })}
                         </span>
                         {getStatusBadge(enrollment.status)}
                       </div>
                       <CardTitle className="text-lg mb-1">{course?.title}</CardTitle>
                       <p className="text-sm text-gray-600">{course?.department.name}</p>
-                      <p className="text-xs text-gray-500 mt-1">Semester: {enrollment.semester}</p>
+                      <p className="text-xs text-gray-500 mt-1">{t('student.myCourses.semester')}: {enrollment.semester}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -237,7 +237,7 @@ export function MyCourses() {
                     <div className="flex items-start gap-2">
                       <User className="h-4 w-4 text-gray-400 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-xs text-gray-500">Instructors</p>
+                        <p className="text-xs text-gray-500">{t('student.myCourses.instructors')}</p>
                         <p className="text-sm text-gray-700">
                           {offering.doctors.map(d => d.name).join(', ')}
                         </p>
@@ -265,14 +265,14 @@ export function MyCourses() {
                   {enrollment.grades && enrollment.grades.finalLetter && (
                     <div className="pt-3 border-t border-gray-200">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Final Grade</span>
+                        <span className="text-sm text-gray-600">{t('student.myCourses.finalGrade')}</span>
                         <span className={`text-lg font-bold ${getGradeColor(enrollment.grades.finalLetter)}`}>
                           {enrollment.grades.finalLetter} ({enrollment.grades.finalTotal?.toFixed(1) || 'N/A'}%)
                         </span>
                       </div>
                       {enrollment.finalAttendancePercentage !== undefined && (
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-sm text-gray-600">Attendance</span>
+                          <span className="text-sm text-gray-600">{t('student.myCourses.attendance')}</span>
                           <span className="text-sm font-medium text-gray-700">
                             {enrollment.finalAttendancePercentage.toFixed(1)}%
                           </span>
@@ -285,7 +285,7 @@ export function MyCourses() {
                   <div className="flex gap-2 pt-3 border-t border-gray-200">
                     <Link to={`/dashboard/courses/${offering?.id}`} className="flex-1">
                       <Button variant="outline" className="w-full" size="sm">
-                        View Details
+                        {t('student.myCourses.viewDetails')}
                       </Button>
                     </Link>
                     {enrollment.status === 'enrolled' && (
@@ -297,7 +297,7 @@ export function MyCourses() {
                           setDropDialogOpen(true);
                         }}
                       >
-                        Drop
+                        {t('student.myCourses.drop')}
                       </Button>
                     )}
                   </div>
@@ -321,34 +321,34 @@ export function MyCourses() {
           try {
             setDropping(true);
             await api.dropCourse(enrollmentToDrop.id);
-            showSuccess(`Successfully dropped ${enrollmentToDrop.courseOffering?.course?.code}`);
+            showSuccess(t('student.myCourses.dropSuccess', { code: enrollmentToDrop.courseOffering?.course?.code }));
             const refreshed = await api.getMyCourses({ semester: selectedSemester });
             setEnrollments(Array.isArray(refreshed) ? refreshed : []);
             setDropDialogOpen(false);
             setEnrollmentToDrop(null);
           } catch (error) {
-            showError('Failed to drop course');
+            showError(t('student.myCourses.dropFailed'));
           } finally {
             setDropping(false);
           }
         }}
-        title="Drop Course"
+        title={t('student.myCourses.dropCourseTitle')}
         message={
           enrollmentToDrop ? (
             <>
               <p className="mb-2">
-                Are you sure you want to drop <strong>{enrollmentToDrop.courseOffering?.course?.code} - {enrollmentToDrop.courseOffering?.course?.title}</strong>?
+                {t('student.myCourses.dropConfirmPrefix')} <strong>{enrollmentToDrop.courseOffering?.course?.code} - {enrollmentToDrop.courseOffering?.course?.title}</strong>?
               </p>
               <p className="text-xs text-gray-500">
-                This action cannot be undone. You will need to re-enroll if you change your mind.
+                {t('student.myCourses.dropConfirmWarning')}
               </p>
             </>
           ) : (
-            'Are you sure you want to drop this course?'
+            t('student.myCourses.dropConfirmGeneric')
           )
         }
-        confirmText="Yes, Drop Course"
-        cancelText="Cancel"
+        confirmText={t('student.myCourses.confirmDrop')}
+        cancelText={t('student.myCourses.cancel')}
         variant="danger"
         isLoading={dropping}
       />

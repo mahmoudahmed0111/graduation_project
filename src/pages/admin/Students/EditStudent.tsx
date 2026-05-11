@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +25,7 @@ const studentEditSchema = z.object({
 type StudentEditForm = z.infer<typeof studentEditSchema>;
 
 export function EditStudent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { success, error: showError } = useToastStore();
@@ -51,7 +53,7 @@ export function EditStudent() {
         setLoadingStudent(true);
         const raw = await api.getUser(id);
         if (String(raw.role ?? '') !== 'student') {
-          showError('This account is not a student.');
+          showError(t('admin.studentsEdit.notStudent'));
           setStudent(null);
           return;
         }
@@ -83,7 +85,7 @@ export function EditStudent() {
           context: 'EditStudent',
           error: err,
         });
-        showError(getApiErrorMessage(err, 'Failed to load student'));
+        showError(getApiErrorMessage(err, t('admin.studentsEdit.loadFail')));
         setStudent(null);
       } finally {
         setLoadingStudent(false);
@@ -91,7 +93,7 @@ export function EditStudent() {
     };
 
     void fetchStudent();
-  }, [id, setValue, showError]);
+  }, [id, setValue, showError, t]);
 
   const onSubmit = async (data: StudentEditForm) => {
     if (!id) return;
@@ -103,14 +105,14 @@ export function EditStudent() {
         phoneNumber: data.phoneNumber?.trim() || undefined,
         department_id: data.department,
       });
-      success('Student updated successfully');
+      success(t('admin.studentsEdit.updatedToast'));
       navigate(`/dashboard/students/${id}`);
     } catch (err: unknown) {
       logger.error('Failed to update student', {
         context: 'EditStudent',
         error: err,
       });
-      showError(getApiErrorMessage(err, 'Failed to update student'));
+      showError(getApiErrorMessage(err, t('admin.studentsEdit.updateFail')));
     } finally {
       setLoading(false);
     }
@@ -118,21 +120,21 @@ export function EditStudent() {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Deactivate this student account? They will no longer be able to sign in.')) {
+    if (!confirm(t('admin.studentsEdit.deactivateConfirm'))) {
       return;
     }
 
     try {
       setLoading(true);
       await api.deactivateUser(id);
-      success('Student deactivated');
+      success(t('admin.studentsEdit.deactivatedToast'));
       navigate('/dashboard/students');
     } catch (err: unknown) {
       logger.error('Failed to deactivate student', {
         context: 'EditStudent',
         error: err,
       });
-      showError(getApiErrorMessage(err, 'Failed to deactivate student'));
+      showError(getApiErrorMessage(err, t('admin.studentsEdit.deactivateFail')));
     } finally {
       setLoading(false);
     }
@@ -143,7 +145,7 @@ export function EditStudent() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500" />
-          <p className="mt-4 text-gray-600">Loading student data...</p>
+          <p className="mt-4 text-gray-600">{t('admin.studentsEdit.loading')}</p>
         </div>
       </div>
     );
@@ -152,9 +154,9 @@ export function EditStudent() {
   if (!student) {
     return (
       <div className="py-12 text-center">
-        <p className="mb-4 text-gray-600">Student not found</p>
+        <p className="mb-4 text-gray-600">{t('admin.studentsEdit.notFound')}</p>
         <Link to="/dashboard/students">
-          <Button variant="primary">Back to Students</Button>
+          <Button variant="primary">{t('admin.studentsEdit.backToStudents')}</Button>
         </Link>
       </div>
     );
@@ -169,9 +171,9 @@ export function EditStudent() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Edit Student</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('admin.studentsEdit.title')}</h1>
           <p className="mt-1 text-gray-600">
-            You can update name, email, phone, and department.
+            {t('admin.studentsEdit.subtitle')}
           </p>
         </div>
       </div>
@@ -182,31 +184,31 @@ export function EditStudent() {
             <div>
               <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <User className="h-4 w-4 text-primary-600" />
-                Personal Information
+                {t('admin.studentsEdit.personalInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Input
-                  label="Full Name"
-                  placeholder="Student name"
+                  label={t('admin.studentsEdit.fullName')}
+                  placeholder={t('admin.studentsEdit.fullNamePlaceholder')}
                   error={errors.name?.message}
                   {...register('name')}
                 />
                 <Input
-                  label="Email"
+                  label={t('admin.studentsEdit.email')}
                   type="email"
                   placeholder="student@university.edu"
                   error={errors.email?.message}
                   {...register('email')}
                 />
-                <Input label="National ID" value={student.nationalId ?? '—'} disabled readOnly />
+                <Input label={t('admin.studentsEdit.nationalId')} value={student.nationalId ?? '—'} disabled readOnly />
                 <Input
-                  label="Phone"
-                  placeholder="Optional"
+                  label={t('admin.studentsEdit.phone')}
+                  placeholder={t('admin.studentsEdit.optional')}
                   error={errors.phoneNumber?.message}
                   {...register('phoneNumber')}
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500">National ID cannot be changed via this form.</p>
+              <p className="mt-2 text-xs text-gray-500">{t('admin.studentsEdit.nationalIdLocked')}</p>
             </div>
 
             <hr className="border-gray-200" />
@@ -214,39 +216,38 @@ export function EditStudent() {
             <div>
               <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <GraduationCap className="h-4 w-4 text-primary-600" />
-                Academic (read-only) + department
+                {t('admin.studentsEdit.academicReadOnly')}
               </h3>
               <p className="mb-4 text-sm text-gray-500">
-                Level, GPA, and credits are managed by the registrar system. You can change department when allowed by
-                policy.
+                {t('admin.studentsEdit.academicHint')}
               </p>
               <div className="mb-4 grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
                 <p>
-                  <span className="text-gray-500">Level / semester: </span>
+                  <span className="text-gray-500">{t('admin.studentsEdit.levelSemester')}: </span>
                   <span className="font-medium">
                     {student.year} / {student.semester}
                   </span>
                 </p>
                 <p>
-                  <span className="text-gray-500">GPA: </span>
+                  <span className="text-gray-500">{t('admin.studentsEdit.gpa')}: </span>
                   <span className="font-medium">{(student.gpa ?? 0).toFixed(2)}</span>
                 </p>
                 <p>
-                  <span className="text-gray-500">Credits: </span>
+                  <span className="text-gray-500">{t('admin.studentsEdit.credits')}: </span>
                   <span className="font-medium">{student.creditsEarned ?? 0}</span>
                 </p>
                 <p>
-                  <span className="text-gray-500">Status: </span>
+                  <span className="text-gray-500">{t('admin.studentsEdit.status')}: </span>
                   <span className="font-medium">{student.academicStatus ?? '—'}</span>
                 </p>
               </div>
               <Select2
-                label="Department"
+                label={t('admin.studentsEdit.department')}
                 value={watchDepartment || ''}
                 onChange={(value) => setValue('department', value)}
-                options={[{ value: '', label: 'Select department' }, ...departmentOptions]}
+                options={[{ value: '', label: t('admin.studentsEdit.selectDepartment') }, ...departmentOptions]}
                 error={errors.department?.message}
-                placeholder="Select department"
+                placeholder={t('admin.studentsEdit.selectDepartment')}
               />
             </div>
           </CardContent>
@@ -255,12 +256,12 @@ export function EditStudent() {
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
             <Save className="mr-2 h-4 w-4" />
-            Save changes
+            {t('admin.studentsEdit.saveChanges')}
           </Button>
           <Link to={`/dashboard/students/${id}`}>
             <Button type="button" variant="secondary" disabled={loading}>
               <X className="mr-2 h-4 w-4" />
-              Cancel
+              {t('admin.studentsEdit.cancel')}
             </Button>
           </Link>
           <Button
@@ -271,7 +272,7 @@ export function EditStudent() {
             disabled={loading}
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Deactivate student
+            {t('admin.studentsEdit.deactivateStudent')}
           </Button>
         </div>
       </form>

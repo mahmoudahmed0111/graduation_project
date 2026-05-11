@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AdminDataTableShell, AdminPageShell } from '@/components/admin';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
@@ -22,6 +23,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { sumGradingPolicy } from './courseOfferingFormConstants';
 
 export function CourseOfferings() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const canManage = user?.role === 'universityAdmin' || user?.role === 'collegeAdmin';
   const { success, error: showError } = useToastStore();
@@ -55,11 +57,11 @@ export function CourseOfferings() {
 
   if (isLoading) {
     return (
-      <AdminPageShell titleStack={{ section: 'Academic', page: 'Course offerings' }} subtitle="Loading…">
+      <AdminPageShell titleStack={{ section: t('admin.courseOfferings.section'), page: t('admin.courseOfferings.page') }} subtitle={t('admin.courseOfferings.loadingShort')}>
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading course offerings…</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.courseOfferings.loading')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -68,12 +70,12 @@ export function CourseOfferings() {
 
   if (isError) {
     return (
-      <AdminPageShell titleStack={{ section: 'Academic', page: 'Course offerings' }} subtitle="Could not load data">
+      <AdminPageShell titleStack={{ section: t('admin.courseOfferings.section'), page: t('admin.courseOfferings.page') }} subtitle={t('admin.courseOfferings.loadFailSubtitle')}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load course offerings</p>
-          <p className="mt-1 text-sm text-red-600 dark:text-red-300">Check permissions or API URL.</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.courseOfferings.loadFail')}</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-300">{t('admin.courseOfferings.loadFailHint')}</p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-            Retry
+            {t('admin.courseOfferings.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -81,14 +83,14 @@ export function CourseOfferings() {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'Academic', page: 'Course offerings' }}>
+    <AdminPageShell titleStack={{ section: t('admin.courseOfferings.section'), page: t('admin.courseOfferings.page') }}>
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full min-w-0 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search course code or title…"
+                placeholder={t('admin.courseOfferings.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -99,7 +101,7 @@ export function CourseOfferings() {
                 <Link to="/dashboard/academic/offerings/create">
                   <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
                     <Plus className="h-4 w-4" />
-                    Create offering
+                    {t('admin.courseOfferings.createOffering')}
                   </Button>
                 </Link>
               </div>
@@ -109,29 +111,29 @@ export function CourseOfferings() {
         <CardContent className="space-y-6">
           <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <Input
-              label="Semester"
-              placeholder="e.g. Second"
+              label={t('admin.courseOfferings.semester')}
+              placeholder={t('admin.courseOfferings.semesterPlaceholder')}
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
             />
-            <Input label="Academic year" placeholder="e.g. 2025-2026" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
+            <Input label={t('admin.courseOfferings.academicYear')} placeholder={t('admin.courseOfferings.yearPlaceholder')} value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
           </div>
 
           {items.length === 0 ? (
             <div className="py-12 text-center">
               <Calendar className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
-              <p className="text-gray-500 dark:text-gray-400">No offerings match these filters.</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('admin.courseOfferings.noResults')}</p>
             </div>
           ) : (
             <AdminDataTableShell>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Term</TableHead>
-                    <TableHead>Seats</TableHead>
-                    <TableHead>Grading</TableHead>
-                    <TableHead className="text-end">Actions</TableHead>
+                    <TableHead>{t('admin.courseOfferings.course')}</TableHead>
+                    <TableHead>{t('admin.courseOfferings.term')}</TableHead>
+                    <TableHead>{t('admin.courseOfferings.seats')}</TableHead>
+                    <TableHead>{t('admin.courseOfferings.grading')}</TableHead>
+                    <TableHead className="text-end">{t('admin.courseOfferings.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -153,7 +155,7 @@ export function CourseOfferings() {
                           {String(row.currentEnrolled ?? 0)} / {String(row.maxSeats ?? '')}
                         </TableCell>
                         <TableCell className="text-xs text-gray-600 dark:text-gray-400">
-                          {gp ? (sumGradingPolicy(gp) === td ? `OK (${td})` : `Mismatch ${sumGradingPolicy(gp)}/${td}`) : '—'}
+                          {gp ? (sumGradingPolicy(gp) === td ? t('admin.courseOfferings.gradingOk', { td }) : t('admin.courseOfferings.gradingMismatch', { sum: sumGradingPolicy(gp), td })) : '—'}
                         </TableCell>
                         <TableCell className="text-end">
                           <div className="flex justify-end gap-2">
@@ -161,7 +163,7 @@ export function CourseOfferings() {
                               type="button"
                               variant="secondary"
                               size="sm"
-                              title="Roster"
+                              title={t('admin.courseOfferings.roster')}
                               className="inline-flex items-center gap-1 rounded-xl"
                               onClick={() => setRosterId(id)}
                             >
@@ -174,7 +176,7 @@ export function CourseOfferings() {
                                     type="button"
                                     variant="secondary"
                                     size="sm"
-                                    title="Edit"
+                                    title={t('admin.courseOfferings.edit')}
                                     className="inline-flex items-center gap-1 rounded-xl"
                                   >
                                     <Pencil className="h-4 w-4" />
@@ -184,7 +186,7 @@ export function CourseOfferings() {
                                   type="button"
                                   variant="secondary"
                                   size="sm"
-                                  title="Archive"
+                                  title={t('admin.courseOfferings.archive')}
                                   className="inline-flex items-center gap-1 rounded-xl"
                                   onClick={() => setArchiveId(id)}
                                 >
@@ -205,7 +207,7 @@ export function CourseOfferings() {
           {items.length > 0 && (
             <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4 dark:border-dark-border sm:flex-row sm:justify-between">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Page {data?.currentPage ?? page} of {totalPages} · {data?.totalResults ?? items.length} offerings
+                {t('admin.courseOfferings.pageInfo', { current: data?.currentPage ?? page, total: totalPages, count: data?.totalResults ?? items.length })}
               </p>
               <Pagination currentPage={data?.currentPage ?? page} totalPages={totalPages} onPageChange={setPage} />
             </div>
@@ -233,9 +235,9 @@ export function CourseOfferings() {
             }
           })();
         }}
-        title="Archive offering"
-        message="Archive this offering? Requires no active enrollments."
-        confirmText="Archive"
+        title={t('admin.courseOfferings.archiveOffering')}
+        message={t('admin.courseOfferings.archiveConfirm')}
+        confirmText={t('admin.courseOfferings.archive')}
         variant="danger"
       />
     </AdminPageShell>
@@ -243,20 +245,21 @@ export function CourseOfferings() {
 }
 
 function RosterModal({ offeringId, onClose }: { offeringId: string; onClose: () => void }) {
+  const { t } = useTranslation();
   const { data, isLoading } = useCourseOfferingRoster(offeringId, { limit: 100 });
   const rows = data?.items ?? [];
 
   return (
-    <Modal isOpen title="Roster" onClose={onClose} size="xl">
+    <Modal isOpen title={t('admin.courseOfferings.roster')} onClose={onClose} size="xl">
       {isLoading ? (
-        <p className="text-gray-500">Loading roster…</p>
+        <p className="text-gray-500">{t('admin.courseOfferings.loadingRoster')}</p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Student</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Code</TableHead>
+              <TableHead>{t('admin.courseOfferings.student')}</TableHead>
+              <TableHead>{t('admin.courseOfferings.status')}</TableHead>
+              <TableHead>{t('admin.courseOfferings.code')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

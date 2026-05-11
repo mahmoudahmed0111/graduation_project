@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -45,12 +46,12 @@ const editSchema = z.object({
 
 type EditForm = z.infer<typeof editSchema>;
 
-const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'student', label: 'Student' },
-  { value: 'ta', label: 'TA' },
-  { value: 'doctor', label: 'Doctor' },
-  { value: 'collegeAdmin', label: 'College admin' },
-  { value: 'universityAdmin', label: 'University admin' },
+const ROLE_OPTIONS: { value: UserRole; labelKey: string }[] = [
+  { value: 'student', labelKey: 'admin.userDetailsPage.roleStudent' },
+  { value: 'ta', labelKey: 'admin.userDetailsPage.roleTa' },
+  { value: 'doctor', labelKey: 'admin.userDetailsPage.roleDoctor' },
+  { value: 'collegeAdmin', labelKey: 'admin.userDetailsPage.roleCollegeAdmin' },
+  { value: 'universityAdmin', labelKey: 'admin.userDetailsPage.roleUniversityAdmin' },
 ];
 
 /** True when the URL `:id` is the signed-in user (handles `id` vs `_id` from auth / `GET /users/me`). */
@@ -70,6 +71,7 @@ function userIdsMatch(
 }
 
 export function UserDetailsPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user: auth, isAuthenticated } = useAuthStore();
   const { success, error: toastError } = useToastStore();
@@ -103,13 +105,13 @@ export function UserDetailsPage() {
   const departmentOptions = useMemo(() => {
     const items = departmentsData?.items ?? [];
     return [
-      { value: '', label: 'None' },
+      { value: '', label: t('admin.userDetailsPage.none') },
       ...items.map((d) => {
         const rec = d as Record<string, unknown>;
         return { value: String(rec._id ?? rec.id ?? ''), label: String(rec.name ?? '') };
       }),
     ];
-  }, [departmentsData?.items]);
+  }, [departmentsData?.items, t]);
 
   const {
     register,
@@ -147,7 +149,7 @@ export function UserDetailsPage() {
     if (el?.files?.[0]) fd.append('photo', el.files[0]);
     try {
       await updateUser.mutateAsync({ id, formData: fd });
-      success('Profile updated.');
+      success(t('admin.userDetailsPage.profileUpdated'));
       void refetch();
     } catch (e) {
       toastError(getApiErrorMessage(e));
@@ -157,7 +159,7 @@ export function UserDetailsPage() {
   const run = async (label: string, fn: () => Promise<unknown>) => {
     try {
       await fn();
-      success(`${label} succeeded.`);
+      success(t('admin.userDetailsPage.actionSucceeded', { label }));
       void refetch();
     } catch (e) {
       toastError(getApiErrorMessage(e));
@@ -176,11 +178,11 @@ export function UserDetailsPage() {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">User not available or outside your scope.</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.notAvailable')}</p>
           <Link to="/dashboard/users/students">
             <Button variant="secondary" className="mt-4 inline-flex items-center gap-2 rounded-xl">
               <ArrowLeft className="h-4 w-4" />
-              Back to Students
+              {t('admin.userDetailsPage.backToStudents')}
             </Button>
           </Link>
         </div>
@@ -199,7 +201,7 @@ export function UserDetailsPage() {
           aria-label="Breadcrumb"
           className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm font-medium text-gray-600 dark:text-gray-400"
         >
-          <span className="shrink-0">User Management</span>
+          <span className="shrink-0">{t('admin.userDetailsPage.userManagement')}</span>
           <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
             /
           </span>
@@ -219,17 +221,17 @@ export function UserDetailsPage() {
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {active ? (
             <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200">
-              Active
+              {t('admin.userDetailsPage.active')}
             </span>
           ) : (
             <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-              Deactivated
+              {t('admin.userDetailsPage.deactivated')}
             </span>
           )}
           <Link to={listBack}>
             <Button variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t('admin.userDetailsPage.back')}
             </Button>
           </Link>
         </div>
@@ -242,7 +244,7 @@ export function UserDetailsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-gray-100">
               <UserIcon className="h-4 w-4 shrink-0 text-gray-500" />
-              Profile
+              {t('admin.userDetailsPage.profile')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -254,30 +256,30 @@ export function UserDetailsPage() {
               </div>
             )}
             <div>
-              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Role</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.role')}</p>
               <p className="font-medium text-gray-900 dark:text-gray-100">{u.role}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">College</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.college')}</p>
               <p className="font-medium text-gray-900 dark:text-gray-100">{phase2RefLabel(u.college_id)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Department</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.department')}</p>
               <p className="font-medium text-gray-900 dark:text-gray-100">{phase2RefLabel(u.department_id)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">National ID</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.nationalId')}</p>
               <p className="font-mono text-gray-900 dark:text-gray-100">{national}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">RFID</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.rfid')}</p>
               <p className="font-mono text-gray-900 dark:text-gray-100">{u.rfidTag ?? '—'}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Academic</p>
+              <p className="text-xs uppercase text-gray-500 dark:text-gray-400">{t('admin.userDetailsPage.academic')}</p>
               <p className="text-gray-900 dark:text-gray-100">
                 {u.academicStatus ?? '—'}
-                {u.level != null ? ` · Level ${u.level}` : ''}
+                {u.level != null ? ` · ${t('admin.userDetailsPage.levelLabel')} ${u.level}` : ''}
                 {u.gpa != null ? ` · GPA ${u.gpa}` : ''}
               </p>
             </div>
@@ -287,21 +289,21 @@ export function UserDetailsPage() {
         <div className="space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base text-gray-900 dark:text-gray-100">Edit contact</CardTitle>
+              <CardTitle className="text-base text-gray-900 dark:text-gray-100">{t('admin.userDetailsPage.editContact')}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit((d) => void onSaveProfile(d))} className="space-y-4">
-                <Input label="Name" {...register('name')} error={errors.name?.message} />
-                <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-                <Input label="Phone" {...register('phoneNumber')} error={errors.phoneNumber?.message} />
+                <Input label={t('admin.userDetailsPage.name')} {...register('name')} error={errors.name?.message} />
+                <Input label={t('admin.userDetailsPage.email')} type="email" {...register('email')} error={errors.email?.message} />
+                <Input label={t('admin.userDetailsPage.phone')} {...register('phoneNumber')} error={errors.phoneNumber?.message} />
                 <Select2
-                  label="Department"
+                  label={t('admin.userDetailsPage.department')}
                   options={departmentOptions}
                   value={watch('department_id') ?? ''}
                   onChange={(v) => setValue('department_id', v)}
                 />
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">New photo (optional)</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.userDetailsPage.newPhotoOptional')}</label>
                   <input
                     id="edit-user-photo"
                     type="file"
@@ -310,7 +312,7 @@ export function UserDetailsPage() {
                   />
                 </div>
                 <Button type="submit" variant="primary" disabled={updateUser.isPending}>
-                  Save changes
+                  {t('admin.userDetailsPage.saveChanges')}
                 </Button>
               </form>
             </CardContent>
@@ -320,14 +322,13 @@ export function UserDetailsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-gray-100">
                 <Shield className="h-4 w-4" />
-                Account control
+                {t('admin.userDetailsPage.accountControl')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isSelf ? (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  You cannot deactivate, reset the password, unlock, force logout, or change the role of your own account
-                  from this page.
+                  {t('admin.userDetailsPage.selfRestriction')}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -336,20 +337,20 @@ export function UserDetailsPage() {
                       type="button"
                       variant="secondary"
                       className="gap-2"
-                      onClick={() => id && void run('Deactivate', () => deactivate.mutateAsync(id))}
+                      onClick={() => id && void run(t('admin.userDetailsPage.deactivate'), () => deactivate.mutateAsync(id))}
                       disabled={deactivate.isPending}
                     >
-                      Deactivate
+                      {t('admin.userDetailsPage.deactivate')}
                     </Button>
                   )}
                   {!active && isUA && (
                     <Button
                       type="button"
                       variant="primary"
-                      onClick={() => id && void run('Activate account', () => restore.mutateAsync(id))}
+                      onClick={() => id && void run(t('admin.userDetailsPage.activateAccount'), () => restore.mutateAsync(id))}
                       disabled={restore.isPending}
                     >
-                      Activate account
+                      {t('admin.userDetailsPage.activateAccount')}
                     </Button>
                   )}
                   {!active && isCA && (
@@ -358,13 +359,13 @@ export function UserDetailsPage() {
                       variant="primary"
                       onClick={() =>
                         id &&
-                        void run('Activate account', () =>
+                        void run(t('admin.userDetailsPage.activateAccount'), () =>
                           bulkActions.mutateAsync({ action: 'activate', userIds: [id] })
                         )
                       }
                       disabled={bulkActions.isPending}
                     >
-                      Activate account
+                      {t('admin.userDetailsPage.activateAccount')}
                     </Button>
                   )}
                   {(isUA || isCA) && (
@@ -372,11 +373,11 @@ export function UserDetailsPage() {
                       type="button"
                       variant="secondary"
                       className="gap-2"
-                      onClick={() => id && void run('Reset password', () => resetPwd.mutateAsync(id))}
+                      onClick={() => id && void run(t('admin.userDetailsPage.resetPassword'), () => resetPwd.mutateAsync(id))}
                       disabled={resetPwd.isPending}
                     >
                       <KeyRound className="h-4 w-4" />
-                      Reset password
+                      {t('admin.userDetailsPage.resetPassword')}
                     </Button>
                   )}
                   {isUA && (
@@ -384,20 +385,20 @@ export function UserDetailsPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => id && void run('Unlock account', () => unlock.mutateAsync(id))}
+                        onClick={() => id && void run(t('admin.userDetailsPage.unlockAccount'), () => unlock.mutateAsync(id))}
                         disabled={unlock.isPending}
                       >
-                        Unlock account
+                        {t('admin.userDetailsPage.unlockAccount')}
                       </Button>
                       <Button
                         type="button"
                         variant="secondary"
                         className="gap-2"
-                        onClick={() => id && void run('Force logout', () => forceLogout.mutateAsync(id))}
+                        onClick={() => id && void run(t('admin.userDetailsPage.forceLogout'), () => forceLogout.mutateAsync(id))}
                         disabled={forceLogout.isPending}
                       >
                         <LogOut className="h-4 w-4" />
-                        Force logout
+                        {t('admin.userDetailsPage.forceLogout')}
                       </Button>
                     </>
                   )}
@@ -411,14 +412,14 @@ export function UserDetailsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base text-gray-900 dark:text-gray-100">
                   <UserCog className="h-4 w-4" />
-                  Role (university admin)
+                  {t('admin.userDetailsPage.roleUaTitle')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[200px] flex-1">
                   <Select2
-                    label="New role"
-                    options={ROLE_OPTIONS.map((r) => ({ value: r.value, label: r.label }))}
+                    label={t('admin.userDetailsPage.newRole')}
+                    options={ROLE_OPTIONS.map((r) => ({ value: r.value, label: t(r.labelKey) }))}
                     value={nextRole}
                     onChange={(v) => setNextRole(v as UserRole)}
                     searchable={false}
@@ -429,11 +430,11 @@ export function UserDetailsPage() {
                   variant="primary"
                   onClick={() =>
                     id &&
-                    void run('Role update', () => updateRole.mutateAsync({ id, role: nextRole }))
+                    void run(t('admin.userDetailsPage.roleUpdate'), () => updateRole.mutateAsync({ id, role: nextRole }))
                   }
                   disabled={updateRole.isPending || nextRole === u.role}
                 >
-                  Update role
+                  {t('admin.userDetailsPage.updateRole')}
                 </Button>
               </CardContent>
             </Card>
@@ -442,19 +443,19 @@ export function UserDetailsPage() {
           {isCA && u.role === 'student' && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base text-gray-900 dark:text-gray-100">College admin actions</CardTitle>
+                <CardTitle className="text-base text-gray-900 dark:text-gray-100">{t('admin.userDetailsPage.caActions')}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 <Button type="button" variant="secondary" onClick={() => setRfidOpen(true)}>
-                  Assign RFID
+                  {t('admin.userDetailsPage.assignRfid')}
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => id && void run('Graduate', () => graduate.mutateAsync(id))}
+                  onClick={() => id && void run(t('admin.userDetailsPage.graduate'), () => graduate.mutateAsync(id))}
                   disabled={graduate.isPending || u.academicStatus === 'graduated'}
                 >
-                  Mark graduated
+                  {t('admin.userDetailsPage.markGraduated')}
                 </Button>
               </CardContent>
             </Card>
@@ -462,11 +463,11 @@ export function UserDetailsPage() {
         </div>
       </div>
 
-      <Modal isOpen={rfidOpen} onClose={() => setRfidOpen(false)} title="Assign RFID tag" size="sm">
-        <Input label="RFID tag" value={rfidTag} onChange={(e) => setRfidTag(e.target.value)} placeholder="Unique tag" />
+      <Modal isOpen={rfidOpen} onClose={() => setRfidOpen(false)} title={t('admin.userDetailsPage.assignRfidTag')} size="sm">
+        <Input label={t('admin.userDetailsPage.rfidTag')} value={rfidTag} onChange={(e) => setRfidTag(e.target.value)} placeholder={t('admin.userDetailsPage.uniqueTag')} />
         <div className="mt-4 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={() => setRfidOpen(false)}>
-            Cancel
+            {t('admin.userDetailsPage.cancel')}
           </Button>
           <Button
             type="button"
@@ -476,7 +477,7 @@ export function UserDetailsPage() {
               void (async () => {
                 try {
                   await assignRfid.mutateAsync({ id, rfidTag: rfidTag.trim() });
-                  success('RFID assigned.');
+                  success(t('admin.userDetailsPage.rfidAssigned'));
                   setRfidOpen(false);
                   setRfidTag('');
                   void refetch();
@@ -487,7 +488,7 @@ export function UserDetailsPage() {
             }}
             disabled={!rfidTag.trim() || assignRfid.isPending}
           >
-            Save
+            {t('admin.userDetailsPage.save')}
           </Button>
         </div>
       </Modal>

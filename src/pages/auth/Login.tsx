@@ -84,27 +84,27 @@ export function Login() {
   const onSubmit = async (data: LoginFormData) => {
     // Check if account is deactivated
     if (isDeactivated) {
-      showError('This account has been deactivated due to multiple failed login attempts. Please contact support.');
+      showError(t('authPages.login.accountDeactivated'));
       return;
     }
 
     // Check if account is locked out
     if (lockoutSeconds && lockoutSeconds > 0) {
-      showError(`Too many failed attempts. Please wait ${lockoutSeconds} seconds before trying again.`);
+      showError(t('authPages.login.tooManyAttempts', { seconds: lockoutSeconds }));
       return;
     }
 
     // Validate email format if provided
     if (data.email && currentUniversity) {
       if (!validateUniversityEmail(data.email, currentUniversity.domains)) {
-        showError('Invalid email format. Please use a valid university email.');
+        showError(t('authPages.login.invalidEmailFormat'));
         return;
       }
     }
 
     // Validate national ID format if provided
     if (data.nationalId && !validateNationalId(data.nationalId)) {
-      showError('Invalid National ID format. Must be 14 digits.');
+      showError(t('authPages.login.invalidNationalIdFormat'));
       return;
     }
 
@@ -118,8 +118,8 @@ export function Login() {
 
       const loginIdentifier = data.email.trim() || data.nationalId.trim();
       recordSuccessAttempt(loginIdentifier);
-      success(t('auth.otpSent') || 'OTP sent successfully');
-      navigate('/otp');
+      success(t('auth.loginSuccess') || 'Logged in successfully');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
       const errorMessage = axiosError?.response?.data?.message || t('auth.invalidCredentials') || 'Invalid credentials';
@@ -128,11 +128,11 @@ export function Login() {
       const attemptInfo = recordFailedAttempt(loginIdentifier);
       
       if (attemptInfo.isDeactivated) {
-        showError('This account has been deactivated due to multiple failed login attempts. Please contact support.');
+        showError(t('authPages.login.accountDeactivated'));
         setIsDeactivated(true);
       } else if (attemptInfo.lockoutSeconds) {
         setLockoutSeconds(attemptInfo.lockoutSeconds);
-        showError(`Invalid credentials. Too many failed attempts. Please wait ${attemptInfo.lockoutSeconds} seconds before trying again.`);
+        showError(t('authPages.login.invalidCredsTooMany', { seconds: attemptInfo.lockoutSeconds }));
       } else {
         showError(errorMessage);
       }
@@ -185,7 +185,7 @@ export function Login() {
                 <div className="p-1 rounded-full bg-white">
                   <img
                     src="/logo/logo.png.png"
-                    alt="Beni-Suef University Logo"
+                    alt={t('authPages.login.logoAlt')}
                     className="h-24 w-24 rounded-full transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
@@ -198,7 +198,7 @@ export function Login() {
           </CardTitle>
 
           <p className="text-center text-base font-semibold mt-2 animate-fade-in" style={{ color: '#0a2472' }}>
-            Beni-Suef University
+            {t('authPages.login.universityName')}
           </p>
 
           {/* Gold separator */}
@@ -209,7 +209,7 @@ export function Login() {
           </div>
 
           <p className="text-center text-xs md:text-sm text-gray-500 mt-1 animate-fade-in">
-            Welcome to the University Management System
+            {t('authPages.login.welcome')}
           </p>
         </CardHeader>
         <CardContent className="pt-2">
@@ -268,7 +268,7 @@ export function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isFormDisabled}
                     className="text-gray-400 hover:text-primary-500 transition-colors p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('authPages.login.hidePassword') : t('authPages.login.showPassword')}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -287,7 +287,7 @@ export function Login() {
             {lockoutSeconds !== null && lockoutSeconds > 0 && (
               <div className="animate-fade-in-up p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
                 <p className="text-sm text-blue-800 text-center">
-                  Too many failed attempts. Please wait <strong>{lockoutSeconds}</strong> seconds before trying again.
+                  {t('authPages.login.tooManyAttemptsPre')} <strong>{lockoutSeconds}</strong> {t('authPages.login.tooManyAttemptsPost')}
                 </p>
                 <p className="text-center">
                   <button
@@ -301,7 +301,7 @@ export function Login() {
                     }}
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
                   >
-                    Clear lockout and try again
+                    {t('authPages.login.clearLockout')}
                   </button>
                 </p>
               </div>
@@ -311,7 +311,7 @@ export function Login() {
             {isDeactivated && (
               <div className="animate-fade-in-up p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-800 text-center">
-                  This account has been deactivated due to multiple failed login attempts. Please contact support.
+                  {t('authPages.login.accountDeactivated')}
                 </p>
               </div>
             )}
@@ -341,7 +341,7 @@ export function Login() {
           <div className="mt-6 pt-4 border-t border-gray-100 text-center animate-fade-in">
             <p className="text-xs text-gray-500">
               © {new Date().getFullYear()}{' '}
-              <span className="text-primary-700 font-semibold">Beni-Suef University</span>
+              <span className="text-primary-700 font-semibold">{t('authPages.login.universityName')}</span>
             </p>
           </div>
         </CardContent>

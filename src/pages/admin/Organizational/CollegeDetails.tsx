@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -128,6 +129,7 @@ function mapLocationRow(raw: Record<string, unknown>): ILocation {
 }
 
 export function CollegeDetails() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { error: showError } = useToastStore();
   const [college, setCollege] = useState<ICollege | null>(null);
@@ -158,7 +160,7 @@ export function CollegeDetails() {
         setLocations(rawLocations.map((loc) => mapLocationRow(loc as Record<string, unknown>)));
       } catch (error) {
         logger.error('Failed to fetch college', { context: 'CollegeDetails', error });
-        showError('Could not load college');
+        showError(t('admin.collegeDetails.loadFail'));
         setCollege(null);
         setLocations([]);
       } finally {
@@ -179,11 +181,11 @@ export function CollegeDetails() {
   if (!college) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">College not found</p>
+        <p className="text-gray-500">{t('admin.collegeDetails.notFound')}</p>
         <Link to="/dashboard/organizational/colleges">
           <Button variant="secondary" className="mt-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Colleges
+            {t('admin.collegeDetails.backToColleges')}
           </Button>
         </Link>
       </div>
@@ -191,8 +193,8 @@ export function CollegeDetails() {
   }
 
   const tabs = [
-    { id: 'departments' as const, label: 'Departments', icon: School },
-    { id: 'locations' as const, label: 'Locations', icon: MapPin },
+    { id: 'departments' as const, label: t('admin.collegeDetails.departments'), icon: School },
+    { id: 'locations' as const, label: t('admin.collegeDetails.locations'), icon: MapPin },
   ];
 
   return (
@@ -202,7 +204,7 @@ export function CollegeDetails() {
           aria-label="Breadcrumb"
           className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm font-medium text-gray-600 dark:text-gray-400"
         >
-          <span className="shrink-0">University Structure</span>
+          <span className="shrink-0">{t('admin.collegeDetails.section')}</span>
           <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
             /
           </span>
@@ -210,7 +212,7 @@ export function CollegeDetails() {
             to="/dashboard/organizational/colleges"
             className="shrink-0 hover:text-primary-600 dark:hover:text-accent-400"
           >
-            Colleges
+            {t('admin.collegeDetails.colleges')}
           </Link>
           <span className="shrink-0 text-gray-400 dark:text-gray-500" aria-hidden>
             /
@@ -226,7 +228,7 @@ export function CollegeDetails() {
           <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
             <Button variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
               <Edit className="h-4 w-4" />
-              Edit
+              {t('admin.collegeDetails.edit')}
             </Button>
           </Link>
         </div>
@@ -236,15 +238,15 @@ export function CollegeDetails() {
         <CardContent className="py-4">
           <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Name</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.name')}</dt>
               <dd className="mt-0.5 font-medium text-gray-900 dark:text-gray-100">{college.name}</dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Code</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.code')}</dt>
               <dd className="mt-0.5 font-medium text-gray-900 dark:text-gray-100">{college.code}</dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Slug</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.slug')}</dt>
               <dd className="mt-0.5">
                 {college.slug ? (
                   <code className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-800 dark:bg-gray-800/80 dark:text-gray-200">
@@ -256,17 +258,17 @@ export function CollegeDetails() {
               </dd>
             </div>
             <div className="sm:col-span-2 lg:col-span-3">
-              <dt className="text-gray-500 dark:text-gray-400">Description</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.description')}</dt>
               <dd className="mt-0.5 text-gray-900 dark:text-gray-100">{college.description ?? '—'}</dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Established year</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.establishedYear')}</dt>
               <dd className="mt-0.5 tabular-nums text-gray-900 dark:text-gray-100">
                 {college.establishedYear ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Dean</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.dean')}</dt>
               <dd className="mt-0.5 space-y-1 text-gray-900 dark:text-gray-100">
                 {college.dean ? (
                   <>
@@ -305,24 +307,24 @@ export function CollegeDetails() {
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Departments</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.departments')}</dt>
               <dd className="mt-0.5 tabular-nums text-gray-900 dark:text-gray-100">
                 {college.deptCount ?? college.departments?.length ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Students</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.students')}</dt>
               <dd className="mt-0.5 tabular-nums text-gray-900 dark:text-gray-100">
                 {college.studentCount ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Archive status</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.archiveStatus')}</dt>
               <dd className="mt-0.5 space-y-1 text-gray-900 dark:text-gray-100">
                 {college.isArchived ? (
                   <>
                     <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                      Archived
+                      {t('admin.collegeDetails.archived')}
                     </span>
                     {college.archivedAt ? (
                       <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -334,13 +336,13 @@ export function CollegeDetails() {
                   </>
                 ) : (
                   <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200">
-                    Active
+                    {t('admin.collegeDetails.active')}
                   </span>
                 )}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500 dark:text-gray-400">Created</dt>
+              <dt className="text-gray-500 dark:text-gray-400">{t('admin.collegeDetails.created')}</dt>
               <dd className="mt-0.5 text-gray-900 dark:text-gray-100">
                 {college.createdAt ? (
                   <time dateTime={college.createdAt} title={college.createdAt}>
@@ -386,16 +388,16 @@ export function CollegeDetails() {
                 <Link to="/dashboard/organizational/departments/create">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Department
+                    {t('admin.collegeDetails.addDepartment')}
                   </Button>
                 </Link>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.collegeDetails.code')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.name')}</TableHead>
+                    <TableHead className="text-right">{t('admin.collegeDetails.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -406,7 +408,7 @@ export function CollegeDetails() {
                       <TableCell className="text-right">
                         <Link to={`/dashboard/organizational/departments/${dept.id}/edit`}>
                           <Button variant="ghost" size="sm">
-                            Edit
+                            {t('admin.collegeDetails.edit')}
                           </Button>
                         </Link>
                       </TableCell>
@@ -415,7 +417,7 @@ export function CollegeDetails() {
                 </TableBody>
               </Table>
               {(!college.departments || college.departments.length === 0) && (
-                <p className="text-center py-8 text-gray-500 text-sm">No departments yet</p>
+                <p className="text-center py-8 text-gray-500 text-sm">{t('admin.collegeDetails.noDepartments')}</p>
               )}
             </div>
           )}
@@ -425,22 +427,22 @@ export function CollegeDetails() {
                 <Link to="/dashboard/organizational/locations/create">
                   <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add location
+                    {t('admin.collegeDetails.addLocation')}
                   </Button>
                 </Link>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50/80">
-                    <TableHead>Name</TableHead>
-                    <TableHead>Building</TableHead>
-                    <TableHead>Floor</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead>Capacity</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.collegeDetails.name')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.building')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.floor')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.room')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.capacity')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.type')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.status')}</TableHead>
+                    <TableHead>{t('admin.collegeDetails.slug')}</TableHead>
+                    <TableHead className="text-right">{t('admin.collegeDetails.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -455,11 +457,11 @@ export function CollegeDetails() {
                       <TableCell>
                         {loc.status === 'maintenance' ? (
                           <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
-                            Maintenance
+                            {t('admin.collegeDetails.maintenance')}
                           </span>
                         ) : (
                           <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
-                            Active
+                            {t('admin.collegeDetails.active')}
                           </span>
                         )}
                       </TableCell>
@@ -467,7 +469,7 @@ export function CollegeDetails() {
                       <TableCell className="text-right">
                         <Link to={`/dashboard/organizational/locations/${loc.id}/edit`}>
                           <Button variant="ghost" size="sm">
-                            Edit
+                            {t('admin.collegeDetails.edit')}
                           </Button>
                         </Link>
                       </TableCell>
@@ -476,7 +478,7 @@ export function CollegeDetails() {
                 </TableBody>
               </Table>
               {locations.length === 0 && (
-                <p className="text-center py-8 text-gray-500 text-sm">No locations for this college</p>
+                <p className="text-center py-8 text-gray-500 text-sm">{t('admin.collegeDetails.noLocations')}</p>
               )}
             </div>
           )}

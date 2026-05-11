@@ -51,7 +51,7 @@ export function Enrollments() {
           context: 'Enrollments',
           error,
         });
-        showError('Failed to load transcript');
+        showError(t('student.enrollments.loadFailed'));
         setTranscript([]);
       } finally {
         setLoading(false);
@@ -163,25 +163,25 @@ export function Enrollments() {
       case 'passed':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            Passed
+            {t('student.enrollments.passed')}
           </span>
         );
       case 'failed':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            Failed
+            {t('student.enrollments.failed')}
           </span>
         );
       case 'enrolled':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            In Progress
+            {t('student.enrollments.inProgress')}
           </span>
         );
       case 'withdrawn':
         return (
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            Withdrawn
+            {t('student.enrollments.withdrawn')}
           </span>
         );
       default:
@@ -204,7 +204,7 @@ export function Enrollments() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">{t('nav.enrollments')}</h1>
-        <p className="text-gray-600 mt-1">View your complete academic transcript</p>
+        <p className="text-gray-600 mt-1">{t('student.enrollments.subtitle')}</p>
       </div>
 
       {/* Summary Cards */}
@@ -213,7 +213,7 @@ export function Enrollments() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Cumulative GPA</p>
+                <p className="text-sm text-gray-600">{t('student.enrollments.cumulativeGpa')}</p>
                 <p className="text-3xl font-bold text-gray-900">{cgpa.toFixed(2)}</p>
               </div>
               <Award className="h-10 w-10 text-primary-600" />
@@ -224,7 +224,7 @@ export function Enrollments() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Credits</p>
+                <p className="text-sm text-gray-600">{t('student.enrollments.totalCredits')}</p>
                 <p className="text-3xl font-bold text-gray-900">{totalCredits}</p>
               </div>
               <GraduationCap className="h-10 w-10 text-primary-600" />
@@ -235,7 +235,7 @@ export function Enrollments() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Semesters Completed</p>
+                <p className="text-sm text-gray-600">{t('student.enrollments.semestersCompleted')}</p>
                 <p className="text-3xl font-bold text-gray-900">{groupedBySemester.length}</p>
               </div>
               <Calendar className="h-10 w-10 text-primary-600" />
@@ -249,7 +249,7 @@ export function Enrollments() {
         <Card>
           <CardContent className="p-12 text-center">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No transcript data available</p>
+            <p className="text-gray-600">{t('student.enrollments.noTranscript')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -261,11 +261,11 @@ export function Enrollments() {
                   <div>
                     <CardTitle className="text-xl">{semesterData.semester}</CardTitle>
                     <p className="text-sm text-gray-600 mt-1">
-                      {semesterData.enrollments.length} course(s) • {semesterData.credits} credit hours
+                      {t('student.enrollments.coursesCreditsLine', { courses: semesterData.enrollments.length, credits: semesterData.credits })}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Semester GPA</p>
+                    <p className="text-sm text-gray-600">{t('student.enrollments.semesterGpa')}</p>
                     <p className="text-2xl font-bold text-primary-600">
                       {semesterData.gpa.toFixed(2)}
                     </p>
@@ -277,12 +277,12 @@ export function Enrollments() {
                   <table className="w-full">
                     <thead className="bg-gray-50 dark:bg-dark-surface-2">
                       <tr className="border-b border-gray-200 dark:border-dark-border">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Course Code</th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Course Title</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Credits</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Grade</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Points</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('student.enrollments.courseCode')}</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('student.enrollments.courseTitle')}</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('student.enrollments.credits')}</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('student.enrollments.grade')}</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('student.enrollments.points')}</th>
+                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('student.enrollments.statusCol')}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-dark-surface">
@@ -331,13 +331,13 @@ export function Enrollments() {
                     <tfoot>
                       <tr className="bg-gray-50 font-semibold text-gray-900 dark:bg-dark-surface-2 dark:text-gray-100">
                         <td colSpan={2} className="py-3 px-4 text-right">
-                          Semester Total:
+                          {t('student.enrollments.semesterTotal')}:
                         </td>
                         <td className="py-3 px-4 text-center">
                           {semesterData.credits}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          GPA: {semesterData.gpa.toFixed(2)}
+                          {t('student.enrollments.gpa')}: {semesterData.gpa.toFixed(2)}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {semesterData.points.toFixed(1)}
@@ -361,15 +361,15 @@ export function Enrollments() {
               <div className="flex items-center gap-4">
                 <TrendingUp className="h-8 w-8 text-primary-600" />
                 <div>
-                  <p className="text-sm font-medium text-primary-900">Cumulative Grade Point Average (CGPA)</p>
+                  <p className="text-sm font-medium text-primary-900">{t('student.enrollments.cgpaTitle')}</p>
                   <p className="text-xs text-primary-700 mt-1">
-                    Based on {totalCredits} credit hours across {groupedBySemester.length} semester(s)
+                    {t('student.enrollments.cgpaBasedOn', { credits: totalCredits, semesters: groupedBySemester.length })}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-4xl font-bold text-primary-600">{cgpa.toFixed(2)}</p>
-                <p className="text-sm text-primary-700 mt-1">out of 4.00</p>
+                <p className="text-sm text-primary-700 mt-1">{t('student.enrollments.outOf400')}</p>
               </div>
             </div>
           </CardContent>

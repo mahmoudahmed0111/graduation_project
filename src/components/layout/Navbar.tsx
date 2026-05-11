@@ -34,8 +34,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const [notifications] = useState<INotification[]>([
     {
       id: '1',
-      title: 'New Assignment Posted',
-      message: 'A new assignment has been posted for CS101 - Introduction to Programming',
+      title: t('chrome.navbar.mockNotif1Title'),
+      message: t('chrome.navbar.mockNotif1Message'),
       type: 'info',
       read: false,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
@@ -43,8 +43,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
     },
     {
       id: '2',
-      title: 'Grade Updated',
-      message: 'Your grade for Midterm Exam in CS201 has been updated',
+      title: t('chrome.navbar.mockNotif2Title'),
+      message: t('chrome.navbar.mockNotif2Message'),
       type: 'success',
       read: false,
       createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
@@ -58,6 +58,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
 
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'ar', label: 'العربية', flag: '🇪🇬' },
   ];
 
   const handleLanguageChange = (lang: string) => {
@@ -113,7 +114,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             <button
               onClick={onToggleSidebar}
               className="flex p-2 text-slate-600 dark:text-slate-300 hover:text-primary-700 dark:hover:text-accent-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg transition-all duration-200"
-              aria-label="Toggle sidebar"
+              aria-label={t('chrome.navbar.toggleSidebar')}
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -143,8 +144,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               'text-slate-600 hover:text-primary-700 hover:bg-primary-50',
               'dark:text-slate-300 dark:hover:text-accent-400 dark:hover:bg-slate-800'
             )}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'dark' ? t('chrome.navbar.switchToLight') : t('chrome.navbar.switchToDark')}
+            title={theme === 'dark' ? t('chrome.navbar.switchToLight') : t('chrome.navbar.switchToDark')}
           >
             <Sun className={cn(
               'h-5 w-5 transition-all duration-300',
@@ -168,7 +169,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                 'text-slate-600 dark:text-slate-300 hover:text-primary-700 dark:hover:text-accent-400 hover:bg-primary-50 dark:hover:bg-slate-800',
                 showNotificationsDropdown && 'bg-primary-50 text-primary-700 dark:bg-slate-800 dark:text-accent-400'
               )}
-              aria-label="Notifications"
+              aria-label={t('chrome.navbar.notifications')}
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
@@ -188,10 +189,10 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {isAdmin ? 'Critical System Notifications' : 'Notifications'}
+                      {isAdmin ? t('chrome.navbar.criticalSystemNotifications') : t('chrome.navbar.notifications')}
                     </h3>
                     {unreadCount > 0 && (
-                      <span className="text-xs text-gray-500 dark:text-slate-400">{unreadCount} unread</span>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">{t('chrome.navbar.unread', { count: unreadCount })}</span>
                     )}
                   </div>
                 </div>
@@ -201,7 +202,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                   {notifications.length === 0 ? (
                     <div className="px-4 py-8 text-center text-gray-500 dark:text-slate-400">
                       <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-slate-600" />
-                      <p className="text-sm">No notifications</p>
+                      <p className="text-sm">{t('chrome.navbar.noNotifications')}</p>
                     </div>
                   ) : (
                     <div className="py-2">
@@ -255,7 +256,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                       onClick={() => setShowNotificationsDropdown(false)}
                       className="block w-full text-center text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 transition-colors"
                     >
-                      See all notifications
+                      {t('chrome.navbar.seeAllNotifications')}
                     </Link>
                   </div>
                 )}
@@ -336,7 +337,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                   'flex items-center gap-2 p-1 rounded-full transition-all duration-200 ring-2',
                   showUserDropdown ? 'ring-accent-400 bg-primary-50 dark:bg-slate-800' : 'ring-transparent hover:ring-accent-300 dark:hover:ring-accent-500/60'
                 )}
-                aria-label="User menu"
+                aria-label={t('chrome.navbar.userMenu')}
               >
                 <Avatar
                   src={user.avatarUrl}
@@ -378,7 +379,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                     >
                       <LockIcon className="h-4 w-4 text-gray-500 dark:text-slate-400" />
                       <span className="flex-1 text-left">
-                        Lock Screen
+                        {t('chrome.navbar.lockScreen')}
                       </span>
                     </button>
                     <button
@@ -387,7 +388,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                     >
                       <LogOut className="h-4 w-4" />
                       <span className="flex-1 text-left">
-                        {t('common.logout') || 'Logout'}
+                        {t('common.logout') || t('chrome.navbar.logout')}
                       </span>
                     </button>
                   </div>

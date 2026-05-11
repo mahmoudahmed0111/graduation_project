@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '@/store/themeStore';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 import {
   Sun,
   Moon,
@@ -18,24 +20,25 @@ import {
   GraduationCap,
 } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Home' },
-  { to: '/about', label: 'About' },
-  { to: '/colleges', label: 'Colleges' },
-  { to: '/academics', label: 'Academics' },
-  { to: '/admissions', label: 'Admissions' },
-  { to: '/research', label: 'Research' },
-  { to: '/campus-life', label: 'Campus Life' },
-  { to: '/news', label: 'News' },
-  { to: '/contact', label: 'Contact' },
-];
-
 export function PublicLayout() {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useThemeStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const location = useLocation();
+
+  const NAV_ITEMS = [
+    { to: '/', label: t('public.publicLayout.home') },
+    { to: '/about', label: t('public.publicLayout.about') },
+    { to: '/colleges', label: t('public.publicLayout.colleges') },
+    { to: '/academics', label: t('public.publicLayout.academics') },
+    { to: '/admissions', label: t('public.publicLayout.admissions') },
+    { to: '/research', label: t('public.publicLayout.research') },
+    { to: '/campus-life', label: t('public.publicLayout.campusLife') },
+    { to: '/news', label: t('public.publicLayout.news') },
+    { to: '/contact', label: t('public.publicLayout.contact') },
+  ];
 
   useEffect(() => {
     const onScroll = () => {
@@ -59,7 +62,7 @@ export function PublicLayout() {
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 text-accent-400" /> +20 82 231 7950</span>
             <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-accent-400" /> info@bsu.edu.eg</span>
-            <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-accent-400" /> Beni Suef, Egypt</span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-accent-400" /> {t('public.publicLayout.location')}</span>
           </div>
           <div className="flex items-center gap-3">
             <a href="#" className="hover:text-accent-400 transition"><Facebook className="h-3.5 w-3.5" /></a>
@@ -88,8 +91,8 @@ export function PublicLayout() {
               </div>
             </div>
             <div className="leading-tight">
-              <p className="text-[11px] uppercase tracking-widest text-accent-600 dark:text-accent-400 font-semibold">Beni Suef</p>
-              <p className="text-base lg:text-lg font-bold text-slate-900 dark:text-white">University</p>
+              <p className="text-[11px] uppercase tracking-widest text-accent-600 dark:text-accent-400 font-semibold">{t('public.publicLayout.brandKicker')}</p>
+              <p className="text-base lg:text-lg font-bold text-slate-900 dark:text-white">{t('public.publicLayout.brandName')}</p>
             </div>
           </Link>
 
@@ -120,9 +123,10 @@ export function PublicLayout() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageToggle variant="light" />
             <button
               onClick={toggleTheme}
-              aria-label="Toggle theme"
+              aria-label={t('public.publicLayout.toggleTheme')}
               className="h-10 w-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all hover:scale-110"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4 text-accent-400" /> : <Moon className="h-4 w-4 text-primary-700" />}
@@ -131,12 +135,12 @@ export function PublicLayout() {
               to="/login"
               className="hidden sm:inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
             >
-              Portal Login
+              {t('public.publicLayout.portalLogin')}
             </Link>
             <button
               onClick={() => setMobileOpen((v) => !v)}
               className="lg:hidden h-10 w-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800"
-              aria-label="Menu"
+              aria-label={t('public.publicLayout.menu')}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -170,7 +174,7 @@ export function PublicLayout() {
               to="/login"
               className="mt-2 inline-flex items-center justify-center h-11 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold"
             >
-              Portal Login
+              {t('public.publicLayout.portalLogin')}
             </Link>
           </nav>
         </div>
@@ -191,12 +195,12 @@ export function PublicLayout() {
                   <GraduationCap className="h-6 w-6 text-accent-400" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-accent-400 font-semibold">Beni Suef</p>
-                  <p className="text-lg font-bold text-white">University</p>
+                  <p className="text-xs uppercase tracking-widest text-accent-400 font-semibold">{t('public.publicLayout.brandKicker')}</p>
+                  <p className="text-lg font-bold text-white">{t('public.publicLayout.brandName')}</p>
                 </div>
               </div>
               <p className="text-sm text-primary-200 leading-relaxed mb-4">
-                A leading Egyptian public university committed to academic excellence, scientific research, and community service since 2005.
+                {t('public.publicLayout.footerAbout')}
               </p>
               <div className="flex items-center gap-2">
                 {[Facebook, Twitter, Instagram, Linkedin, Youtube].map((Icon, i) => (
@@ -213,7 +217,7 @@ export function PublicLayout() {
 
             <div>
               <h4 className="text-white font-semibold mb-4 relative inline-block">
-                Quick Links
+                {t('public.publicLayout.quickLinks')}
                 <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-accent-500" />
               </h4>
               <ul className="space-y-2 text-sm">
@@ -229,27 +233,27 @@ export function PublicLayout() {
 
             <div>
               <h4 className="text-white font-semibold mb-4 relative inline-block">
-                Resources
+                {t('public.publicLayout.resources')}
                 <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-accent-500" />
               </h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ Library</a></li>
-                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ E-Learning</a></li>
-                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ Alumni</a></li>
-                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ Careers</a></li>
-                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ Calendar</a></li>
+                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ {t('public.publicLayout.library')}</a></li>
+                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ {t('public.publicLayout.eLearning')}</a></li>
+                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ {t('public.publicLayout.alumni')}</a></li>
+                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ {t('public.publicLayout.careers')}</a></li>
+                <li><a href="#" className="text-primary-200 hover:text-accent-400 transition">→ {t('public.publicLayout.calendar')}</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-white font-semibold mb-4 relative inline-block">
-                Get in Touch
+                {t('public.publicLayout.getInTouch')}
                 <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-accent-500" />
               </h4>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-accent-400 mt-0.5 shrink-0" />
-                  <span>Salah Salem St., Beni Suef 62511, Egypt</span>
+                  <span>{t('public.publicLayout.address')}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-accent-400 shrink-0" />
@@ -264,11 +268,11 @@ export function PublicLayout() {
           </div>
 
           <div className="pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-primary-300">
-            <p>© {new Date().getFullYear()} Beni Suef University. All rights reserved.</p>
+            <p>{t('public.publicLayout.copyright', { year: new Date().getFullYear() })}</p>
             <div className="flex items-center gap-4">
-              <Link to="/privacy" className="hover:text-accent-400 transition">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-accent-400 transition">Terms of Use</Link>
-              <Link to="/sitemap" className="hover:text-accent-400 transition">Sitemap</Link>
+              <Link to="/privacy" className="hover:text-accent-400 transition">{t('public.publicLayout.privacyPolicy')}</Link>
+              <Link to="/terms" className="hover:text-accent-400 transition">{t('public.publicLayout.termsOfUse')}</Link>
+              <Link to="/sitemap" className="hover:text-accent-400 transition">{t('public.publicLayout.sitemap')}</Link>
             </div>
           </div>
         </div>
@@ -280,7 +284,7 @@ export function PublicLayout() {
         className={`fixed bottom-6 right-6 z-50 h-12 w-12 rounded-full bg-gradient-to-br from-primary-600 to-primary-800 text-white shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 ${
           showTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
-        aria-label="Scroll to top"
+        aria-label={t('public.publicLayout.scrollToTop')}
       >
         <ArrowUp className="h-5 w-5" />
       </button>

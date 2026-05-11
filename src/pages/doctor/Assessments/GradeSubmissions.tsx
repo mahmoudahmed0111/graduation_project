@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, MessageSquare, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -27,6 +28,7 @@ function studentLabel(s: ReturnType<typeof useSubmission>['data']): string {
 }
 
 export function GradeSubmissions() {
+  const { t } = useTranslation();
   const params = useParams<{ offeringId?: string; assessmentId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { success, error: showError } = useToastStore();
@@ -79,29 +81,29 @@ export function GradeSubmissions() {
       payload.push({ questionId: a.questionId, score: Number(d.score), feedback: d.feedback });
     }
     if (payload.length === 0) {
-      showError('No grades to save.');
+      showError(t('doctor.gradeSubmissions.noGradesToSave'));
       return;
     }
     try {
       await grade.mutateAsync(payload);
-      success('Grades saved.');
+      success(t('doctor.gradeSubmissions.gradesSaved'));
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to save grades.'));
+      showError(getApiErrorMessage(err, t('doctor.gradeSubmissions.failedSave')));
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Grade Submissions</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Manually grade subjective answers</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.gradeSubmissions.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.gradeSubmissions.subtitle')}</p>
       </div>
 
       {(!params.offeringId || !params.assessmentId) && (
         <Card>
           <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Course Offering</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.gradeSubmissions.courseOffering')}</label>
               <select
                 value={offeringId}
                 onChange={(e) => {
@@ -113,7 +115,7 @@ export function GradeSubmissions() {
                 disabled={offeringsLoading}
                 className="field"
               >
-                <option value="">{offeringsLoading ? 'Loading…' : 'Select…'}</option>
+                <option value="">{offeringsLoading ? t('doctor.gradeSubmissions.loading') : t('doctor.gradeSubmissions.selectPlaceholder')}</option>
                 {offerings.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
@@ -122,7 +124,7 @@ export function GradeSubmissions() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Assessment</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.gradeSubmissions.assessmentLabel')}</label>
               <select
                 value={assessmentId}
                 onChange={(e) => {
@@ -133,7 +135,7 @@ export function GradeSubmissions() {
                 disabled={!offeringId || assessmentsList.isLoading}
                 className="field"
               >
-                <option value="">{assessmentsList.isLoading ? 'Loading…' : 'Select…'}</option>
+                <option value="">{assessmentsList.isLoading ? t('doctor.gradeSubmissions.loading') : t('doctor.gradeSubmissions.selectPlaceholder')}</option>
                 {(assessmentsList.data?.items ?? []).map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.title}
@@ -147,26 +149,26 @@ export function GradeSubmissions() {
 
       {!assessmentId ? (
         <Card>
-          <CardContent className="p-12 text-center text-gray-500">Pick an assessment to view submissions.</CardContent>
+          <CardContent className="p-12 text-center text-gray-500">{t('doctor.gradeSubmissions.pickAssessment')}</CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">Submissions awaiting grade</h3>
+            <h3 className="text-sm font-semibold text-gray-700">{t('doctor.gradeSubmissions.awaitingGrade')}</h3>
             {submissionsList.isLoading ? (
               <Card>
-                <CardContent className="p-6 text-center text-gray-500">Loading…</CardContent>
+                <CardContent className="p-6 text-center text-gray-500">{t('doctor.gradeSubmissions.loading')}</CardContent>
               </Card>
             ) : (submissionsList.data?.items.length ?? 0) === 0 ? (
               <Card>
                 <CardContent className="p-6 text-center text-gray-500">
                   <ClipboardList className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  No pending submissions.
+                  {t('doctor.gradeSubmissions.noPending')}
                 </CardContent>
               </Card>
             ) : (
               (submissionsList.data?.items ?? []).map((s) => {
-                const studentName = typeof s.student_id === 'object' ? s.student_id.name : 'Student';
+                const studentName = typeof s.student_id === 'object' ? s.student_id.name : t('doctor.gradeSubmissions.studentFallback');
                 return (
                   <button
                     key={s._id}
@@ -190,7 +192,7 @@ export function GradeSubmissions() {
           <div className="lg:col-span-2 space-y-4">
             {!selectedSubmissionId ? (
               <Card>
-                <CardContent className="p-12 text-center text-gray-500">Pick a submission to grade.</CardContent>
+                <CardContent className="p-12 text-center text-gray-500">{t('doctor.gradeSubmissions.pickSubmission')}</CardContent>
               </Card>
             ) : submissionDetail.isLoading ? (
               <div className="flex items-center justify-center h-48">
@@ -204,7 +206,7 @@ export function GradeSubmissions() {
                       <span>{studentLabel(submissionDetail.data)}</span>
                       {submissionDetail.data.status === 'graded' && (
                         <span className="flex items-center gap-1 text-sm font-normal text-green-700">
-                          <CheckCircle2 className="h-4 w-4" /> Graded
+                          <CheckCircle2 className="h-4 w-4" /> {t('doctor.gradeSubmissions.graded')}
                         </span>
                       )}
                     </CardTitle>
@@ -223,10 +225,10 @@ export function GradeSubmissions() {
                           <div>
                             <span className="text-xs uppercase text-gray-500">{q.questionType}</span>
                             <p className="font-medium mt-1">
-                              Q{idx + 1}. {q.questionText}
+                              {t('doctor.gradeSubmissions.qN', { n: idx + 1 })} {q.questionText}
                             </p>
                           </div>
-                          <span className="text-sm text-gray-500">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                          <span className="text-sm text-gray-500">{q.points !== 1 ? t('doctor.gradeSubmissions.pts', { pts: q.points }) : t('doctor.gradeSubmissions.pt', { pts: q.points })}</span>
                         </div>
 
                         <div className="text-sm bg-gray-50 rounded p-3">
@@ -236,11 +238,11 @@ export function GradeSubmissions() {
                         </div>
 
                         {objective ? (
-                          <p className="text-sm text-gray-500 italic">Auto-graded · score: {a.score ?? 0}</p>
+                          <p className="text-sm text-gray-500 italic">{t('doctor.gradeSubmissions.autoGraded', { score: a.score ?? 0 })}</p>
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <Input
-                              label="Score"
+                              label={t('doctor.gradeSubmissions.scoreLabel')}
                               type="number"
                               min={0}
                               max={q.points}
@@ -254,7 +256,7 @@ export function GradeSubmissions() {
                             />
                             <div className="md:col-span-2">
                               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                                <MessageSquare className="h-4 w-4 inline mr-1" /> Feedback
+                                <MessageSquare className="h-4 w-4 inline mr-1" /> {t('doctor.gradeSubmissions.feedback')}
                               </label>
                               <textarea
                                 rows={2}
@@ -276,7 +278,7 @@ export function GradeSubmissions() {
                 })}
 
                 <Button onClick={handleSave} isLoading={grade.isPending} className="w-full">
-                  <Save className="h-4 w-4 mr-2" /> Save Grades
+                  <Save className="h-4 w-4 mr-2" /> {t('doctor.gradeSubmissions.saveGrades')}
                 </Button>
               </>
             )}

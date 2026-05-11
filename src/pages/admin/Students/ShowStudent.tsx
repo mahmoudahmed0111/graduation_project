@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
@@ -26,6 +27,7 @@ import { mapUserRecordToStudent } from '@/lib/mapUserRecord';
 import { useToastStore } from '@/store/toastStore';
 
 export function ShowStudent() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { error: showError } = useToastStore();
   const [student, setStudent] = useState<IStudent | null>(null);
@@ -41,7 +43,7 @@ export function ShowStudent() {
         setNotFound(false);
         const raw = await api.getUser(id);
         if (String(raw.role ?? '') !== 'student') {
-          showError('This profile is not a student account.');
+          showError(t('admin.studentsShow.notStudent'));
           setNotFound(true);
           setStudent(null);
           return;
@@ -55,7 +57,7 @@ export function ShowStudent() {
           context: 'ShowStudent',
           error: err,
         });
-        showError(getApiErrorMessage(err, 'Failed to load student'));
+        showError(getApiErrorMessage(err, t('admin.studentsShow.loadFail')));
         setNotFound(true);
         setStudent(null);
         setEnrollments([]);
@@ -65,7 +67,7 @@ export function ShowStudent() {
     };
 
     void fetchStudentData();
-  }, [id, showError]);
+  }, [id, showError, t]);
 
   const renderStatusBadge = (status?: string) => {
     const badge = getStatusBadge(status);
@@ -79,7 +81,7 @@ export function ShowStudent() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500" />
-          <p className="mt-4 text-gray-600">Loading student data...</p>
+          <p className="mt-4 text-gray-600">{t('admin.studentsShow.loading')}</p>
         </div>
       </div>
     );
@@ -88,9 +90,9 @@ export function ShowStudent() {
   if (!student || notFound) {
     return (
       <div className="py-12 text-center">
-        <p className="mb-4 text-gray-600">Student not found or unavailable.</p>
+        <p className="mb-4 text-gray-600">{t('admin.studentsShow.notFound')}</p>
         <Link to="/dashboard/students">
-          <Button variant="primary">Back to Students</Button>
+          <Button variant="primary">{t('admin.studentsShow.backToStudents')}</Button>
         </Link>
       </div>
     );
@@ -112,7 +114,7 @@ export function ShowStudent() {
         <Link to={`/dashboard/students/${student.id}/edit`}>
           <Button variant="primary" className="flex items-center gap-2">
             <Edit className="h-4 w-4" />
-            Edit Student
+            {t('admin.studentsShow.editStudent')}
           </Button>
         </Link>
       </div>
@@ -123,7 +125,7 @@ export function ShowStudent() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5 text-primary-600" />
-                Personal Information
+                {t('admin.studentsShow.personalInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -131,14 +133,14 @@ export function ShowStudent() {
                 <div className="space-y-1">
                   <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                     <Mail className="h-4 w-4" />
-                    Email
+                    {t('admin.studentsShow.email')}
                   </div>
                   <p className="font-medium text-gray-900">{student.email}</p>
                 </div>
                 <div className="space-y-1">
                   <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                     <CreditCard className="h-4 w-4" />
-                    National ID
+                    {t('admin.studentsShow.nationalId')}
                   </div>
                   <p className="font-medium text-gray-900">{student.nationalId ?? '—'}</p>
                 </div>
@@ -146,7 +148,7 @@ export function ShowStudent() {
                   <div className="space-y-1">
                     <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                       <Phone className="h-4 w-4" />
-                      Phone
+                      {t('admin.studentsShow.phone')}
                     </div>
                     <p className="font-medium text-gray-900">{student.phoneNumber}</p>
                   </div>
@@ -159,7 +161,7 @@ export function ShowStudent() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-primary-600" />
-                Academic Information
+                {t('admin.studentsShow.academicInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -167,38 +169,38 @@ export function ShowStudent() {
                 <div className="space-y-1">
                   <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                     <Building2 className="h-4 w-4" />
-                    Department
+                    {t('admin.studentsShow.department')}
                   </div>
-                  <p className="font-medium text-gray-900">{student.department?.name || 'N/A'}</p>
+                  <p className="font-medium text-gray-900">{student.department?.name || t('admin.studentsShow.notAvailable')}</p>
                   <p className="text-sm text-gray-500">{student.department?.college?.name || ''}</p>
                 </div>
                 <div className="space-y-1">
                   <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="h-4 w-4" />
-                    Level & semester
+                    {t('admin.studentsShow.levelSemester')}
                   </div>
                   <p className="font-medium text-gray-900">
-                    Level {student.year}, Semester {student.semester}
+                    {t('admin.studentsShow.levelSemesterValue', { level: student.year, semester: student.semester })}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                     <BookOpen className="h-4 w-4" />
-                    Credits earned
+                    {t('admin.studentsShow.creditsEarned')}
                   </div>
-                  <p className="font-medium text-gray-900">{student.creditsEarned ?? 0} credits</p>
+                  <p className="font-medium text-gray-900">{t('admin.studentsShow.creditsValue', { count: student.creditsEarned ?? 0 })}</p>
                 </div>
                 <div className="space-y-1">
                   <div className="mb-1 flex items-center gap-2 text-sm text-gray-600">
                     <Award className="h-4 w-4" />
-                    GPA
+                    {t('admin.studentsShow.gpa')}
                   </div>
                   <p className={`text-xl font-bold ${getGPAColor(student.gpa ?? 0)}`}>
                     {(student.gpa ?? 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <div className="mb-1 text-sm text-gray-600">Status</div>
+                  <div className="mb-1 text-sm text-gray-600">{t('admin.studentsShow.status')}</div>
                   {renderStatusBadge(student.academicStatus)}
                 </div>
               </div>
@@ -210,7 +212,7 @@ export function ShowStudent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary-600" />
-                  Course enrollments
+                  {t('admin.studentsShow.courseEnrollments')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -225,10 +227,10 @@ export function ShowStudent() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="mb-1 flex flex-wrap items-center gap-2">
-                              <h4 className="font-semibold text-gray-900">{course?.code || 'N/A'}</h4>
+                              <h4 className="font-semibold text-gray-900">{course?.code || t('admin.studentsShow.notAvailable')}</h4>
                               {course && 'creditHours' in course && typeof course.creditHours === 'number' ? (
                                 <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
-                                  {course.creditHours} hrs
+                                  {t('admin.studentsShow.hoursShort', { count: course.creditHours })}
                                 </span>
                               ) : null}
                               <span
@@ -245,16 +247,16 @@ export function ShowStudent() {
                                 {enrollment.status}
                               </span>
                             </div>
-                            <p className="mb-2 text-sm text-gray-700">{course?.title || 'Course'}</p>
+                            <p className="mb-2 text-sm text-gray-700">{course?.title || t('admin.studentsShow.course')}</p>
                             {enrollment.grades?.finalLetter ? (
                               <div className="flex flex-wrap items-center gap-4 text-sm">
                                 <span className="text-gray-600">
-                                  Grade:{' '}
+                                  {t('admin.studentsShow.grade')}:{' '}
                                   <span className="font-medium text-primary-600">{enrollment.grades.finalLetter}</span>
                                 </span>
                                 {enrollment.grades.finalTotal !== undefined ? (
                                   <span className="text-gray-600">
-                                    Score:{' '}
+                                    {t('admin.studentsShow.score')}:{' '}
                                     <span className="font-medium">{enrollment.grades.finalTotal.toFixed(1)}%</span>
                                   </span>
                                 ) : null}
@@ -274,19 +276,19 @@ export function ShowStudent() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Quick stats</CardTitle>
+              <CardTitle className="text-sm">{t('admin.studentsShow.quickStats')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Courses (enrollments)</span>
+                <span className="text-sm text-gray-600">{t('admin.studentsShow.coursesEnrollments')}</span>
                 <span className="font-semibold text-gray-900">{enrollments.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Credits earned</span>
+                <span className="text-sm text-gray-600">{t('admin.studentsShow.creditsEarned')}</span>
                 <span className="font-semibold text-gray-900">{student.creditsEarned ?? 0}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">GPA</span>
+                <span className="text-sm text-gray-600">{t('admin.studentsShow.gpa')}</span>
                 <span className={`font-semibold ${getGPAColor(student.gpa ?? 0)}`}>
                   {(student.gpa ?? 0).toFixed(2)}
                 </span>
@@ -296,22 +298,22 @@ export function ShowStudent() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Actions</CardTitle>
+              <CardTitle className="text-sm">{t('admin.studentsShow.actions')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Link to={`/dashboard/students/${student.id}/edit`}>
                 <Button variant="secondary" className="w-full justify-start">
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit student
+                  {t('admin.studentsShow.editStudentShort')}
                 </Button>
               </Link>
               <Button variant="secondary" className="w-full justify-start" type="button" disabled>
                 <FileText className="mr-2 h-4 w-4" />
-                View transcript (when API is wired)
+                {t('admin.studentsShow.viewTranscript')}
               </Button>
               <Button variant="secondary" className="w-full justify-start" type="button" disabled>
                 <Clock className="mr-2 h-4 w-4" />
-                View attendance (when API is wired)
+                {t('admin.studentsShow.viewAttendance')}
               </Button>
             </CardContent>
           </Card>

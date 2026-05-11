@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +28,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function EditMaterial() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { offeringId, id } = useParams<{ offeringId: string; id: string }>();
   const { success, error: showError } = useToastStore();
@@ -65,12 +67,12 @@ export function EditMaterial() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!ACCEPTED_MIME.includes(file.type)) {
-      showError('Invalid file type. Allowed: PDF, MP4, PNG, JPEG, DOC.');
+      showError(t('doctor.editMaterial.invalidFileType'));
       e.target.value = '';
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
-      showError('File too large. Maximum 50MB.');
+      showError(t('doctor.editMaterial.fileTooLarge'));
       e.target.value = '';
       return;
     }
@@ -80,11 +82,11 @@ export function EditMaterial() {
   const onSubmit = async (data: FormValues) => {
     if (!offeringId || !id) return;
     if (data.isExternalLink && !data.url) {
-      showError('URL is required when switching to an external link.');
+      showError(t('doctor.editMaterial.urlRequired'));
       return;
     }
     if (!data.isExternalLink && detail.data?.isExternalLink && !selectedFile) {
-      showError('A file is required when switching to a non-link material.');
+      showError(t('doctor.editMaterial.fileRequired'));
       return;
     }
     try {
@@ -99,10 +101,10 @@ export function EditMaterial() {
           file: !data.isExternalLink ? selectedFile ?? undefined : undefined,
         },
       });
-      success('Material updated.');
+      success(t('doctor.editMaterial.updated'));
       navigate(`/dashboard/course-offerings/${offeringId}/materials`);
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to update material.'));
+      showError(getApiErrorMessage(err, t('doctor.editMaterial.failedUpdate')));
     }
   };
 
@@ -117,7 +119,7 @@ export function EditMaterial() {
   if (detail.isError || !detail.data) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-red-600">Material not found or you don't have access.</CardContent>
+        <CardContent className="p-12 text-center text-red-600">{t('doctor.editMaterial.notFound')}</CardContent>
       </Card>
     );
   }
@@ -125,22 +127,22 @@ export function EditMaterial() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Material</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Update metadata or replace the file/URL</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.editMaterial.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.editMaterial.subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Save className="h-5 w-5 text-primary-600" /> Material Details
+            <Save className="h-5 w-5 text-primary-600" /> {t('doctor.editMaterial.materialDetails')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Input label="Title *" {...register('title')} error={errors.title?.message} />
+            <Input label={t('doctor.editMaterial.titleLabel')} {...register('title')} error={errors.title?.message} />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.editMaterial.descriptionLabel')}</label>
               <textarea
                 {...register('description')}
                 rows={3}
@@ -149,7 +151,7 @@ export function EditMaterial() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Material Type</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.editMaterial.materialType')}</label>
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -158,7 +160,7 @@ export function EditMaterial() {
                     !isExternalLink ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-300 text-gray-700'
                   }`}
                 >
-                  <FileText className="h-5 w-5 mx-auto mb-2" /> File
+                  <FileText className="h-5 w-5 mx-auto mb-2" /> {t('doctor.editMaterial.file')}
                 </button>
                 <button
                   type="button"
@@ -167,13 +169,13 @@ export function EditMaterial() {
                     isExternalLink ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-300 text-gray-700'
                   }`}
                 >
-                  <LinkIcon className="h-5 w-5 mx-auto mb-2" /> Link
+                  <LinkIcon className="h-5 w-5 mx-auto mb-2" /> {t('doctor.editMaterial.link')}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Category *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.editMaterial.categoryLabel')}</label>
               <select
                 {...register('category')}
                 className="field"
@@ -191,13 +193,13 @@ export function EditMaterial() {
             </div>
 
             {isExternalLink ? (
-              <Input label="URL *" type="url" {...register('url')} error={errors.url?.message} />
+              <Input label={t('doctor.editMaterial.urlLabel')} type="url" {...register('url')} error={errors.url?.message} />
             ) : (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  Replace File (optional)
+                  {t('doctor.editMaterial.replaceFile')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Leave empty to keep the existing file.</p>
+                <p className="text-xs text-gray-500 mb-2">{t('doctor.editMaterial.leaveEmpty')}</p>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <input
                     type="file"
@@ -208,8 +210,8 @@ export function EditMaterial() {
                   />
                   <label htmlFor="edit-file" className="cursor-pointer flex flex-col items-center">
                     <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600">Click to choose a new file</p>
-                    <p className="text-xs text-gray-500">PDF, MP4, PNG, JPEG, DOC — max 50MB</p>
+                    <p className="text-sm text-gray-600">{t('doctor.editMaterial.clickToChoose')}</p>
+                    <p className="text-xs text-gray-500">{t('doctor.editMaterial.fileTypes')}</p>
                   </label>
                   {selectedFile && (
                     <div className="mt-3 flex items-center justify-center gap-2 p-2 bg-gray-50 rounded">
@@ -221,7 +223,7 @@ export function EditMaterial() {
                     </div>
                   )}
                   {!selectedFile && detail.data.fileName && (
-                    <p className="mt-3 text-xs text-gray-500">Current file: {detail.data.fileName}</p>
+                    <p className="mt-3 text-xs text-gray-500">{t('doctor.editMaterial.currentFile', { name: detail.data.fileName })}</p>
                   )}
                 </div>
               </div>
@@ -234,10 +236,10 @@ export function EditMaterial() {
                 className="flex-1"
                 onClick={() => navigate(`/dashboard/course-offerings/${offeringId}/materials`)}
               >
-                Cancel
+                {t('doctor.editMaterial.cancel')}
               </Button>
               <Button type="submit" isLoading={update.isPending} className="flex-1">
-                <Save className="h-4 w-4 mr-2" /> Save Changes
+                <Save className="h-4 w-4 mr-2" /> {t('doctor.editMaterial.saveChanges')}
               </Button>
             </div>
           </form>

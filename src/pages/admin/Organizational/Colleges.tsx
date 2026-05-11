@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -59,6 +60,7 @@ const COLLEGES_LIST_QUERY = {
 };
 
 export function Colleges() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const { data, isLoading, isError, error, refetch } = useColleges(COLLEGES_LIST_QUERY);
 
@@ -91,13 +93,13 @@ export function Colleges() {
   if (isLoading) {
     return (
       <AdminPageShell
-        titleStack={{ section: 'University Structure', page: 'Colleges' }}
-        subtitle="Loading…"
+        titleStack={{ section: t('admin.organizationalColleges.section'), page: t('admin.organizationalColleges.page') }}
+        subtitle={t('admin.organizationalColleges.loadingShort')}
       >
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading colleges...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.organizationalColleges.loading')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -107,16 +109,16 @@ export function Colleges() {
   if (isError) {
     return (
       <AdminPageShell
-        titleStack={{ section: 'University Structure', page: 'Colleges' }}
-        subtitle="Could not load data"
+        titleStack={{ section: t('admin.organizationalColleges.section'), page: t('admin.organizationalColleges.page') }}
+        subtitle={t('admin.organizationalColleges.loadFailSubtitle')}
       >
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load colleges</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.organizationalColleges.loadFail')}</p>
           <p className="mt-1 text-sm text-red-600 dark:text-red-300">
-            {error instanceof Error ? error.message : 'Unknown error'}
+            {error instanceof Error ? error.message : t('admin.organizationalColleges.unknownError')}
           </p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-            Retry
+            {t('admin.organizationalColleges.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -124,14 +126,14 @@ export function Colleges() {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'University Structure', page: 'Colleges' }}>
+    <AdminPageShell titleStack={{ section: t('admin.organizationalColleges.section'), page: t('admin.organizationalColleges.page') }}>
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full min-w-0 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search name, code, description, year, dean…"
+                placeholder={t('admin.organizationalColleges.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -141,7 +143,7 @@ export function Colleges() {
               <Link to="/dashboard/organizational/colleges/create">
                 <Button className="inline-flex items-center gap-2 rounded-xl">
                   <Plus className="h-4 w-4" />
-                  Add College
+                  {t('admin.organizationalColleges.addCollege')}
                 </Button>
               </Link>
             </div>
@@ -152,7 +154,7 @@ export function Colleges() {
             <div className="py-12 text-center">
               <Building2 className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-500 dark:text-gray-400">
-                {colleges.length === 0 ? 'No colleges found' : 'No colleges match your search'}
+                {colleges.length === 0 ? t('admin.organizationalColleges.noColleges') : t('admin.organizationalColleges.noMatch')}
               </p>
             </div>
           ) : (
@@ -160,16 +162,16 @@ export function Colleges() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Code / slug</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="whitespace-nowrap">Est.</TableHead>
-                    <TableHead>Dean</TableHead>
-                    <TableHead className="text-end tabular-nums">Depts</TableHead>
-                    <TableHead className="text-end tabular-nums">Students</TableHead>
-                    <TableHead className="hidden lg:table-cell whitespace-nowrap">Created</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-end">Actions</TableHead>
+                    <TableHead>{t('admin.organizationalColleges.name')}</TableHead>
+                    <TableHead>{t('admin.organizationalColleges.codeSlug')}</TableHead>
+                    <TableHead>{t('admin.organizationalColleges.description')}</TableHead>
+                    <TableHead className="whitespace-nowrap">{t('admin.organizationalColleges.est')}</TableHead>
+                    <TableHead>{t('admin.organizationalColleges.dean')}</TableHead>
+                    <TableHead className="text-end tabular-nums">{t('admin.organizationalColleges.depts')}</TableHead>
+                    <TableHead className="text-end tabular-nums">{t('admin.organizationalColleges.students')}</TableHead>
+                    <TableHead className="hidden lg:table-cell whitespace-nowrap">{t('admin.organizationalColleges.created')}</TableHead>
+                    <TableHead>{t('admin.organizationalColleges.status')}</TableHead>
+                    <TableHead className="text-end">{t('admin.organizationalColleges.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -272,7 +274,7 @@ export function Colleges() {
                         {college.isArchived ? (
                           <div className="space-y-0.5">
                             <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                              Archived
+                              {t('admin.organizationalColleges.archived')}
                             </span>
                             {college.archivedAt ? (
                               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -282,19 +284,19 @@ export function Colleges() {
                           </div>
                         ) : (
                           <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                            Active
+                            {t('admin.organizationalColleges.active')}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-end">
                         <div className="flex items-center justify-end gap-2">
                           <Link to={`/dashboard/organizational/colleges/${college.id}`}>
-                            <Button variant="secondary" size="sm" title="View">
+                            <Button variant="secondary" size="sm" title={t('admin.organizationalColleges.view')}>
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
                           <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
-                            <Button variant="secondary" size="sm" title="Edit">
+                            <Button variant="secondary" size="sm" title={t('admin.organizationalColleges.edit')}>
                               <Edit className="h-4 w-4" />
                             </Button>
                           </Link>

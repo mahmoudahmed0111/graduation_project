@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AdminPageShell } from '@/components/admin';
 import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
 import { IndeterminateCheckbox } from '@/components/admin/AdminIndexBulkBar';
@@ -21,30 +22,30 @@ import type { Phase2ApiUser } from '@/types/phase2-user';
 import { Eye, FileUp, Fingerprint, Plus, Search, Users } from 'lucide-react';
 
 const STATUS_FILTERS = [
-  { value: 'false', label: 'Active' },
-  { value: 'true', label: 'Deactivated' },
-  { value: 'all', label: 'All' },
+  { value: 'false', labelKey: 'admin.usersDirectory.statusActive' },
+  { value: 'true', labelKey: 'admin.usersDirectory.statusDeactivated' },
+  { value: 'all', labelKey: 'admin.usersDirectory.statusAll' },
 ];
 
 const SORT_OPTIONS = [
-  { value: '-createdAt', label: 'Newest first' },
-  { value: 'createdAt', label: 'Oldest first' },
-  { value: 'name', label: 'Name A–Z' },
-  { value: '-name', label: 'Name Z–A' },
-  { value: 'email', label: 'Email A–Z' },
+  { value: '-createdAt', labelKey: 'admin.usersDirectory.sortNewest' },
+  { value: 'createdAt', labelKey: 'admin.usersDirectory.sortOldest' },
+  { value: 'name', labelKey: 'admin.usersDirectory.sortNameAZ' },
+  { value: '-name', labelKey: 'admin.usersDirectory.sortNameZA' },
+  { value: 'email', labelKey: 'admin.usersDirectory.sortEmailAZ' },
 ];
 
 const ACADEMIC_OPTIONS = [
-  { value: '', label: 'Any status' },
-  { value: 'active', label: 'Active' },
-  { value: 'graduated', label: 'Graduated' },
-  { value: 'good_standing', label: 'Good standing' },
-  { value: 'probation', label: 'Probation' },
+  { value: '', labelKey: 'admin.usersDirectory.academicAny' },
+  { value: 'active', labelKey: 'admin.usersDirectory.academicActive' },
+  { value: 'graduated', labelKey: 'admin.usersDirectory.academicGraduated' },
+  { value: 'good_standing', labelKey: 'admin.usersDirectory.academicGoodStanding' },
+  { value: 'probation', labelKey: 'admin.usersDirectory.academicProbation' },
 ];
 
 const ADMIN_TYPE_OPTIONS = [
-  { value: 'universityAdmin', label: 'University admins' },
-  { value: 'collegeAdmin', label: 'College admins' },
+  { value: 'universityAdmin', labelKey: 'admin.usersDirectory.adminTypeUniversity' },
+  { value: 'collegeAdmin', labelKey: 'admin.usersDirectory.adminTypeCollege' },
 ];
 
 /** Match `/dashboard/organizational/colleges`: load a batch once, filter in the browser (no refetch while typing). */
@@ -74,6 +75,7 @@ export interface UsersDirectoryProps {
 }
 
 export function UsersDirectory({ segment }: UsersDirectoryProps) {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user: authUser } = useAuthStore();
   const isUA = authUser?.role === 'universityAdmin';
@@ -83,12 +85,12 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   const pageTitle =
     segment === 'students'
-      ? 'Students'
+      ? t('admin.usersDirectory.pageStudents')
       : segment === 'doctors'
-        ? 'Doctors'
+        ? t('admin.usersDirectory.pageDoctors')
         : segment === 'tas'
-          ? 'Teaching assistants'
-          : 'Administrators';
+          ? t('admin.usersDirectory.pageTas')
+          : t('admin.usersDirectory.pageAdmins');
 
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
   const sort = searchParams.get('sort') || '-createdAt';
@@ -143,7 +145,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
   const collegeOptions = useMemo(() => {
     const items = collegesData?.items ?? [];
     return [
-      { value: '', label: 'All colleges' },
+      { value: '', label: t('admin.usersDirectory.allColleges') },
       ...items.map((c) => {
         const rec = c as Record<string, unknown>;
         const id = String(rec._id ?? rec.id ?? '');
@@ -151,12 +153,12 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
         return { value: id, label: name };
       }),
     ];
-  }, [collegesData?.items]);
+  }, [collegesData?.items, t]);
 
   const departmentOptions = useMemo(() => {
     const items = departmentsData?.items ?? [];
     return [
-      { value: '', label: 'All departments' },
+      { value: '', label: t('admin.usersDirectory.allDepartments') },
       ...items.map((d) => {
         const rec = d as Record<string, unknown>;
         const id = String(rec._id ?? rec.id ?? '');
@@ -164,7 +166,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
         return { value: id, label: name };
       }),
     ];
-  }, [departmentsData?.items]);
+  }, [departmentsData?.items, t]);
 
   const departmentNameById = useMemo(() => {
     const m = new Map<string, string>();
@@ -267,11 +269,11 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   if (query.isLoading) {
     return (
-      <AdminPageShell titleStack={{ section: 'User Management', page: pageTitle }} subtitle="Loading…">
+      <AdminPageShell titleStack={{ section: t('admin.usersDirectory.userManagement'), page: pageTitle }} subtitle={t('admin.usersDirectory.loadingShort')}>
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading users…</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.usersDirectory.loadingUsers')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -280,14 +282,14 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   if (query.isError) {
     return (
-      <AdminPageShell titleStack={{ section: 'User Management', page: pageTitle }} subtitle="Could not load data">
+      <AdminPageShell titleStack={{ section: t('admin.usersDirectory.userManagement'), page: pageTitle }} subtitle={t('admin.usersDirectory.loadFailSubtitle')}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load users</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.usersDirectory.loadFail')}</p>
           <p className="mt-1 text-sm text-red-600 dark:text-red-300">
-            {query.error instanceof Error ? query.error.message : 'You may be outside your scope, or the server returned an error.'}
+            {query.error instanceof Error ? query.error.message : t('admin.usersDirectory.loadFailHint')}
           </p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void query.refetch()}>
-            Retry
+            {t('admin.usersDirectory.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -295,7 +297,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'User Management', page: pageTitle }}>
+    <AdminPageShell titleStack={{ section: t('admin.usersDirectory.userManagement'), page: pageTitle }}>
       <NationalIdLookupModal isOpen={lookupOpen} onClose={() => setLookupOpen(false)} />
 
       <Card>
@@ -304,7 +306,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             <div className="relative w-full min-w-0 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search name, email, phone, National ID, role…"
+                placeholder={t('admin.usersDirectory.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -318,18 +320,18 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                 onClick={() => setLookupOpen(true)}
               >
                 <Fingerprint className="h-4 w-4" />
-                Lookup
+                {t('admin.usersDirectory.lookup')}
               </Button>
               <Link to="/dashboard/users/bulk-import">
                 <Button type="button" variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
                   <FileUp className="h-4 w-4" />
-                  Bulk import
+                  {t('admin.usersDirectory.bulkImport')}
                 </Button>
               </Link>
               <Link to={createPath}>
                 <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
                   <Plus className="h-4 w-4" />
-                  {segment === 'students' ? 'Add student' : 'Create user'}
+                  {segment === 'students' ? t('admin.usersDirectory.addStudent') : t('admin.usersDirectory.createUser')}
                 </Button>
               </Link>
             </div>
@@ -339,8 +341,8 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
           <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {segment === 'admins' && isUA && (
               <Select2
-                label="Admin type"
-                options={ADMIN_TYPE_OPTIONS}
+                label={t('admin.usersDirectory.adminType')}
+                options={ADMIN_TYPE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
                 value={adminSubtype}
                 onChange={(v) => {
                   const next = v as 'universityAdmin' | 'collegeAdmin';
@@ -353,8 +355,8 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
               />
             )}
             <Select2
-              label="Account status"
-              options={STATUS_FILTERS}
+              label={t('admin.usersDirectory.accountStatus')}
+              options={STATUS_FILTERS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               value={isArchived}
               onChange={(v) => {
                 const next = v as 'true' | 'false' | 'all';
@@ -364,29 +366,29 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             />
             {isUA && (
               <Select2
-                label="College"
+                label={t('admin.usersDirectory.college')}
                 options={collegeOptions}
                 value={collegeId}
                 onChange={(v) => patchParams({ college_id: v || null, page: null })}
               />
             )}
             <Select2
-              label="Department"
+              label={t('admin.usersDirectory.department')}
               options={departmentOptions}
               value={departmentId}
               onChange={(v) => patchParams({ department_id: v || null, page: null })}
             />
             <Select2
-              label="Sort"
-              options={SORT_OPTIONS}
+              label={t('admin.usersDirectory.sort')}
+              options={SORT_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
               value={sort}
               onChange={(v) => patchParams({ sort: v === '-createdAt' ? null : v, page: null })}
               searchable={false}
             />
             {segment === 'students' && (
               <Select2
-                label="Academic status"
-                options={ACADEMIC_OPTIONS}
+                label={t('admin.usersDirectory.academicStatus')}
+                options={ACADEMIC_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
                 value={academicStatus}
                 onChange={(v) => patchParams({ academicStatus: v || null, page: null })}
               />
@@ -394,12 +396,12 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             {segment === 'students' && (
               <div className="min-w-0 sm:max-w-[11rem]">
                 <Input
-                  label="Level (optional)"
+                  label={t('admin.usersDirectory.levelOptional')}
                   type="number"
                   min={1}
                   value={levelStr}
                   onChange={(e) => patchParams({ level: e.target.value || null, page: null })}
-                  error={!levelValid ? 'Invalid level' : undefined}
+                  error={!levelValid ? t('admin.usersDirectory.invalidLevel') : undefined}
                 />
               </div>
             )}
@@ -418,14 +420,14 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             <div className="py-12 text-center">
               <Users className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-500 dark:text-gray-400">
-                No users match these filters. Try widening status to &quot;All&quot; or adjusting scope.
+                {t('admin.usersDirectory.noFiltersMatch')}
               </p>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="py-12 text-center">
               <Users className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-500 dark:text-gray-400">
-                No users match your search. Try a different term or use National ID lookup.
+                {t('admin.usersDirectory.noSearchMatch')}
               </p>
             </div>
           ) : (
@@ -446,15 +448,15 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                         checked={allOnPageSelected}
                         indeterminate={!allOnPageSelected && someOnPageSelected}
                         onChange={toggleAllPage}
-                        aria-label="Select all on page"
+                        aria-label={t('admin.usersDirectory.selectAllOnPage')}
                       />
                     </TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-end">Actions</TableHead>
+                    <TableHead>{t('admin.usersDirectory.name')}</TableHead>
+                    <TableHead>{t('admin.usersDirectory.email')}</TableHead>
+                    <TableHead>{t('admin.usersDirectory.role')}</TableHead>
+                    <TableHead>{t('admin.usersDirectory.department')}</TableHead>
+                    <TableHead>{t('admin.usersDirectory.status')}</TableHead>
+                    <TableHead className="text-end">{t('admin.usersDirectory.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -474,7 +476,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                               className="h-4 w-4 rounded border-gray-300 text-primary-600"
                               checked={selected.has(id)}
                               onChange={() => toggleOne(id)}
-                              aria-label={`Select ${u.name}`}
+                              aria-label={t('admin.usersDirectory.selectUser', { name: u.name })}
                             />
                           </div>
                         </TableCell>
@@ -491,17 +493,17 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                         <TableCell>
                           {active ? (
                             <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                              Active
+                              {t('admin.usersDirectory.statusActive')}
                             </span>
                           ) : (
                             <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                              Deactivated
+                              {t('admin.usersDirectory.statusDeactivated')}
                             </span>
                           )}
                         </TableCell>
                         <TableCell className="text-end">
                           <Link to={`${listBase}/${id}`}>
-                            <Button variant="secondary" size="sm" title="View" className="inline-flex items-center gap-1 rounded-xl">
+                            <Button variant="secondary" size="sm" title={t('admin.usersDirectory.view')} className="inline-flex items-center gap-1 rounded-xl">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
@@ -519,13 +521,16 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4 dark:border-dark-border sm:flex-row sm:justify-between">
               <div className="text-center sm:text-left">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Page {Math.min(page, totalFilteredPages)} of {totalFilteredPages} · {filteredItems.length}{' '}
-                  {searchTerm.trim() ? 'matching users' : 'users'}
+                  {t('admin.usersDirectory.pageInfo', {
+                    current: Math.min(page, totalFilteredPages),
+                    total: totalFilteredPages,
+                    count: filteredItems.length,
+                    label: searchTerm.trim() ? t('admin.usersDirectory.matchingUsers') : t('admin.usersDirectory.users'),
+                  })}
                 </p>
                 {apiTotal > items.length ? (
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Loaded {items.length} of {apiTotal} in this scope. Narrow filters if someone is missing, or use
-                    Lookup.
+                    {t('admin.usersDirectory.loadedInfo', { loaded: items.length, total: apiTotal })}
                   </p>
                 ) : null}
               </div>

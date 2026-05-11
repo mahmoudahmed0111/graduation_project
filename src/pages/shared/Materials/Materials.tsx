@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueries } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, ExternalLink, FileText, Search } from 'lucide-react';
@@ -22,6 +23,7 @@ interface OfferingMeta {
 }
 
 export function Materials() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { error: showError } = useToastStore();
 
@@ -59,7 +61,7 @@ export function Materials() {
         const rows = await api.getMyCourses({ semester: 'current' });
         if (!cancelled) setEnrollments(Array.isArray(rows) ? rows : []);
       } catch (err) {
-        if (!cancelled) showError('Failed to load your courses.');
+        if (!cancelled) showError(t('shared.materials.failedLoadCourses'));
       } finally {
         if (!cancelled) setEnrollmentsLoading(false);
       }
@@ -134,11 +136,11 @@ export function Materials() {
 
   if (allLoading) {
     return (
-      <AdminPageShell titleStack={{ section: 'LMS & Gradebook', page: 'Materials' }} subtitle="Loading…">
+      <AdminPageShell titleStack={{ section: t('shared.materials.section'), page: t('shared.materials.page') }} subtitle={t('shared.materials.loadingSubtitle')}>
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading materials…</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('shared.materials.loadingMaterials')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -147,8 +149,8 @@ export function Materials() {
 
   return (
     <AdminPageShell
-      titleStack={{ section: 'LMS & Gradebook', page: 'Materials' }}
-      subtitle="Access course materials, lectures, and resources"
+      titleStack={{ section: t('shared.materials.section'), page: t('shared.materials.page') }}
+      subtitle={t('shared.materials.subtitle')}
     >
       <Card>
         <CardContent className="p-4">
@@ -157,7 +159,7 @@ export function Materials() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search materials…"
+                placeholder={t('shared.materials.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -168,10 +170,10 @@ export function Materials() {
                 value={selectedCourse}
                 onChange={setSelectedCourse}
                 options={[
-                  { value: 'all', label: 'All courses' },
+                  { value: 'all', label: t('shared.materials.allCourses') },
                   ...offerings.map((o) => ({ value: o.id, label: `${o.code} — ${o.title}` })),
                 ]}
-                placeholder="All courses"
+                placeholder={t('shared.materials.allCourses')}
               />
             </div>
             <div className="w-full sm:w-56">
@@ -179,13 +181,13 @@ export function Materials() {
                 value={selectedCategory}
                 onChange={setSelectedCategory}
                 options={[
-                  { value: 'all', label: 'All categories' },
-                  { value: 'Lectures', label: 'Lectures' },
-                  { value: 'Sheets', label: 'Sheets' },
-                  { value: 'Readings', label: 'Readings' },
-                  { value: 'Links', label: 'Links' },
+                  { value: 'all', label: t('shared.materials.allCategories') },
+                  { value: 'Lectures', label: t('shared.materials.catLectures') },
+                  { value: 'Sheets', label: t('shared.materials.catSheets') },
+                  { value: 'Readings', label: t('shared.materials.catReadings') },
+                  { value: 'Links', label: t('shared.materials.catLinks') },
                 ]}
-                placeholder="All categories"
+                placeholder={t('shared.materials.allCategories')}
                 searchable={false}
               />
             </div>
@@ -198,18 +200,17 @@ export function Materials() {
           <Card>
             <CardContent className="p-12 text-center">
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No course offerings available.</p>
+              <p className="text-gray-600">{t('shared.materials.noOfferings')}</p>
             </CardContent>
           </Card>
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Browse materials by course</CardTitle>
+              <CardTitle>{t('shared.materials.browseByCourse')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-4">
-                As a university admin you don't have direct access to read materials, but you can drill into any
-                course offering's materials page.
+                {t('shared.materials.uaHint')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {offeringsForBrowse.map((o) => (
@@ -233,7 +234,7 @@ export function Materials() {
         <Card>
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No materials found.</p>
+            <p className="text-gray-600">{t('shared.materials.noMaterials')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -271,11 +272,11 @@ export function Materials() {
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                            <span>{m.isExternalLink ? 'Link' : (m.fileType ?? 'File').toUpperCase()}</span>
+                            <span>{m.isExternalLink ? t('shared.materials.link') : (m.fileType ?? t('shared.materials.fileFallback')).toUpperCase()}</span>
                           </div>
                           <span className="flex items-center gap-1 text-sm text-primary-600 font-medium">
                             {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-                            {m.isExternalLink ? 'Open' : 'Download'}
+                            {m.isExternalLink ? t('shared.materials.open') : t('shared.materials.download')}
                           </span>
                         </div>
                         <div className="mt-2 text-xs text-gray-400">
@@ -293,7 +294,7 @@ export function Materials() {
 
       {!isUniversityAdmin && totalCount > 0 && (
         <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-          Showing {totalCount} materials
+          {t('shared.materials.showingCount', { count: totalCount })}
         </div>
       )}
     </AdminPageShell>

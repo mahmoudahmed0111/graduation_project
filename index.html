@@ -29,6 +29,17 @@
           }
         } catch (e) {}
       })();
+      // Apply language direction early to avoid LTR/RTL flash
+      (function () {
+        try {
+          var lang = localStorage.getItem('app-language');
+          if (lang !== 'ar' && lang !== 'en') {
+            lang = (navigator.language || 'en').toLowerCase().indexOf('ar') === 0 ? 'ar' : 'en';
+          }
+          document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+          document.documentElement.setAttribute('lang', lang);
+        } catch (e) {}
+      })();
     </script>
   </head>
   <body>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Select2 } from '@/components/ui/Select2';
@@ -11,6 +12,7 @@ import { useToastStore } from '@/store/toastStore';
 import { ArrowLeft, FileSpreadsheet, Upload } from 'lucide-react';
 
 export function BulkImportUsersPage() {
+  const { t } = useTranslation();
   const { user: auth } = useAuthStore();
   const isUA = auth?.role === 'universityAdmin';
   const { success, error: toastError } = useToastStore();
@@ -35,11 +37,11 @@ export function BulkImportUsersPage() {
 
   const handleImport = async () => {
     if (!file) {
-      toastError('Choose an Excel or CSV file (max 2MB).');
+      toastError(t('admin.bulkImportUsers.chooseFile'));
       return;
     }
     if (isUA && !collegeId) {
-      toastError('College is required for bulk import.');
+      toastError(t('admin.bulkImportUsers.collegeRequired'));
       return;
     }
     try {
@@ -49,7 +51,7 @@ export function BulkImportUsersPage() {
       });
       setSummary({ created: result.created, failed: result.failed });
       setLastLogId(result.logId ?? null);
-      success(`Import finished: ${result.created} created, ${result.failed} failed.`);
+      success(t('admin.bulkImportUsers.importFinished', { created: result.created, failed: result.failed }));
     } catch (e) {
       toastError(getApiErrorMessage(e));
     }
@@ -57,7 +59,7 @@ export function BulkImportUsersPage() {
 
   const handleResend = async () => {
     if (!lastLogId) {
-      toastError('No import log id yet. Run an import first.');
+      toastError(t('admin.bulkImportUsers.noLogId'));
       return;
     }
     try {
@@ -75,13 +77,13 @@ export function BulkImportUsersPage() {
           <Link to="/dashboard/users/students">
             <Button variant="secondary" size="sm" className="inline-flex items-center gap-2 rounded-xl">
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t('admin.bulkImportUsers.back')}
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bulk import users</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.bulkImportUsers.title')}</h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              .xlsx or .csv, max 2MB and 500 rows. College admins are scoped automatically.
+              {t('admin.bulkImportUsers.subtitle')}
             </p>
           </div>
         </div>
@@ -91,15 +93,15 @@ export function BulkImportUsersPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <FileSpreadsheet className="h-5 w-5 shrink-0 text-gray-500" />
-            Import file
+            {t('admin.bulkImportUsers.importFile')}
           </CardTitle>
         </CardHeader>
         <CardContent className="mx-auto max-w-xl space-y-6">
           {isUA && (
-            <Select2 label="College" options={collegeOptions} value={collegeId} onChange={setCollegeId} />
+            <Select2 label={t('admin.bulkImportUsers.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
           )}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Spreadsheet</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.bulkImportUsers.spreadsheet')}</label>
             <input
               type="file"
               accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
@@ -118,23 +120,23 @@ export function BulkImportUsersPage() {
             disabled={importMutation.isPending}
           >
             <Upload className="h-4 w-4" />
-            {importMutation.isPending ? 'Uploading…' : 'Start import'}
+            {importMutation.isPending ? t('admin.bulkImportUsers.uploading') : t('admin.bulkImportUsers.startImport')}
           </Button>
 
           {summary && (
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm dark:border-dark-border dark:bg-dark-bg">
-              <p className="font-medium text-gray-900 dark:text-white">Last result</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t('admin.bulkImportUsers.lastResult')}</p>
               <p className="mt-1 text-gray-600 dark:text-gray-400">
-                Created: <strong>{summary.created}</strong> · Failed: <strong>{summary.failed}</strong>
+                {t('admin.bulkImportUsers.created')}: <strong>{summary.created}</strong> · {t('admin.bulkImportUsers.failed')}: <strong>{summary.failed}</strong>
               </p>
               {lastLogId && (
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Log id: <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">{lastLogId}</code>
+                  {t('admin.bulkImportUsers.logId')}: <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">{lastLogId}</code>
                 </p>
               )}
               {lastLogId && summary.failed > 0 && (
                 <Button type="button" variant="secondary" className="mt-3 rounded-xl" onClick={() => void handleResend()}>
-                  Resend credentials (failed emails)
+                  {t('admin.bulkImportUsers.resendCredentials')}
                 </Button>
               )}
             </div>

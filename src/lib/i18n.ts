@@ -1,8 +1,9 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { buildAreaResources } from './i18n_modules';
 
-const resources = {
+const baseResources = {
   en: {
     translation: {
       common: {
@@ -267,7 +268,287 @@ const resources = {
       },
     },
   },
+  ar: {
+    translation: {
+      common: {
+        login: 'تسجيل الدخول',
+        logout: 'تسجيل الخروج',
+        register: 'إنشاء حساب',
+        submit: 'إرسال',
+        cancel: 'إلغاء',
+        save: 'حفظ',
+        delete: 'حذف',
+        edit: 'تعديل',
+        search: 'بحث',
+        loading: 'جارٍ التحميل...',
+        error: 'خطأ',
+        success: 'تم بنجاح',
+        name: 'الاسم',
+        next: 'التالي',
+        change: 'تغيير',
+        welcome: 'مرحبًا',
+        dashboard: 'لوحة التحكم',
+      },
+      auth: {
+        loginTitle: 'تسجيل الدخول إلى حسابك',
+        registerTitle: 'إنشاء حساب',
+        nationalId: 'الرقم القومي',
+        email: 'البريد الإلكتروني',
+        password: 'كلمة المرور',
+        confirmPassword: 'تأكيد كلمة المرور',
+        loginWithNationalId: 'الدخول بالرقم القومي',
+        loginWithEmail: 'الدخول بالبريد الجامعي',
+        forgotPassword: 'نسيت كلمة المرور؟',
+        resetPassword: 'إعادة تعيين كلمة المرور',
+        resetPasswordTitle: 'إعادة تعيين كلمة المرور',
+        enterEmail: 'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور',
+        sendResetLink: 'إرسال رابط إعادة التعيين',
+        backToLogin: 'العودة لتسجيل الدخول',
+        noAccount: 'ليس لديك حساب؟',
+        hasAccount: 'لديك حساب بالفعل؟',
+        invalidCredentials: 'بيانات الدخول غير صحيحة',
+        accountExists: 'يوجد حساب بهذا الرقم القومي بالفعل',
+        claimAccount: 'استرداد الحساب',
+        loginSuccess: 'تم تسجيل الدخول بنجاح',
+        verifyOTP: 'تحقق من الرمز',
+        otpDescription: 'أدخل الرمز المكوّن من 6 أرقام المُرسل إلى بريدك',
+        otpHelper: 'يمكنك لصق الرمز كاملًا في أول خانة.',
+        otpSent: 'تم إرسال الرمز بنجاح',
+        verify: 'تحقق من الرمز',
+        otpIncomplete: 'يرجى إدخال الرمز كاملًا (6 أرقام)',
+        otpSessionExpired: 'انتهت الجلسة. يرجى إعادة تسجيل الدخول.',
+        invalidOTP: 'الرمز غير صحيح. حاول مرة أخرى.',
+        otpDigitAria: 'خانة الرمز رقم {{number}}',
+        resetLinkSent: 'تم إرسال رابط إعادة التعيين إلى بريدك',
+        resetLinkError: 'حدث خطأ أثناء إرسال رابط إعادة التعيين',
+        selectFaculty: 'اختر الكلية',
+        faculty: 'الكلية',
+      },
+      nav: {
+        dashboard: 'لوحة التحكم',
+        courses: 'المقررات',
+        allCourses: 'كل المقررات',
+        myCourses: 'مقرراتي',
+        enrollInCourse: 'التسجيل في مقرر',
+        enrollments: 'التسجيلات',
+        materials: 'المواد التعليمية',
+        assessments: 'التقييمات',
+        myAssessments: 'تقييماتي',
+        mySubmissions: 'تسليماتي',
+        attendance: 'الحضور',
+        announcements: 'الإعلانات',
+        chatbot: 'المساعد الذكي',
+        profile: 'الملف الشخصي',
+        students: 'الطلاب',
+        roster: 'كشف الطلاب',
+        settings: 'الإعدادات',
+        createCourse: 'إنشاء مقرر',
+        analytics: 'التحليلات',
+        users: 'المستخدمون',
+        doctors: 'الأساتذة',
+        tas: 'المعيدون',
+        admins: 'المسؤولون',
+        organizationalStructure: 'الهيكل التنظيمي',
+        colleges: 'الكليات',
+        departments: 'الأقسام',
+        academicStructure: 'الهيكل الأكاديمي',
+        courseCatalog: 'دليل المقررات',
+        courseOfferings: 'المقررات المطروحة',
+        systemSettings: 'إعدادات النظام',
+        viewMaterials: 'عرض المواد',
+        manageMaterials: 'إدارة المواد',
+        uploadMaterial: 'رفع مادة',
+        createAssessment: 'إنشاء تقييم',
+        gradeSubmissions: 'تصحيح التسليمات',
+        attendanceReports: 'تقارير الحضور',
+        manageSessions: 'إدارة الجلسات',
+        calculateFinalGrades: 'احتساب الدرجات النهائية',
+      },
+      student: {
+        dashboard: 'لوحة الطالب',
+        myCourses: 'مقرراتي',
+        gpa: 'المعدل التراكمي',
+        creditsEarned: 'الساعات المعتمدة',
+        year: 'السنة',
+        semester: 'الفصل الدراسي',
+        graduationProject: 'مشروع التخرج',
+        addProject: 'إضافة مشروع تخرج',
+        projectTitle: 'عنوان المشروع',
+        projectDescription: 'الوصف',
+        supervisor: 'المشرف',
+        uploadFile: 'رفع ملف PDF',
+      },
+      teacher: {
+        roster: 'كشف الطلاب',
+        course: 'المقرر',
+        students: 'الطلاب',
+        grade: 'الدرجة',
+      },
+      mock: {
+        departments: {
+          computerScience: 'علوم الحاسب',
+          mathematics: 'الرياضيات',
+          physics: 'الفيزياء',
+          chemistry: 'الكيمياء',
+        },
+        colleges: {
+          facultyOfEngineering: 'كلية الهندسة',
+        },
+        courses: {
+          introToProgramming: 'مقدمة في البرمجة',
+          dataStructures: 'هياكل البيانات',
+          databaseSystems: 'نظم قواعد البيانات',
+          operatingSystems: 'نظم التشغيل',
+          webDevelopment: 'تطوير الويب',
+          softwareEngineering: 'هندسة البرمجيات',
+          computerNetworks: 'شبكات الحاسب',
+        },
+        courseDescriptions: {
+          introToProgramming: 'أساسيات البرمجة بما في ذلك المتغيرات وأنواع البيانات وهياكل التحكم والدوال والخوارزميات الأساسية. يوفر هذا المقرر أساسًا متينًا لمقررات البرمجة المتقدمة.',
+          dataStructures: 'دراسة هياكل البيانات الأساسية بما فيها المصفوفات والقوائم المتصلة والمكدسات والطوابير والأشجار والرسوم البيانية، مع تحليل وتصميم الخوارزميات.',
+          databaseSystems: 'مقدمة لمفاهيم قواعد البيانات وSQL وتصميم قواعد البيانات العلائقية والتطبيع وأنظمة إدارة قواعد البيانات.',
+          operatingSystems: 'مفاهيم نظم التشغيل بما يشمل إدارة العمليات والذاكرة وأنظمة الملفات والتزامن.',
+          webDevelopment: 'تطوير الويب الحديث باستخدام HTML وCSS وJavaScript وأطر العمل، مع مفاهيم تطوير الواجهة الأمامية والخلفية.',
+          softwareEngineering: 'دورة حياة تطوير البرمجيات وتحليل المتطلبات وأنماط التصميم والاختبار وإدارة المشاريع.',
+          computerNetworks: 'بروتوكولات وبنية الشبكات',
+          dataStructuresAlgorithms: 'هياكل بيانات وخوارزميات متقدمة',
+          databaseDesign: 'مقدمة في تصميم قواعد البيانات وSQL',
+        },
+        announcements: {
+          welcomeFall2025: 'مرحبًا بكم في الفصل الدراسي خريف 2025',
+          welcomeFall2025Content: 'يسعدنا الترحيب بجميع الطلاب في فصل خريف 2025. تبدأ المحاضرات في الأول من سبتمبر. يرجى مراجعة جداولكم والتأكد من تسجيل المقررات الصحيحة.',
+          newLabEquipment: 'كلية الهندسة - أجهزة معامل جديدة',
+          newLabEquipmentContent: 'قامت كلية الهندسة بتركيب أجهزة جديدة في معامل الحاسب. يمكن لجميع الطلاب استخدام المرافق خلال ساعات المعمل.',
+          guestLecture: 'قسم علوم الحاسب - محاضرة ضيف',
+          guestLectureContent: 'يسرّنا الإعلان عن محاضرة للدكتور أحمد حسن بعنوان "ممارسات تطوير البرمجيات الحديثة" يوم 20 أكتوبر الساعة 2 ظهرًا بالقاعة 501. جميع طلاب علوم الحاسب مدعوون للحضور.',
+          assignmentExtended: 'CS101 - تمديد موعد تسليم الواجب الأول',
+          assignmentExtendedContent: 'بناءً على الطلب، تم تمديد موعد تسليم الواجب الأول إلى 8 أكتوبر الساعة 11:59 مساءً. يرجى التسليم عبر البوابة الإلكترونية.',
+          midtermSchedule: 'CS201 - جدول امتحان منتصف الفصل',
+          midtermScheduleContent: 'سيُعقد امتحان منتصف الفصل لمقرر هياكل البيانات يوم 25 أكتوبر من الساعة 10 صباحًا حتى 12 ظهرًا في القاعة 502. يرجى إحضار البطاقة الجامعية والحضور قبل 15 دقيقة.',
+          libraryHours: 'تمديد ساعات عمل المكتبة خلال فترة الامتحانات',
+          libraryHoursContent: 'ستقوم مكتبة الجامعة بتمديد ساعات العمل خلال الامتحانات. الساعات الجديدة: 8 صباحًا - 11 مساءً، من الأحد إلى السبت.',
+          universityAdministration: 'إدارة الجامعة',
+        },
+        notifications: {
+          newAssignmentPosted: 'تم نشر واجب جديد',
+          newAssignmentMessage: 'تم نشر واجب جديد لمقرر CS101 - مقدمة في البرمجة',
+          gradeUpdated: 'تم تحديث الدرجة',
+          gradeUpdatedMessage: 'تم تحديث درجتك في امتحان منتصف الفصل لمقرر CS201',
+        },
+        assessments: {
+          midtermChapter1_5: 'امتحان منتصف الفصل - الفصول 1-5',
+          assignment1BasicAlgorithms: 'الواجب الأول: الخوارزميات الأساسية',
+          quizDataStructuresBasics: 'اختبار قصير: أساسيات هياكل البيانات',
+          questionVariable: 'ما هو المتغير؟',
+          questionLoops: 'اشرح مفهوم الحلقات في البرمجة.',
+          questionMaxArray: 'اكتب دالة لإيجاد أكبر رقم في مصفوفة.',
+          questionBinarySearch: 'ما تعقيد البحث الثنائي الزمني؟',
+          questionArraysFixed: 'صح أم خطأ: المصفوفات ذات حجم ثابت.',
+          optionStorageLocation: 'موقع تخزين',
+          optionFunction: 'دالة',
+          optionLoop: 'حلقة',
+          optionTrue: 'صح',
+          optionFalse: 'خطأ',
+        },
+        materials: {
+          lecture1: 'مقدمة في البرمجة - المحاضرة الأولى',
+          lecture1Desc: 'نظرة عامة على مفاهيم البرمجة وأساسياتها',
+          assignmentSheet1: 'ورقة الواجب البرمجي الأولى',
+          assignmentSheet1Desc: 'تمارين على المتغيرات وأنواع البيانات',
+          cleanCodeReading: 'قراءة موصى بها: Clean Code',
+          cleanCodeReadingDesc: 'الفصول 1-3 من كتاب Clean Code',
+          week1Slides: 'هياكل البيانات - شرائح الأسبوع الأول',
+          week1SlidesDesc: 'مقدمة عن المصفوفات والقوائم المتصلة',
+          youtubeTutorial: 'يوتيوب: شرح هياكل البيانات',
+          youtubeTutorialDesc: 'شرح مرئي للأشجار الثنائية',
+        },
+        materialCategories: {
+          lectures: 'المحاضرات',
+          sheets: 'الأوراق',
+          readings: 'القراءات',
+          links: 'الروابط',
+        },
+        status: {
+          enrolled: 'مسجَّل',
+          passed: 'ناجح',
+          inProgress: 'قيد التنفيذ',
+          graded: 'تم التصحيح',
+          submitted: 'تم التسليم',
+        },
+        days: {
+          sunday: 'الأحد',
+          monday: 'الإثنين',
+          tuesday: 'الثلاثاء',
+          wednesday: 'الأربعاء',
+          thursday: 'الخميس',
+          friday: 'الجمعة',
+          saturday: 'السبت',
+        },
+        sessionTypes: {
+          lecture: 'محاضرة',
+          lab: 'معمل',
+        },
+        semesters: {
+          fall2025: 'خريف 2025',
+          spring2024: 'ربيع 2024',
+          fall2024: 'خريف 2024',
+        },
+        locations: {
+          hall501: 'قاعة 501',
+          hall502: 'قاعة 502',
+          hall503: 'قاعة 503',
+          hall504: 'قاعة 504',
+          hall505: 'قاعة 505',
+          lab201: 'معمل 201',
+          lab202: 'معمل 202',
+          lab203: 'معمل 203',
+          lab301: 'معمل 301',
+        },
+        questionTypes: {
+          mcqSingle: 'اختيار من متعدد (إجابة واحدة)',
+          essay: 'مقالي',
+          fileUpload: 'رفع ملف',
+          trueFalse: 'صح/خطأ',
+        },
+        doctor: {
+          welcomeBack: 'مرحبًا بعودتك',
+          facultyMember: 'عضو هيئة تدريس',
+          myCourses: 'مقرراتي',
+          totalStudents: 'إجمالي الطلاب',
+          enrolledStudents: 'الطلاب المسجلون',
+          pendingAssessments: 'تقييمات معلّقة',
+          toBeGraded: 'بحاجة للتصحيح',
+          upcomingClasses: 'المحاضرات القادمة',
+          course: 'المقرر',
+          students: 'الطلاب',
+          month: 'الشهر',
+          count: 'العدد',
+          noEnrollmentData: 'لا توجد بيانات تسجيل متاحة',
+          noCourseData: 'لا توجد بيانات مقررات متاحة',
+          activeCourses: 'المقررات النشطة',
+          noCoursesAssigned: 'لم يتم إسناد مقررات لهذا الفصل',
+          courseOverview: 'نظرة عامة على المقرر',
+        },
+      },
+    },
+  },
 };
+
+const areaBundles = buildAreaResources();
+const resources = {
+  en: { translation: { ...baseResources.en.translation, ...areaBundles.en } },
+  ar: { translation: { ...baseResources.ar.translation, ...areaBundles.ar } },
+};
+
+const STORAGE_KEY = 'app-language';
+
+function applyDirection(lng: string) {
+  if (typeof document === 'undefined') return;
+  const isRtl = lng?.toLowerCase().startsWith('ar');
+  const html = document.documentElement;
+  html.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
+  html.setAttribute('lang', isRtl ? 'ar' : 'en');
+}
 
 i18n
   .use(LanguageDetector)
@@ -275,11 +556,18 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    supportedLngs: ['en'],
+    supportedLngs: ['en', 'ar'],
+    detection: {
+      order: ['localStorage', 'navigator', 'htmlTag'],
+      lookupLocalStorage: STORAGE_KEY,
+      caches: ['localStorage'],
+    },
     interpolation: {
       escapeValue: false,
     },
   });
 
-export default i18n;
+applyDirection(i18n.language);
+i18n.on('languageChanged', (lng) => applyDirection(lng));
 
+export default i18n;

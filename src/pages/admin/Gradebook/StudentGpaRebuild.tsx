@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
 import { AdminPageShell } from '@/components/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -11,6 +12,7 @@ import { getApiErrorMessage } from '@/lib/http/client';
 import type { GpaRebuildResponse } from '@/services/gradebook.service';
 
 export function StudentGpaRebuild() {
+  const { t } = useTranslation();
   const [studentId, setStudentId] = useState('');
   const [result, setResult] = useState<GpaRebuildResponse | null>(null);
   const { success, error: showError } = useToastStore();
@@ -40,35 +42,35 @@ export function StudentGpaRebuild() {
     try {
       const res = await rebuild.mutateAsync(studentId.trim());
       setResult(res);
-      success('GPA rebuilt.');
+      success(t('admin.studentGpaRebuild.gpaRebuilt'));
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to rebuild GPA.'));
+      showError(getApiErrorMessage(err, t('admin.studentGpaRebuild.rebuildFail')));
     }
   };
 
   return (
     <AdminPageShell
-      titleStack={{ section: 'LMS & Gradebook', page: 'GPA Rebuild' }}
-      subtitle="Standalone rebuild for a single student. Use after concurrent-publish issues."
+      titleStack={{ section: t('admin.studentGpaRebuild.section'), page: t('admin.studentGpaRebuild.page') }}
+      subtitle={t('admin.studentGpaRebuild.subtitle')}
     >
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary-600 dark:text-primary-400" /> Rebuild
+              <Sparkles className="h-5 w-5 text-primary-600 dark:text-primary-400" /> {t('admin.studentGpaRebuild.rebuild')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <Select2
-                label="Student *"
+                label={t('admin.studentGpaRebuild.studentRequired')}
                 value={studentId}
                 onChange={setStudentId}
-                placeholder={studentsLoading ? 'Loading students…' : 'Search by name, email, or national ID…'}
+                placeholder={studentsLoading ? t('admin.studentGpaRebuild.loadingStudents') : t('admin.studentGpaRebuild.searchPlaceholder')}
                 options={studentOptions}
               />
               <Button type="submit" isLoading={rebuild.isPending} disabled={!studentId.trim()}>
-                Rebuild
+                {t('admin.studentGpaRebuild.rebuild')}
               </Button>
             </form>
           </CardContent>
@@ -77,26 +79,26 @@ export function StudentGpaRebuild() {
         {result && (
           <Card className="lg:col-span-3">
             <CardHeader>
-              <CardTitle>Result</CardTitle>
+              <CardTitle>{t('admin.studentGpaRebuild.result')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400">GPA</div>
+                  <div className="text-gray-500 dark:text-gray-400">{t('admin.studentGpaRebuild.gpa')}</div>
                   <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                     {result.gpa.toFixed(2)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400">Earned credits</div>
+                  <div className="text-gray-500 dark:text-gray-400">{t('admin.studentGpaRebuild.earnedCredits')}</div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{result.earnedCredits}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400">Level</div>
+                  <div className="text-gray-500 dark:text-gray-400">{t('admin.studentGpaRebuild.level')}</div>
                   <div className="font-medium text-gray-900 dark:text-gray-100">{result.level}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400">Status</div>
+                  <div className="text-gray-500 dark:text-gray-400">{t('admin.studentGpaRebuild.status')}</div>
                   <div className="font-medium capitalize text-gray-900 dark:text-gray-100">{result.academicStatus}</div>
                 </div>
               </div>

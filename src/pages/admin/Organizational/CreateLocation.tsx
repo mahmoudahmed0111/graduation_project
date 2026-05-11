@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -12,14 +13,14 @@ import { useAuthStore } from '@/store/authStore';
 import { useColleges } from '@/hooks/queries/useColleges';
 import { useInvalidateLocations } from '@/hooks/queries/useLocations';
 
-const TYPE_OPTS = [
-  { value: 'lecture_hall', label: 'Lecture hall' },
-  { value: 'lab', label: 'Lab' },
-  { value: 'section_room', label: 'Section room' },
-  { value: 'auditorium', label: 'Auditorium' },
-];
-
 export function CreateLocation() {
+  const { t } = useTranslation();
+  const TYPE_OPTS = [
+    { value: 'lecture_hall', label: t('admin.createLocation.lectureHall') },
+    { value: 'lab', label: t('admin.createLocation.lab') },
+    { value: 'section_room', label: t('admin.createLocation.sectionRoom') },
+    { value: 'auditorium', label: t('admin.createLocation.auditorium') },
+  ];
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
@@ -66,15 +67,15 @@ export function CreateLocation() {
     e.preventDefault();
     const cap = Number(form.capacity);
     if (!form.name.trim() || !Number.isFinite(cap) || cap < 0) {
-      showError('Name and valid capacity are required');
+      showError(t('admin.createLocation.nameCapacityRequired'));
       return;
     }
     if (isUa && !form.collegeId.trim()) {
-      showError('Select a college');
+      showError(t('admin.createLocation.selectCollege'));
       return;
     }
     if (!isUa && !user?.collegeId) {
-      showError('College could not be determined for your account');
+      showError(t('admin.createLocation.collegeUnknown'));
       return;
     }
     try {
@@ -91,12 +92,12 @@ export function CreateLocation() {
         ...(form.roomNumber.trim() ? { roomNumber: form.roomNumber.trim() } : {}),
         ...(form.readerId.trim() ? { readerId: form.readerId.trim() } : {}),
       });
-      success('Location created');
+      success(t('admin.createLocation.created'));
       invalidateLocations();
       navigate('/dashboard/organizational/locations');
     } catch (error) {
       logger.error('Failed to create location', { context: 'CreateLocation', error });
-      showError(getApiErrorMessage(error, 'Failed to create location'));
+      showError(getApiErrorMessage(error, t('admin.createLocation.createFail')));
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,7 @@ export function CreateLocation() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading colleges…</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.createLocation.loadingColleges')}</p>
         </div>
       </div>
     );
@@ -120,15 +121,15 @@ export function CreateLocation() {
           <Link to="/dashboard/organizational/locations">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-1 h-4 w-4" />
-              Back
+              {t('admin.createLocation.back')}
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add location</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createLocation.title')}</h1>
         </div>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load colleges</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.createLocation.collegesLoadFail')}</p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetchColleges()}>
-            Retry
+            {t('admin.createLocation.retry')}
           </Button>
         </div>
       </div>
@@ -141,11 +142,11 @@ export function CreateLocation() {
         <Link to="/dashboard/organizational/locations">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            {t('admin.createLocation.back')}
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add location</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createLocation.title')}</h1>
         </div>
       </div>
 
@@ -153,23 +154,23 @@ export function CreateLocation() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            Details
+            {t('admin.createLocation.details')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {isUa && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.collegeRequired')}</label>
                 <Select2
                   value={form.collegeId}
                   onChange={(v) => setForm((p) => ({ ...p, collegeId: v }))}
-                  options={[{ value: '', label: 'Select…' }, ...colleges.map((c) => ({ value: c.id, label: c.name }))]}
+                  options={[{ value: '', label: t('admin.createLocation.selectOpt') }, ...colleges.map((c) => ({ value: c.id, label: c.name }))]}
                 />
               </div>
             )}
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.nameRequired')}</label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -178,7 +179,7 @@ export function CreateLocation() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Capacity *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.capacityRequired')}</label>
                 <Input
                   type="number"
                   min={0}
@@ -188,7 +189,7 @@ export function CreateLocation() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Type *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.typeRequired')}</label>
                 <Select2
                   value={form.type}
                   onChange={(v) =>
@@ -203,14 +204,14 @@ export function CreateLocation() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Building</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.building')}</label>
                 <Input
                   value={form.building}
                   onChange={(e) => setForm((p) => ({ ...p, building: e.target.value }))}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Floor</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.floor')}</label>
                 <Input
                   type="number"
                   value={form.floor}
@@ -220,14 +221,14 @@ export function CreateLocation() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Room number</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.roomNumber')}</label>
                 <Input
                   value={form.roomNumber}
                   onChange={(e) => setForm((p) => ({ ...p, roomNumber: e.target.value }))}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Reader ID</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createLocation.readerId')}</label>
                 <Input
                   value={form.readerId}
                   onChange={(e) => setForm((p) => ({ ...p, readerId: e.target.value }))}
@@ -240,7 +241,7 @@ export function CreateLocation() {
               className="w-full sm:w-auto"
             >
               <Save className="mr-2 h-4 w-4" />
-              {loading ? 'Saving…' : 'Create'}
+              {loading ? t('admin.createLocation.saving') : t('admin.createLocation.create')}
             </Button>
           </form>
         </CardContent>

@@ -154,7 +154,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         { path: '/dashboard/assessments/submissions', label: t('nav.mySubmissions'), icon: FileText },
       ]
     },
-    { path: '/dashboard/my-grades', label: 'My Grades', icon: GraduationCap },
+    { path: '/dashboard/my-grades', label: t('chrome.sidebar.myGrades'), icon: GraduationCap },
     { path: '/dashboard/attendance', label: t('nav.attendance'), icon: Clock },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
@@ -164,21 +164,21 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
   const adminNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     ...(import.meta.env.DEV
-      ? [{ path: '/dashboard/ui-preview', label: 'UI Preview (Static)', icon: LayoutDashboard } satisfies NavItem]
+      ? [{ path: '/dashboard/ui-preview', label: t('chrome.sidebar.uiPreviewStatic'), icon: LayoutDashboard } satisfies NavItem]
       : []),
-    { 
-      path: '/dashboard/organizational', 
-      label: 'University Structure', 
+    {
+      path: '/dashboard/organizational',
+      label: t('chrome.sidebar.universityStructure'),
       icon: Building2,
       children: [
         { path: '/dashboard/organizational/colleges', label: t('nav.colleges'), icon: Building2 },
         { path: '/dashboard/organizational/departments', label: t('nav.departments'), icon: School },
-        { path: '/dashboard/organizational/locations', label: 'Locations', icon: MapPin },
+        { path: '/dashboard/organizational/locations', label: t('chrome.sidebar.locations'), icon: MapPin },
       ]
     },
-    { 
-      path: '/dashboard/users', 
-      label: 'User Management', 
+    {
+      path: '/dashboard/users',
+      label: t('chrome.sidebar.userManagement'),
       icon: Users,
       children: [
         { path: '/dashboard/users/students', label: t('nav.students'), icon: GraduationCap },
@@ -189,28 +189,28 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
     },
     {
       path: '/dashboard/academic',
-      label: 'Academic',
+      label: t('chrome.sidebar.academic'),
       icon: Library,
       children: [
-        { path: '/dashboard/academic/catalog', label: 'Course catalog', icon: Library },
-        { path: '/dashboard/academic/offerings', label: 'Course offerings', icon: BookOpen },
-        { path: '/dashboard/academic/enrollments', label: 'Enrollments', icon: GraduationCap },
+        { path: '/dashboard/academic/catalog', label: t('chrome.sidebar.courseCatalog'), icon: Library },
+        { path: '/dashboard/academic/offerings', label: t('chrome.sidebar.courseOfferings'), icon: BookOpen },
+        { path: '/dashboard/academic/enrollments', label: t('chrome.sidebar.enrollments'), icon: GraduationCap },
       ],
     },
     {
       path: '/dashboard/lms',
-      label: 'LMS & Gradebook',
+      label: t('chrome.sidebar.lmsAndGradebook'),
       icon: GraduationCap,
       children: [
         { path: '/dashboard/materials', label: t('nav.materials'), icon: FileText },
-        { path: '/dashboard/gradebook', label: 'Gradebook', icon: ClipboardList },
-        { path: '/dashboard/admin/gpa-rebuild', label: 'GPA Rebuild', icon: GraduationCap },
+        { path: '/dashboard/gradebook', label: t('chrome.sidebar.gradebook'), icon: ClipboardList },
+        { path: '/dashboard/admin/gpa-rebuild', label: t('chrome.sidebar.gpaRebuild'), icon: GraduationCap },
       ],
     },
-    { path: '/dashboard/system-settings', label: 'System Settings', icon: Database },
-    { path: '/dashboard/announcements', label: 'Broadcast Center', icon: Bell },
-    { path: '/dashboard/chatbot', label: 'AI Assistant', icon: MessageSquare },
-    { path: '/dashboard/audit-logs', label: 'Audit Logs', icon: FileText },
+    { path: '/dashboard/system-settings', label: t('chrome.sidebar.systemSettings'), icon: Database },
+    { path: '/dashboard/announcements', label: t('chrome.sidebar.broadcastCenter'), icon: Bell },
+    { path: '/dashboard/chatbot', label: t('chrome.sidebar.aiAssistant'), icon: MessageSquare },
+    { path: '/dashboard/audit-logs', label: t('chrome.sidebar.auditLogs'), icon: FileText },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
@@ -255,11 +255,11 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       ]
     },
     { path: '/dashboard/grades', label: t('nav.calculateFinalGrades'), icon: GraduationCap },
-    { path: '/dashboard/gradebook', label: 'Gradebook', icon: ClipboardList },
+    { path: '/dashboard/gradebook', label: t('chrome.sidebar.gradebook'), icon: ClipboardList },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
     { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3 },
-    { path: '/dashboard/organizational/locations', label: 'Locations', icon: MapPin },
+    { path: '/dashboard/organizational/locations', label: t('chrome.sidebar.locations'), icon: MapPin },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
@@ -447,8 +447,8 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-full z-50 shadow-xl shadow-primary-900/5 dark:shadow-black/40',
-          'bg-white dark:bg-slate-900 border-r border-slate-200/70 dark:border-slate-800',
+          'fixed top-0 start-0 h-full z-50 shadow-xl shadow-primary-900/5 dark:shadow-black/40',
+          'bg-white dark:bg-slate-900 border-e border-slate-200/70 dark:border-slate-800',
           'transition-all duration-300 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           isExpanded ? 'lg:w-64' : 'lg:w-16'
@@ -469,22 +469,22 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
                 <div className="p-0.5 rounded-full bg-white">
                   <img
                     src="/logo/icon.png.png"
-                    alt="Logo"
+                    alt={t('chrome.sidebar.logoAlt')}
                     className="h-7 w-7 rounded-full"
                   />
                 </div>
               </div>
               {isExpanded && (
                 <div className="min-w-0 transition-opacity duration-300">
-                  <p className="font-bold text-white text-sm leading-tight whitespace-nowrap">Beni-Suef</p>
-                  <p className="text-[10px] text-accent-300 font-semibold tracking-wider uppercase">University</p>
+                  <p className="font-bold text-white text-sm leading-tight whitespace-nowrap">{t('chrome.sidebar.brandName')}</p>
+                  <p className="text-[10px] text-accent-300 font-semibold tracking-wider uppercase">{t('chrome.sidebar.brandSubtitle')}</p>
                 </div>
               )}
             </div>
             <button
               onClick={onClose}
               className="lg:hidden p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors relative z-10"
-              aria-label="Close sidebar"
+              aria-label={t('chrome.sidebar.closeSidebar')}
             >
               <X className="h-5 w-5" />
             </button>
@@ -493,7 +493,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
             {isExpanded && (
-              <p className="px-3 pb-2 text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">Menu</p>
+              <p className="px-3 pb-2 text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase">{t('chrome.sidebar.menu')}</p>
             )}
             {navItems.map((item) => renderNavItem(item))}
           </nav>

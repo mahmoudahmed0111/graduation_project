@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -126,6 +127,7 @@ const RECENT_ACTIVITY = [
 // ============ COMPONENT ============
 
 export function DoctorDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const doctor = user as IUser;
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -137,7 +139,7 @@ export function DoctorDashboard() {
 
   const statCards = [
     {
-      label: 'My Courses',
+      label: t('doctor.doctorDashboard.statMyCourses'),
       value: STATS.totalCourses,
       delta: STATS.coursesDelta,
       trend: 'up',
@@ -145,10 +147,10 @@ export function DoctorDashboard() {
       gradient: 'from-blue-500 to-blue-600',
       bg: 'bg-blue-50',
       iconColor: 'text-blue-600',
-      hint: 'Teaching this semester',
+      hint: t('doctor.doctorDashboard.statMyCoursesHint'),
     },
     {
-      label: 'Total Students',
+      label: t('doctor.doctorDashboard.statTotalStudents'),
       value: STATS.totalStudents,
       delta: STATS.studentsDelta,
       trend: 'up',
@@ -156,10 +158,10 @@ export function DoctorDashboard() {
       gradient: 'from-purple-500 to-purple-600',
       bg: 'bg-purple-50',
       iconColor: 'text-purple-600',
-      hint: 'Across all courses',
+      hint: t('doctor.doctorDashboard.statTotalStudentsHint'),
     },
     {
-      label: 'Pending Reviews',
+      label: t('doctor.doctorDashboard.statPendingReviews'),
       value: STATS.pendingAssessments,
       delta: STATS.assessmentsDelta,
       trend: 'down',
@@ -167,10 +169,10 @@ export function DoctorDashboard() {
       gradient: 'from-orange-500 to-orange-600',
       bg: 'bg-orange-50',
       iconColor: 'text-orange-600',
-      hint: 'To be graded',
+      hint: t('doctor.doctorDashboard.statPendingReviewsHint'),
     },
     {
-      label: 'Upcoming Classes',
+      label: t('doctor.doctorDashboard.statUpcomingClasses'),
       value: STATS.upcomingClasses,
       delta: STATS.classesDelta,
       trend: 'up',
@@ -178,15 +180,15 @@ export function DoctorDashboard() {
       gradient: 'from-emerald-500 to-emerald-600',
       bg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
-      hint: 'This week',
+      hint: t('doctor.doctorDashboard.statUpcomingClassesHint'),
     },
   ];
 
   const kpiCards = [
-    { label: 'Avg Attendance', value: `${STATS.avgAttendance}%`, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Avg Grade', value: STATS.avgGrade, icon: Target, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Submission Rate', value: `${STATS.submissionRate}%`, icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Rating', value: `${STATS.rating} / 5`, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: t('doctor.doctorDashboard.kpiAvgAttendance'), value: `${STATS.avgAttendance}%`, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: t('doctor.doctorDashboard.kpiAvgGrade'), value: STATS.avgGrade, icon: Target, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: t('doctor.doctorDashboard.kpiSubmissionRate'), value: `${STATS.submissionRate}%`, icon: CheckCircle2, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: t('doctor.doctorDashboard.kpiRating'), value: `${STATS.rating} / 5`, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
 
   return (
@@ -197,22 +199,22 @@ export function DoctorDashboard() {
         <div className="absolute -bottom-16 -left-8 h-56 w-56 rounded-full bg-accent-400/20 blur-3xl" />
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <p className="text-primary-200 text-sm mb-1">Welcome back,</p>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-3">Dr. {doctor?.name || 'Professor'}</h1>
+            <p className="text-primary-200 text-sm mb-1">{t('doctor.doctorDashboard.welcomeBack')}</p>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-3">{t('doctor.doctorDashboard.drName', { name: doctor?.name || t('doctor.doctorDashboard.professor') })}</h1>
             <div className="flex flex-wrap items-center gap-4 text-primary-100 text-sm">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                <span>Faculty of Computer Science</span>
+                <span>{t('doctor.doctorDashboard.facultyCS')}</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
-                <span>Senior Lecturer</span>
+                <span>{t('doctor.doctorDashboard.seniorLecturer')}</span>
               </div>
               <span className="hidden md:inline">•</span>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>Fall Semester 2026</span>
+                <span>{t('doctor.doctorDashboard.fallSemester2026')}</span>
               </div>
             </div>
           </div>
@@ -285,7 +287,7 @@ export function DoctorDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary-600" />
-              Today's Schedule
+              {t('doctor.doctorDashboard.todaysSchedule')}
             </CardTitle>
             <span className="text-xs text-gray-500">{currentTime.toLocaleDateString('en-US', { weekday: 'long' })}</span>
           </CardHeader>
@@ -312,7 +314,7 @@ export function DoctorDashboard() {
                       <div className="flex items-center gap-2 mb-0.5">
                         <h4 className="font-semibold text-gray-900">{s.course}</h4>
                         <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{s.type}</span>
-                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">Live now</span>}
+                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">{t('doctor.doctorDashboard.liveNow')}</span>}
                       </div>
                       <p className="text-xs text-gray-500">{s.time} • {s.room}</p>
                     </div>
@@ -328,7 +330,7 @@ export function DoctorDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary-600" />
-              Recent Activity
+              {t('doctor.doctorDashboard.recentActivity')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -353,13 +355,13 @@ export function DoctorDashboard() {
       </div>
 
       {/* Charts Row 1: Student Performance Trend (full) */}
-      <ChartCard title="Class Performance Trend" description="Average grade and attendance over the past 8 weeks">
+      <ChartCard title={t('doctor.doctorDashboard.classPerformanceTrend')} description={t('doctor.doctorDashboard.classPerformanceDesc')}>
         <LineChart
           data={STUDENT_PERFORMANCE}
           dataKey="week"
           lines={[
-            { dataKey: 'avg', name: 'Avg Grade', stroke: '#0055cc' },
-            { dataKey: 'attendance', name: 'Attendance %', stroke: '#10b981' },
+            { dataKey: 'avg', name: t('doctor.doctorDashboard.avgGradeLine'), stroke: '#0055cc' },
+            { dataKey: 'attendance', name: t('doctor.doctorDashboard.attendancePctLine'), stroke: '#10b981' },
           ]}
           height={280}
         />
@@ -367,38 +369,38 @@ export function DoctorDashboard() {
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Student Enrollment by Course" description="Number of students per course">
+        <ChartCard title={t('doctor.doctorDashboard.enrollmentByCourse')} description={t('doctor.doctorDashboard.enrollmentByCourseDesc')}>
           <BarChart
             data={ENROLLMENT_BY_COURSE}
             dataKey="course"
-            bars={[{ dataKey: 'students', name: 'Students', fill: '#0055cc' }]}
+            bars={[{ dataKey: 'students', name: t('doctor.doctorDashboard.studentsLabel'), fill: '#0055cc' }]}
             height={280}
           />
         </ChartCard>
 
-        <ChartCard title="Assessment Distribution" description="Breakdown of assessment types">
+        <ChartCard title={t('doctor.doctorDashboard.assessmentDistribution')} description={t('doctor.doctorDashboard.assessmentDistributionDesc')}>
           <PieChart data={ASSESSMENT_DISTRIBUTION} height={280} />
         </ChartCard>
       </div>
 
       {/* Charts Row 3 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Grade Distribution" description="Letter grades across all courses">
+        <ChartCard title={t('doctor.doctorDashboard.gradeDistribution')} description={t('doctor.doctorDashboard.gradeDistributionDesc')}>
           <BarChart
             data={GRADE_DISTRIBUTION}
             dataKey="grade"
-            bars={[{ dataKey: 'count', name: 'Students', fill: '#8b5cf6' }]}
+            bars={[{ dataKey: 'count', name: t('doctor.doctorDashboard.studentsLabel'), fill: '#8b5cf6' }]}
             height={260}
           />
         </ChartCard>
 
-        <ChartCard title="Submissions Trend" description="On-time vs late submissions">
+        <ChartCard title={t('doctor.doctorDashboard.submissionsTrend')} description={t('doctor.doctorDashboard.submissionsTrendDesc')}>
           <AreaChart
             data={SUBMISSIONS_TREND}
             dataKey="month"
             areas={[
-              { dataKey: 'onTime', name: 'On Time', fill: '#10b981' },
-              { dataKey: 'late', name: 'Late', fill: '#ef4444' },
+              { dataKey: 'onTime', name: t('doctor.doctorDashboard.onTime'), fill: '#10b981' },
+              { dataKey: 'late', name: t('doctor.doctorDashboard.late'), fill: '#ef4444' },
             ]}
             height={260}
           />
@@ -411,10 +413,10 @@ export function DoctorDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary-600" />
-              My Courses
+              {t('doctor.doctorDashboard.myCourses')}
             </CardTitle>
             <Link to="/dashboard/courses/my-courses">
-              <Button variant="secondary" size="sm">View All</Button>
+              <Button variant="secondary" size="sm">{t('doctor.doctorDashboard.viewAll')}</Button>
             </Link>
           </CardHeader>
           <CardContent>
@@ -433,7 +435,7 @@ export function DoctorDashboard() {
                         <div className="flex items-center gap-2">
                           <h4 className="font-semibold text-gray-900">{c.code}</h4>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
-                            {c.creditHours} hrs
+                            {t('doctor.doctorDashboard.creditHours', { hours: c.creditHours })}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600">{c.title}</p>
@@ -443,9 +445,9 @@ export function DoctorDashboard() {
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                     <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" /> {c.students} students
+                      <Users className="h-3 w-3" /> {t('doctor.doctorDashboard.studentsCount', { count: c.students })}
                     </span>
-                    <span className="font-medium text-gray-700">{c.progress}% complete</span>
+                    <span className="font-medium text-gray-700">{t('doctor.doctorDashboard.percentComplete', { pct: c.progress })}</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
                     <div
@@ -463,10 +465,10 @@ export function DoctorDashboard() {
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary-600" />
-              Upcoming Assessments
+              {t('doctor.doctorDashboard.upcomingAssessments')}
             </CardTitle>
             <Link to="/dashboard/assessments">
-              <Button variant="secondary" size="sm">View All</Button>
+              <Button variant="secondary" size="sm">{t('doctor.doctorDashboard.viewAll')}</Button>
             </Link>
           </CardHeader>
           <CardContent>
@@ -495,15 +497,15 @@ export function DoctorDashboard() {
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {a.daysLeft} {a.daysLeft === 1 ? 'day' : 'days'} left
+                            {a.daysLeft === 1 ? t('doctor.doctorDashboard.dayLeft', { count: a.daysLeft }) : t('doctor.doctorDashboard.daysLeft', { count: a.daysLeft })}
                           </span>
-                          <span>{a.points} pts</span>
+                          <span>{t('doctor.doctorDashboard.points', { pts: a.points })}</span>
                         </div>
                       </div>
                       {isUrgent && <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
                     </div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-gray-600">Submissions</span>
+                      <span className="text-gray-600">{t('doctor.doctorDashboard.submissionsLabel')}</span>
                       <span className="font-medium text-gray-800">{a.submissions} / {a.total}</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
@@ -525,10 +527,10 @@ export function DoctorDashboard() {
         <CardHeader className="flex items-center justify-between pb-3">
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-primary-600" />
-            Announcements
+            {t('doctor.doctorDashboard.announcements')}
           </CardTitle>
           <Link to="/dashboard/announcements">
-            <Button variant="secondary" size="sm">View All</Button>
+            <Button variant="secondary" size="sm">{t('doctor.doctorDashboard.viewAll')}</Button>
           </Link>
         </CardHeader>
         <CardContent>

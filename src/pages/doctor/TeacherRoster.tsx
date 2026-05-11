@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
@@ -37,6 +38,7 @@ interface RosterStudent {
 }
 
 export function TeacherRoster() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { error: showError } = useToastStore();
   const [loading, setLoading] = useState(true);
@@ -217,7 +219,7 @@ export function TeacherRoster() {
           context: 'TeacherRoster',
           error,
         });
-        showError('Failed to load roster');
+        showError(t('doctor.teacherRoster.failedLoadRoster'));
         setStudents([]);
       } finally {
         setLoading(false);
@@ -269,7 +271,7 @@ export function TeacherRoster() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">
-            Loading roster...
+            {t('doctor.teacherRoster.loadingRoster')}
           </p>
         </div>
       </div>
@@ -282,15 +284,15 @@ export function TeacherRoster() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Student Roster
+            {t('doctor.teacherRoster.title')}
           </h1>
           <p className="text-gray-600 mt-1">
-            View and manage students in your courses
+            {t('doctor.teacherRoster.subtitle')}
           </p>
         </div>
         <Button variant="secondary" className="flex items-center gap-2 rounded-full px-4 py-2 shadow-sm">
           <Download className="h-4 w-4" />
-          Export Roster
+          {t('doctor.teacherRoster.exportRoster')}
         </Button>
       </div>
 
@@ -301,7 +303,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  Total Students
+                  {t('doctor.teacherRoster.totalStudents')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{students.length}</p>
               </div>
@@ -314,7 +316,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  Active Courses
+                  {t('doctor.teacherRoster.activeCourses')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{uniqueCourses.length}</p>
               </div>
@@ -327,7 +329,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  Avg. Attendance
+                  {t('doctor.teacherRoster.avgAttendance')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {students.length > 0 
@@ -344,7 +346,7 @@ export function TeacherRoster() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  Avg. Grade
+                  {t('doctor.teacherRoster.avgGrade')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {students.length > 0 
@@ -366,7 +368,7 @@ export function TeacherRoster() {
               <div className="relative flex-1 md:w-72">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search by name, ID, or email..."
+                  placeholder={t('doctor.teacherRoster.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -384,14 +386,14 @@ export function TeacherRoster() {
                 options={[
                   {
                     value: '',
-                    label: 'All Courses',
+                    label: t('doctor.teacherRoster.allCourses'),
                   },
                   ...uniqueCourses.map((course) => ({
                     value: course.id,
                     label: `${course.course.code} - ${course.course.title}`,
                   })),
                 ]}
-                placeholder="Filter by course..."
+                placeholder={t('doctor.teacherRoster.filterByCourse')}
                 className="w-full md:w-72"
               />
             </div>
@@ -403,31 +405,31 @@ export function TeacherRoster() {
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Student ID
+                    {t('doctor.teacherRoster.colStudentId')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Name
+                    {t('doctor.teacherRoster.colName')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Email
+                    {t('doctor.teacherRoster.colEmail')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Course
+                    {t('doctor.teacherRoster.colCourse')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Year & Semester
+                    {t('doctor.teacherRoster.colYearSem')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Attendance
+                    {t('doctor.teacherRoster.colAttendance')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Grade
+                    {t('doctor.teacherRoster.colGrade')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Status
+                    {t('doctor.teacherRoster.colStatus')}
                   </TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Actions
+                    {t('doctor.teacherRoster.colActions')}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -438,10 +440,10 @@ export function TeacherRoster() {
                       <div className="flex flex-col items-center justify-center w-full min-h-[200px]">
                         <Users className="h-16 w-16 text-gray-300 mb-4" />
                         <p className="text-lg font-semibold text-gray-900 mb-1">
-                          No students found
+                          {t('doctor.teacherRoster.noStudentsFound')}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Try adjusting your search or filters
+                          {t('doctor.teacherRoster.adjustSearch')}
                         </p>
                       </div>
                     </TableCell>
@@ -475,7 +477,7 @@ export function TeacherRoster() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {`Year ${student.year} - Sem ${student.semester}`}
+                          {t('doctor.teacherRoster.yearSemFormat', { year: student.year, sem: student.semester })}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -509,7 +511,7 @@ export function TeacherRoster() {
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
-                              title="View Details"
+                              title={t('doctor.teacherRoster.viewDetails')}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

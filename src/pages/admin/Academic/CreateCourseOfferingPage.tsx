@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -21,6 +22,7 @@ import {
 } from './courseOfferingFormConstants';
 
 export function CreateCourseOfferingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { success, error: showError } = useToastStore();
   const createMut = useCreateCourseOffering();
@@ -102,11 +104,11 @@ export function CreateCourseOfferingPage() {
     e.preventDefault();
     const ms = Number(maxSeats);
     if (!Number.isFinite(ms) || !Number.isFinite(tdNum) || !course_id) {
-      showError('Select a catalog course and enter valid seats / total degree.');
+      showError(t('admin.createCourseOfferingPage.invalidInputs'));
       return;
     }
     if (!policyOk) {
-      showError('Grading components must sum to total degree.');
+      showError(t('admin.createCourseOfferingPage.gradingMustSum'));
       return;
     }
     const slots = schedule.filter((s) => s.location && s.startTime && s.endTime);
@@ -120,7 +122,7 @@ export function CreateCourseOfferingPage() {
         tas_ids: taIds.length ? taIds : undefined,
         schedule: slots.length ? slots : undefined,
       });
-      success('Offering created.');
+      success(t('admin.createCourseOfferingPage.offeringCreated'));
       navigate('/dashboard/academic/offerings');
     } catch (err) {
       showError(getApiErrorMessage(err));
@@ -133,11 +135,11 @@ export function CreateCourseOfferingPage() {
         <Link to="/dashboard/academic/offerings">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            {t('admin.createCourseOfferingPage.back')}
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create course offering</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createCourseOfferingPage.title')}</h1>
         </div>
       </div>
 
@@ -145,21 +147,21 @@ export function CreateCourseOfferingPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-            Details
+            {t('admin.createCourseOfferingPage.details')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
-                <Select2 label="Catalog course *" options={courseOptions} value={course_id} onChange={setCourse_id} />
+                <Select2 label={t('admin.createCourseOfferingPage.catalogCourseRequired')} options={courseOptions} value={course_id} onChange={setCourse_id} />
               </div>
-              <Input label="Max seats *" value={maxSeats} onChange={(e) => setMaxSeats(e.target.value)} />
-              <Input label="Total degree *" value={totalDegree} onChange={(e) => setTotalDegree(e.target.value)} />
+              <Input label={t('admin.createCourseOfferingPage.maxSeatsRequired')} value={maxSeats} onChange={(e) => setMaxSeats(e.target.value)} />
+              <Input label={t('admin.createCourseOfferingPage.totalDegreeRequired')} value={totalDegree} onChange={(e) => setTotalDegree(e.target.value)} />
             </div>
 
             <div>
-              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Grading policy (must sum to total degree)</p>
+              <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCourseOfferingPage.gradingPolicyHint')}</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {(['attendance', 'midterm', 'assignments', 'project', 'finalExam'] as const).map((k) => (
                   <Input
@@ -173,14 +175,14 @@ export function CreateCourseOfferingPage() {
               </div>
               {!policyOk && (
                 <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                  Sum is {sumGradingPolicy(policy)} vs total {totalDegree}.
+                  {t('admin.createCourseOfferingPage.sumIs', { sum: sumGradingPolicy(policy), total: totalDegree })}
                 </p>
               )}
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div>
-                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Doctors</p>
+                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCourseOfferingPage.doctors')}</p>
                 <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-dark-border">
                   {doctorOptions.map((o) => (
                     <label key={o.value} className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
@@ -197,7 +199,7 @@ export function CreateCourseOfferingPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Teaching assistants</p>
+                <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCourseOfferingPage.teachingAssistants')}</p>
                 <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-gray-200 p-3 dark:border-dark-border">
                   {taOptions.map((o) => (
                     <label key={o.value} className="flex items-center gap-2 text-sm text-gray-800 dark:text-gray-200">
@@ -216,9 +218,9 @@ export function CreateCourseOfferingPage() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Schedule</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createCourseOfferingPage.schedule')}</p>
                 <Button type="button" size="sm" variant="secondary" onClick={addSlot}>
-                  Add slot
+                  {t('admin.createCourseOfferingPage.addSlot')}
                 </Button>
               </div>
               {schedule.map((slot, i) => (
@@ -227,24 +229,24 @@ export function CreateCourseOfferingPage() {
                   className="mb-3 grid grid-cols-1 gap-3 rounded-lg border border-gray-200 p-4 dark:border-dark-border md:grid-cols-2"
                 >
                   <Select2
-                    label="Day"
+                    label={t('admin.createCourseOfferingPage.day')}
                     options={OFFERING_FORM_DAYS}
                     value={slot.day}
                     onChange={(v) => updateSlot(i, { day: v })}
                     searchable={false}
                   />
                   <Select2
-                    label="Session"
+                    label={t('admin.createCourseOfferingPage.session')}
                     options={OFFERING_SESSION_TYPES}
                     value={slot.sessionType}
                     onChange={(v) => updateSlot(i, { sessionType: v as ScheduleSlot['sessionType'] })}
                     searchable={false}
                   />
-                  <Input label="Start" value={slot.startTime} onChange={(e) => updateSlot(i, { startTime: e.target.value })} />
-                  <Input label="End" value={slot.endTime} onChange={(e) => updateSlot(i, { endTime: e.target.value })} />
+                  <Input label={t('admin.createCourseOfferingPage.start')} value={slot.startTime} onChange={(e) => updateSlot(i, { startTime: e.target.value })} />
+                  <Input label={t('admin.createCourseOfferingPage.end')} value={slot.endTime} onChange={(e) => updateSlot(i, { endTime: e.target.value })} />
                   <div className="md:col-span-2">
                     <Select2
-                      label="Location"
+                      label={t('admin.createCourseOfferingPage.location')}
                       options={locationOptions}
                       value={slot.location}
                       onChange={(v) => updateSlot(i, { location: v })}
@@ -256,7 +258,7 @@ export function CreateCourseOfferingPage() {
 
             <Button type="submit" variant="primary" disabled={createMut.isPending || !policyOk} className="w-full sm:w-auto">
               <Save className="mr-2 h-4 w-4" />
-              {createMut.isPending ? 'Saving…' : 'Create'}
+              {createMut.isPending ? t('admin.createCourseOfferingPage.saving') : t('admin.createCourseOfferingPage.create')}
             </Button>
           </form>
         </CardContent>

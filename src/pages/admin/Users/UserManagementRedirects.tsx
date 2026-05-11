@@ -1,4 +1,5 @@
 import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/hooks/queries/useUsers';
 import { detailPathForPhase2Role } from '@/lib/userListPaths';
 
@@ -18,13 +19,14 @@ export function LegacyUsersDirectoryRedirect() {
 
 /** Old `/dashboard/users/directory/:id` → canonical URL by loaded user role. */
 export function UserFromLegacyDirectoryRedirect() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, isError } = useUser(id);
 
   if (!id) return <Navigate to="/dashboard/users/students" replace />;
   if (isLoading) {
     return (
-      <div className="flex min-h-[240px] items-center justify-center text-gray-500">Opening profile…</div>
+      <div className="flex min-h-[240px] items-center justify-center text-gray-500">{t('admin.userManagementRedirects.openingProfile')}</div>
     );
   }
   if (isError || !data) return <Navigate to="/dashboard/users/students" replace />;

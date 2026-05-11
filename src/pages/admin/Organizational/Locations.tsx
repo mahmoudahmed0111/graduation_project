@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
@@ -39,27 +40,25 @@ function mapLocation(raw: Record<string, unknown>): ILocation {
   };
 }
 
-const TYPE_OPTS = [
-  { value: '', label: 'All types' },
-  { value: 'lecture_hall', label: 'Lecture hall' },
-  { value: 'lab', label: 'Lab' },
-  { value: 'section_room', label: 'Section room' },
-  { value: 'auditorium', label: 'Auditorium' },
-];
-
-const STATUS_OPTS = [
-  { value: '', label: 'All statuses' },
-  { value: 'active', label: 'Active' },
-  { value: 'maintenance', label: 'Maintenance' },
-];
-
-const ARCHIVE_FILTER_OPTS = [
-  { value: 'all', label: 'All records' },
-  { value: 'false', label: 'Active (not archived)' },
-  { value: 'true', label: 'Archived' },
-] as const;
-
 export function Locations() {
+  const { t } = useTranslation();
+  const TYPE_OPTS = [
+    { value: '', label: t('admin.organizationalLocations.allTypes') },
+    { value: 'lecture_hall', label: t('admin.organizationalLocations.lectureHall') },
+    { value: 'lab', label: t('admin.organizationalLocations.lab') },
+    { value: 'section_room', label: t('admin.organizationalLocations.sectionRoom') },
+    { value: 'auditorium', label: t('admin.organizationalLocations.auditorium') },
+  ];
+  const STATUS_OPTS = [
+    { value: '', label: t('admin.organizationalLocations.allStatuses') },
+    { value: 'active', label: t('admin.organizationalLocations.active') },
+    { value: 'maintenance', label: t('admin.organizationalLocations.maintenance') },
+  ];
+  const ARCHIVE_FILTER_OPTS = [
+    { value: 'all', label: t('admin.organizationalLocations.allRecords') },
+    { value: 'false', label: t('admin.organizationalLocations.activeRecords') },
+    { value: 'true', label: t('admin.organizationalLocations.archived') },
+  ];
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const invalidateLocations = useInvalidateLocations();
@@ -116,44 +115,44 @@ export function Locations() {
     const next = loc.status === 'active' ? 'maintenance' : 'active';
     try {
       await api.patchLocationStatus(loc.id, next);
-      success(`Location set to ${next}`);
+      success(t('admin.organizationalLocations.statusSet', { status: next }));
       invalidateLocations();
     } catch (error) {
-      showError(getApiErrorMessage(error, 'Could not update status'));
+      showError(getApiErrorMessage(error, t('admin.organizationalLocations.statusFail')));
     }
   };
 
   const doArchive = async (loc: ILocation) => {
     try {
       await api.archiveLocation(loc.id);
-      success('Location archived');
+      success(t('admin.organizationalLocations.archivedToast'));
       setArchiveOpen({ open: false, loc: null });
       invalidateLocations();
     } catch (error) {
-      showError(getApiErrorMessage(error, 'Could not archive'));
+      showError(getApiErrorMessage(error, t('admin.organizationalLocations.archiveFail')));
     }
   };
 
   const doRestore = async (loc: ILocation) => {
     try {
       await api.restoreLocation(loc.id);
-      success('Location restored');
+      success(t('admin.organizationalLocations.restoredToast'));
       invalidateLocations();
     } catch (error) {
-      showError(getApiErrorMessage(error, 'Could not restore'));
+      showError(getApiErrorMessage(error, t('admin.organizationalLocations.restoreFail')));
     }
   };
 
   if (isLoading && !data) {
     return (
       <AdminPageShell
-        titleStack={{ section: 'University Structure', page: 'Locations' }}
-        subtitle="Loading…"
+        titleStack={{ section: t('admin.organizationalLocations.section'), page: t('admin.organizationalLocations.page') }}
+        subtitle={t('admin.organizationalLocations.loadingShort')}
       >
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading locations…</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.organizationalLocations.loading')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -163,16 +162,16 @@ export function Locations() {
   if (isError) {
     return (
       <AdminPageShell
-        titleStack={{ section: 'University Structure', page: 'Locations' }}
-        subtitle="Could not load data"
+        titleStack={{ section: t('admin.organizationalLocations.section'), page: t('admin.organizationalLocations.page') }}
+        subtitle={t('admin.organizationalLocations.loadFailSubtitle')}
       >
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load locations</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.organizationalLocations.loadFail')}</p>
           <p className="mt-1 text-sm text-red-600 dark:text-red-300">
-            {error instanceof Error ? error.message : 'Unknown error'}
+            {error instanceof Error ? error.message : t('admin.organizationalLocations.unknownError')}
           </p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-            Retry
+            {t('admin.organizationalLocations.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -180,7 +179,7 @@ export function Locations() {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'University Structure', page: 'Locations' }}>
+    <AdminPageShell titleStack={{ section: t('admin.organizationalLocations.section'), page: t('admin.organizationalLocations.page') }}>
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -188,7 +187,7 @@ export function Locations() {
               <div className="relative w-full min-w-0 sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search name, slug, college, building…"
+                  placeholder={t('admin.organizationalLocations.searchPlaceholder')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -198,22 +197,22 @@ export function Locations() {
                 value={typeFilter}
                 onChange={setTypeFilter}
                 options={TYPE_OPTS}
-                placeholder="Type"
+                placeholder={t('admin.organizationalLocations.type')}
                 className="sm:w-44"
               />
               <Select2
                 value={statusFilter}
                 onChange={setStatusFilter}
                 options={STATUS_OPTS}
-                placeholder="Status"
+                placeholder={t('admin.organizationalLocations.status')}
                 className="sm:w-44"
               />
               {canFilterArchive && (
                 <Select2
                   value={archiveFilter}
                   onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')}
-                  options={[...ARCHIVE_FILTER_OPTS]}
-                  placeholder="Archive filter"
+                  options={ARCHIVE_FILTER_OPTS}
+                  placeholder={t('admin.organizationalLocations.archiveFilter')}
                   className="sm:w-52"
                 />
               )}
@@ -223,7 +222,7 @@ export function Locations() {
                 <Link to="/dashboard/organizational/locations/create">
                   <Button className="inline-flex items-center gap-2 rounded-xl">
                     <Plus className="h-4 w-4" />
-                    Add Location
+                    {t('admin.organizationalLocations.addLocation')}
                   </Button>
                 </Link>
               </div>
@@ -235,7 +234,7 @@ export function Locations() {
             <div className="py-12 text-center">
               <MapPin className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-500 dark:text-gray-400">
-                {rows.length === 0 ? 'No locations found' : 'No locations match your search or filters'}
+                {rows.length === 0 ? t('admin.organizationalLocations.noLocations') : t('admin.organizationalLocations.noMatch')}
               </p>
             </div>
           ) : (
@@ -243,18 +242,18 @@ export function Locations() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>College</TableHead>
-                    <TableHead>Building</TableHead>
-                    <TableHead>Floor</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead>Capacity</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Reader ID</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Archived</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.name')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.college')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.building')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.floor')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.room')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.capacity')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.type')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.status')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.readerId')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.slug')}</TableHead>
+                    <TableHead>{t('admin.organizationalLocations.archived')}</TableHead>
+                    <TableHead className="text-right">{t('admin.organizationalLocations.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -270,11 +269,11 @@ export function Locations() {
                       <TableCell>
                         {loc.status === 'maintenance' ? (
                           <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
-                            Maintenance
+                            {t('admin.organizationalLocations.maintenance')}
                           </span>
                         ) : (
                           <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-700">
-                            Active
+                            {t('admin.organizationalLocations.active')}
                           </span>
                         )}
                       </TableCell>
@@ -284,7 +283,7 @@ export function Locations() {
                         {loc.isArchived ? (
                           <div className="space-y-0.5">
                             <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                              Archived
+                              {t('admin.organizationalLocations.archived')}
                             </span>
                             {loc.archivedAt ? (
                               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -294,7 +293,7 @@ export function Locations() {
                           </div>
                         ) : (
                           <span className="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                            Active
+                            {t('admin.organizationalLocations.active')}
                           </span>
                         )}
                       </TableCell>
@@ -302,7 +301,7 @@ export function Locations() {
                         <div className="flex flex-wrap justify-end gap-1">
                           {canMutate && (
                             <Link to={`/dashboard/organizational/locations/${loc.id}/edit`}>
-                              <Button variant="secondary" size="sm" title="Edit">
+                              <Button variant="secondary" size="sm" title={t('admin.organizationalLocations.edit')}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -311,7 +310,7 @@ export function Locations() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              title="Toggle active / maintenance"
+                              title={t('admin.organizationalLocations.toggleStatus')}
                               onClick={() => void toggleStatus(loc)}
                             >
                               <Wrench className="h-4 w-4" />
@@ -321,7 +320,7 @@ export function Locations() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              title="Archive (UA only)"
+                              title={t('admin.organizationalLocations.archiveTitle')}
                               onClick={() => setArchiveOpen({ open: true, loc })}
                             >
                               <Archive className="h-4 w-4" />
@@ -331,7 +330,7 @@ export function Locations() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              title="Restore"
+                              title={t('admin.organizationalLocations.restore')}
                               onClick={() => void doRestore(loc)}
                             >
                               <RotateCcw className="h-4 w-4" />
@@ -352,9 +351,9 @@ export function Locations() {
         isOpen={archiveOpen.open}
         onClose={() => setArchiveOpen({ open: false, loc: null })}
         onConfirm={() => archiveOpen.loc && void doArchive(archiveOpen.loc)}
-        title="Archive location"
-        message={`Archive “${archiveOpen.loc?.name ?? ''}”?`}
-        confirmText="Archive"
+        title={t('admin.organizationalLocations.archiveLocation')}
+        message={t('admin.organizationalLocations.archiveConfirm', { name: archiveOpen.loc?.name ?? '' })}
+        confirmText={t('admin.organizationalLocations.archive')}
         variant="danger"
       />
     </AdminPageShell>

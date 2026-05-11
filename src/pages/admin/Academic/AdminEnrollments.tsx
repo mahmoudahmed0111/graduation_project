@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AdminDataTableShell, AdminPageShell } from '@/components/admin';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
@@ -16,15 +17,15 @@ import { getApiErrorMessage } from '@/lib/http/client';
 import { p3Id, p3RefName } from '@/lib/phase3Ui';
 import { GraduationCap, LogOut, Search, UserPlus } from 'lucide-react';
 
-const STATUS_OPTS = [
-  { value: '', label: 'Any status' },
-  { value: 'enrolled', label: 'Enrolled' },
-  { value: 'withdrawn', label: 'Withdrawn' },
-  { value: 'passed', label: 'Passed' },
-  { value: 'failed', label: 'Failed' },
-];
-
 export function AdminEnrollments() {
+  const { t } = useTranslation();
+  const STATUS_OPTS = [
+    { value: '', label: t('admin.adminEnrollments.anyStatus') },
+    { value: 'enrolled', label: t('admin.adminEnrollments.enrolled') },
+    { value: 'withdrawn', label: t('admin.adminEnrollments.withdrawn') },
+    { value: 'passed', label: t('admin.adminEnrollments.passed') },
+    { value: 'failed', label: t('admin.adminEnrollments.failed') },
+  ];
   const { user } = useAuthStore();
   const isUA = user?.role === 'universityAdmin';
   const { success, error: showError } = useToastStore();
@@ -46,7 +47,7 @@ export function AdminEnrollments() {
   const collegeOptions = useMemo(() => {
     const items = collegesData?.items ?? [];
     return [
-      { value: '', label: 'All colleges' },
+      { value: '', label: t('admin.adminEnrollments.allColleges') },
       ...items.map((c) => {
         const r = c as Record<string, unknown>;
         return { value: String(r._id ?? r.id ?? ''), label: String(r.name ?? '') };
@@ -77,11 +78,11 @@ export function AdminEnrollments() {
 
   if (isLoading) {
     return (
-      <AdminPageShell titleStack={{ section: 'Academic', page: 'Enrollments' }} subtitle="Loading…">
+      <AdminPageShell titleStack={{ section: t('admin.adminEnrollments.section'), page: t('admin.adminEnrollments.page') }} subtitle={t('admin.adminEnrollments.loadingShort')}>
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading enrollments…</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.adminEnrollments.loading')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -90,12 +91,12 @@ export function AdminEnrollments() {
 
   if (isError) {
     return (
-      <AdminPageShell titleStack={{ section: 'Academic', page: 'Enrollments' }} subtitle="Could not load data">
+      <AdminPageShell titleStack={{ section: t('admin.adminEnrollments.section'), page: t('admin.adminEnrollments.page') }} subtitle={t('admin.adminEnrollments.loadFailSubtitle')}>
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Could not load enrollments</p>
-          <p className="mt-1 text-sm text-red-600 dark:text-red-300">Check permissions or API URL.</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.adminEnrollments.loadFail')}</p>
+          <p className="mt-1 text-sm text-red-600 dark:text-red-300">{t('admin.adminEnrollments.loadFailHint')}</p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-            Retry
+            {t('admin.adminEnrollments.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -103,14 +104,14 @@ export function AdminEnrollments() {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'Academic', page: 'Enrollments' }}>
+    <AdminPageShell titleStack={{ section: t('admin.adminEnrollments.section'), page: t('admin.adminEnrollments.page') }}>
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full min-w-0 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Filter by student ID…"
+                placeholder={t('admin.adminEnrollments.filterByStudentId')}
                 value={student_id}
                 onChange={(e) => setStudent_id(e.target.value)}
                 className="pl-10"
@@ -120,7 +121,7 @@ export function AdminEnrollments() {
               <Link to="/dashboard/academic/enrollments/force">
                 <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
                   <UserPlus className="h-4 w-4" />
-                  Force enroll
+                  {t('admin.adminEnrollments.forceEnroll')}
                 </Button>
               </Link>
             </div>
@@ -129,41 +130,41 @@ export function AdminEnrollments() {
         <CardContent className="space-y-6">
           <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {isUA && (
-              <Select2 label="College" options={collegeOptions} value={collegeId} onChange={setCollegeId} />
+              <Select2 label={t('admin.adminEnrollments.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
             )}
             <Select2
-              label="Status"
+              label={t('admin.adminEnrollments.status')}
               options={STATUS_OPTS}
               value={status}
               onChange={setStatus}
               searchable={false}
             />
-            <Input label="Semester" value={semester} onChange={(e) => setSemester(e.target.value)} placeholder="e.g. Second" />
-            <Input label="Academic year" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="e.g. 2025-2026" />
+            <Input label={t('admin.adminEnrollments.semester')} value={semester} onChange={(e) => setSemester(e.target.value)} placeholder={t('admin.adminEnrollments.semesterPlaceholder')} />
+            <Input label={t('admin.adminEnrollments.academicYear')} value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder={t('admin.adminEnrollments.yearPlaceholder')} />
             <Input
-              label="Offering ID"
+              label={t('admin.adminEnrollments.offeringId')}
               value={course_id}
               onChange={(e) => setCourse_id(e.target.value)}
-              placeholder="Course offering _id"
+              placeholder={t('admin.adminEnrollments.offeringIdPlaceholder')}
             />
           </div>
 
           {items.length === 0 ? (
             <div className="py-12 text-center">
               <GraduationCap className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
-              <p className="text-gray-500 dark:text-gray-400">No enrollments match these filters.</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('admin.adminEnrollments.noResults')}</p>
             </div>
           ) : (
             <AdminDataTableShell>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Offering</TableHead>
-                    <TableHead>Term</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Snapshot</TableHead>
-                    <TableHead className="text-end">Actions</TableHead>
+                    <TableHead>{t('admin.adminEnrollments.student')}</TableHead>
+                    <TableHead>{t('admin.adminEnrollments.offering')}</TableHead>
+                    <TableHead>{t('admin.adminEnrollments.term')}</TableHead>
+                    <TableHead>{t('admin.adminEnrollments.status')}</TableHead>
+                    <TableHead>{t('admin.adminEnrollments.snapshot')}</TableHead>
+                    <TableHead className="text-end">{t('admin.adminEnrollments.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -190,7 +191,7 @@ export function AdminEnrollments() {
                         </TableCell>
                         <TableCell className="text-sm text-gray-600 dark:text-gray-400">
                           {snap ? `${String(snap.courseCode ?? '')}` : '—'}
-                          {force ? <span className="ml-2 text-amber-600 dark:text-amber-400">(forced)</span> : null}
+                          {force ? <span className="ml-2 text-amber-600 dark:text-amber-400">{t('admin.adminEnrollments.forced')}</span> : null}
                         </TableCell>
                         <TableCell className="text-end">
                           {rec.status === 'enrolled' && (
@@ -198,7 +199,7 @@ export function AdminEnrollments() {
                               type="button"
                               variant="secondary"
                               size="sm"
-                              title="Withdraw"
+                              title={t('admin.adminEnrollments.withdraw')}
                               className="inline-flex items-center gap-1 rounded-xl"
                               onClick={() => setWithdrawTarget(id)}
                             >
@@ -217,7 +218,7 @@ export function AdminEnrollments() {
           {items.length > 0 && (
             <div className="flex flex-col items-center gap-2 border-t border-gray-100 pt-4 dark:border-dark-border sm:flex-row sm:justify-between">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Page {data?.currentPage ?? page} of {totalPages} · {data?.totalResults ?? items.length} enrollments
+                {t('admin.adminEnrollments.pageInfo', { current: data?.currentPage ?? page, total: totalPages, count: data?.totalResults ?? items.length })}
               </p>
               <Pagination currentPage={data?.currentPage ?? page} totalPages={totalPages} onPageChange={setPage} />
             </div>
@@ -233,7 +234,7 @@ export function AdminEnrollments() {
           void (async () => {
             try {
               await withdrawMut.mutateAsync(withdrawTarget);
-              success('Withdrawn.');
+              success(t('admin.adminEnrollments.withdrawnToast'));
               setWithdrawTarget(null);
               void refetch();
             } catch (e) {
@@ -241,9 +242,9 @@ export function AdminEnrollments() {
             }
           })();
         }}
-        title="Withdraw student"
-        message="Set enrollment status to withdrawn and free a seat?"
-        confirmText="Withdraw"
+        title={t('admin.adminEnrollments.withdrawStudent')}
+        message={t('admin.adminEnrollments.withdrawConfirm')}
+        confirmText={t('admin.adminEnrollments.withdraw')}
         variant="danger"
       />
     </AdminPageShell>

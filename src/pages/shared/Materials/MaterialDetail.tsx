@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, ExternalLink, FileText, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -6,6 +7,7 @@ import { categoryColors, categoryIcons } from '@/constants/ui';
 import { useMaterial } from '@/hooks/queries/usePhase4Materials';
 
 export function MaterialDetail() {
+  const { t } = useTranslation();
   const { offeringId, id } = useParams<{ offeringId: string; id: string }>();
   const detail = useMaterial(offeringId, id);
 
@@ -20,7 +22,7 @@ export function MaterialDetail() {
   if (detail.isError || !detail.data) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-red-600">Material not found.</CardContent>
+        <CardContent className="p-12 text-center text-red-600">{t('shared.materialDetail.notFound')}</CardContent>
       </Card>
     );
   }
@@ -35,7 +37,7 @@ export function MaterialDetail() {
         to={`/dashboard/course-offerings/${offeringId}/materials`}
         className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to materials
+        <ArrowLeft className="h-4 w-4" /> {t('shared.materialDetail.backToMaterials')}
       </Link>
 
       <Card>
@@ -50,7 +52,7 @@ export function MaterialDetail() {
             <a href={m.url} target="_blank" rel="noopener noreferrer">
               <Button variant="primary">
                 {m.isExternalLink ? <ExternalLink className="h-4 w-4 mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-                {m.isExternalLink ? 'Open Link' : 'Download'}
+                {m.isExternalLink ? t('shared.materialDetail.openLink') : t('shared.materialDetail.download')}
               </Button>
             </a>
           </div>
@@ -61,25 +63,25 @@ export function MaterialDetail() {
 
           <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t border-gray-100">
             <div>
-              <div className="text-gray-500">Type</div>
+              <div className="text-gray-500">{t('shared.materialDetail.type')}</div>
               <div className="font-medium flex items-center gap-1">
                 {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                {m.isExternalLink ? 'External link' : (m.fileType ?? 'File').toUpperCase()}
+                {m.isExternalLink ? t('shared.materialDetail.externalLink') : (m.fileType ?? t('shared.materialDetail.fileFallback')).toUpperCase()}
               </div>
             </div>
             {m.fileName && (
               <div>
-                <div className="text-gray-500">File name</div>
+                <div className="text-gray-500">{t('shared.materialDetail.fileName')}</div>
                 <div className="font-medium">{m.fileName}</div>
               </div>
             )}
             <div>
-              <div className="text-gray-500">Uploaded</div>
+              <div className="text-gray-500">{t('shared.materialDetail.uploaded')}</div>
               <div className="font-medium">{new Date(m.createdAt).toLocaleString()}</div>
             </div>
             {uploader && (
               <div>
-                <div className="text-gray-500">Uploaded by</div>
+                <div className="text-gray-500">{t('shared.materialDetail.uploadedBy')}</div>
                 <div className="font-medium flex items-center gap-1">
                   <User className="h-4 w-4" />
                   {uploader.name}

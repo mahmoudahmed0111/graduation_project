@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -48,6 +49,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export function UploadMaterial() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const params = useParams<{ offeringId?: string }>();
   const [searchParams] = useSearchParams();
@@ -90,12 +92,12 @@ export function UploadMaterial() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!ACCEPTED_MIME.includes(file.type)) {
-      showError('Invalid file type. Allowed: PDF, MP4, PNG, JPEG, DOC.');
+      showError(t('doctor.uploadMaterial.invalidFileType'));
       e.target.value = '';
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
-      showError('File too large. Maximum size is 50MB.');
+      showError(t('doctor.uploadMaterial.fileTooLarge'));
       e.target.value = '';
       return;
     }
@@ -104,11 +106,11 @@ export function UploadMaterial() {
 
   const onSubmit = async (data: FormValues) => {
     if (!offeringId) {
-      showError('Please select a course offering first.');
+      showError(t('doctor.uploadMaterial.selectOfferingFirst'));
       return;
     }
     if (!data.isExternalLink && !selectedFile) {
-      showError('A file is required for non-link materials.');
+      showError(t('doctor.uploadMaterial.fileRequired'));
       return;
     }
     try {
@@ -120,19 +122,19 @@ export function UploadMaterial() {
         url: data.isExternalLink ? data.url : undefined,
         file: data.isExternalLink ? undefined : selectedFile ?? undefined,
       });
-      success('Material uploaded successfully.');
+      success(t('doctor.uploadMaterial.uploadedSuccess'));
       navigate(`/dashboard/course-offerings/${offeringId}/materials`);
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to upload material.'));
+      showError(getApiErrorMessage(err, t('doctor.uploadMaterial.failedUpload')));
     }
   };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Upload Material</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.uploadMaterial.title')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Add a new resource to {offeringLabel ?? 'a course offering'}
+          {t('doctor.uploadMaterial.subtitle', { offering: offeringLabel ?? t('doctor.uploadMaterial.aCourseOffering') })}
         </p>
       </div>
 
@@ -140,7 +142,7 @@ export function UploadMaterial() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-primary-600" />
-            Material Details
+            {t('doctor.uploadMaterial.materialDetails')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -148,7 +150,7 @@ export function UploadMaterial() {
             {!params.offeringId && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  Course Offering *
+                  {t('doctor.uploadMaterial.courseOfferingLabel')}
                 </label>
                 <select
                   value={offeringId}
@@ -156,7 +158,7 @@ export function UploadMaterial() {
                   disabled={offeringsLoading}
                   className="field"
                 >
-                  <option value="">{offeringsLoading ? 'Loading…' : 'Select a course…'}</option>
+                  <option value="">{offeringsLoading ? t('doctor.uploadMaterial.loading') : t('doctor.uploadMaterial.selectCourse')}</option>
                   {offerings.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
@@ -167,20 +169,20 @@ export function UploadMaterial() {
               </div>
             )}
 
-            <Input label="Title *" placeholder="Enter material title" {...register('title')} error={errors.title?.message} />
+            <Input label={t('doctor.uploadMaterial.titleLabel')} placeholder={t('doctor.uploadMaterial.titlePlaceholder')} {...register('title')} error={errors.title?.message} />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.uploadMaterial.descriptionLabel')}</label>
               <textarea
                 {...register('description')}
                 rows={3}
-                placeholder="Optional description"
+                placeholder={t('doctor.uploadMaterial.descriptionPlaceholder')}
                 className="field"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Material Type *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.uploadMaterial.materialType')}</label>
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -190,7 +192,7 @@ export function UploadMaterial() {
                   }`}
                 >
                   <FileText className="h-5 w-5 mx-auto mb-2" />
-                  File Upload
+                  {t('doctor.uploadMaterial.fileUpload')}
                 </button>
                 <button
                   type="button"
@@ -200,13 +202,13 @@ export function UploadMaterial() {
                   }`}
                 >
                   <LinkIcon className="h-5 w-5 mx-auto mb-2" />
-                  External Link
+                  {t('doctor.uploadMaterial.externalLink')}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Category *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.uploadMaterial.categoryLabel')}</label>
               <select
                 {...register('category')}
                 className="field"
@@ -226,7 +228,7 @@ export function UploadMaterial() {
 
             {isExternalLink ? (
               <Input
-                label="URL *"
+                label={t('doctor.uploadMaterial.urlLabel')}
                 type="url"
                 placeholder="https://example.com/resource"
                 {...register('url')}
@@ -234,7 +236,7 @@ export function UploadMaterial() {
               />
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">File *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.uploadMaterial.fileLabel')}</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
                   <input
                     type="file"
@@ -245,8 +247,8 @@ export function UploadMaterial() {
                   />
                   <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
                     <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-1">Click to choose a file</p>
-                    <p className="text-xs text-gray-500">PDF, MP4, PNG, JPEG, DOC — max 50MB</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('doctor.uploadMaterial.clickToChoose')}</p>
+                    <p className="text-xs text-gray-500">{t('doctor.uploadMaterial.fileTypes')}</p>
                   </label>
                   {selectedFile && (
                     <div className="mt-4 flex items-center justify-center gap-2 p-2 bg-gray-50 rounded">
@@ -272,11 +274,11 @@ export function UploadMaterial() {
                   navigate(offeringId ? `/dashboard/course-offerings/${offeringId}/materials` : '/dashboard/materials')
                 }
               >
-                Cancel
+                {t('doctor.uploadMaterial.cancel')}
               </Button>
               <Button type="submit" isLoading={create.isPending} disabled={!offeringId} className="flex-1">
                 <Upload className="h-4 w-4 mr-2" />
-                Upload
+                {t('doctor.uploadMaterial.upload')}
               </Button>
             </div>
           </form>

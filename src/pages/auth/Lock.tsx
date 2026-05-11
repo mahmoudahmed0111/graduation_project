@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Lock as LockIcon, User, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
 
@@ -19,6 +20,7 @@ const lockSchema = z.object({
 type LockFormData = z.infer<typeof lockSchema>;
 
 export function Lock() {
+  const { t } = useTranslation();
   const { user, logout, isAuthenticated } = useAuthStore();
   const { error: showError, success } = useToastStore();
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ export function Lock() {
     try {
       setIsLoading(true);
       await authApi.verifyPassword(data.password);
-      success('Screen unlocked successfully');
+      success(t('authPages.lock.unlockSuccess'));
       navigate('/dashboard');
     } catch (err: unknown) {
       logger.error('Failed to unlock screen', {
@@ -53,7 +55,7 @@ export function Lock() {
       });
       const status = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      showError(status === 401 ? (msg || 'Incorrect password. Please try again.') : msg || 'Failed to unlock screen');
+      showError(status === 401 ? (msg || t('authPages.lock.incorrectPassword')) : msg || t('authPages.lock.unlockFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -89,16 +91,16 @@ export function Lock() {
           <div className="flex justify-center mb-6 animate-scale-in" style={{ animationDelay: '0.2s' }}>
             <img 
               src="/logo/logo.png.png" 
-              alt="University Logo" 
+              alt={t('authPages.lock.logoAlt')}
               className="h-20 w-auto object-contain"
             />
           </div>
 
           <CardTitle className="text-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent animate-fade-in font-cairo" style={{ animationDelay: '0.3s' }}>
-            Screen Locked
+            {t('authPages.lock.title')}
           </CardTitle>
           <p className="text-center text-sm text-gray-500 mt-2 animate-fade-in" style={{ animationDelay: '0.35s' }}>
-            Enter your password to unlock
+            {t('authPages.lock.subtitle')}
           </p>
         </CardHeader>
 
@@ -130,9 +132,9 @@ export function Lock() {
             <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
               <div className="relative">
                 <Input
-                  label="Password"
+                  label={t('auth.password')}
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={t('authPages.lock.passwordPlaceholder')}
                   error={errors.password?.message}
                   className="transition-all duration-300 hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-primary-500/30 border-2 py-3 text-base pr-12"
                   {...register('password')}
@@ -141,7 +143,7 @@ export function Lock() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-9 text-gray-500 hover:text-primary-500 transition-colors p-1.5 rounded-lg hover:bg-primary-50"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('authPages.lock.hidePassword') : t('authPages.lock.showPassword')}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -159,7 +161,7 @@ export function Lock() {
                 isLoading={isLoading}
               >
                 <LockIcon className="h-4 w-4 mr-2" />
-                Unlock
+                {t('authPages.lock.unlock')}
               </Button>
             </div>
           </form>
@@ -170,7 +172,7 @@ export function Lock() {
               className="w-full flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-primary-600 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Sign in as different user
+              {t('authPages.lock.signInDifferentUser')}
             </button>
           </div>
         </CardContent>

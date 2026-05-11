@@ -1,27 +1,30 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, MessageSquare, HelpCircle, Users } from 'lucide-react';
 
-const CONTACT_INFO = [
-  { icon: MapPin, label: 'Address', value: 'Salah Salem St., Beni Suef 62511, Egypt', color: 'from-blue-500 to-indigo-600' },
-  { icon: Phone, label: 'Phone', value: '+20 82 231 7950', color: 'from-emerald-500 to-emerald-700' },
-  { icon: Mail, label: 'Email', value: 'info@bsu.edu.eg', color: 'from-amber-500 to-orange-600' },
-  { icon: Clock, label: 'Hours', value: 'Sun — Thu, 9:00 AM — 5:00 PM', color: 'from-purple-500 to-purple-700' },
-];
-
-const DEPARTMENTS = [
-  { icon: Users, name: 'Admissions Office', email: 'admissions@bsu.edu.eg', phone: '+20 82 231 7951' },
-  { icon: HelpCircle, name: 'Student Affairs', email: 'students@bsu.edu.eg', phone: '+20 82 231 7952' },
-  { icon: MessageSquare, name: 'International Office', email: 'international@bsu.edu.eg', phone: '+20 82 231 7953' },
-];
-
-const FAQ = [
-  { q: 'How can I apply for admission?', a: 'Visit our Admissions page or contact admissions@bsu.edu.eg. Applications open every August.' },
-  { q: 'Are there scholarships available?', a: 'Yes — we offer merit-based, need-based, and international scholarships. See the Admissions page.' },
-  { q: 'Can I visit campus?', a: 'Absolutely! Open Days are held quarterly. You can also book private tours through Student Affairs.' },
-  { q: 'How do I contact a specific college?', a: 'Each college has dedicated contact info on its page. The Colleges section lists all 14 colleges.' },
-];
-
 export function Contact() {
+  const { t } = useTranslation();
+
+  const CONTACT_INFO = [
+    { icon: MapPin, labelKey: 'info1Label', valueKey: 'info1Value', color: 'from-blue-500 to-indigo-600' },
+    { icon: Phone, labelKey: 'info2Label', value: '+20 82 231 7950', color: 'from-emerald-500 to-emerald-700' },
+    { icon: Mail, labelKey: 'info3Label', value: 'info@bsu.edu.eg', color: 'from-amber-500 to-orange-600' },
+    { icon: Clock, labelKey: 'info4Label', valueKey: 'info4Value', color: 'from-purple-500 to-purple-700' },
+  ];
+
+  const DEPARTMENTS = [
+    { icon: Users, nameKey: 'dept1Name', email: 'admissions@bsu.edu.eg', phone: '+20 82 231 7951' },
+    { icon: HelpCircle, nameKey: 'dept2Name', email: 'students@bsu.edu.eg', phone: '+20 82 231 7952' },
+    { icon: MessageSquare, nameKey: 'dept3Name', email: 'international@bsu.edu.eg', phone: '+20 82 231 7953' },
+  ];
+
+  const FAQ = [
+    { qKey: 'faq1Q', aKey: 'faq1A' },
+    { qKey: 'faq2Q', aKey: 'faq2A' },
+    { qKey: 'faq3Q', aKey: 'faq3A' },
+    { qKey: 'faq4Q', aKey: 'faq4A' },
+  ];
+
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
   const [openIdx, setOpenIdx] = useState<number | null>(0);
@@ -41,13 +44,13 @@ export function Contact() {
         <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-accent-500/20 blur-3xl" />
         <div className="container mx-auto px-6 relative animate-fade-in-up">
           <p className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-accent-300 text-xs font-semibold uppercase tracking-wider mb-4">
-            Get in Touch
+            {t('public.contact.kicker')}
           </p>
           <h1 className="text-4xl md:text-6xl font-bold mb-4 max-w-3xl">
-            We'd Love to <span className="bg-gradient-to-r from-accent-300 to-accent-500 bg-clip-text text-transparent">Hear</span> from You
+            {t('public.contact.heroTitlePart1')}<span className="bg-gradient-to-r from-accent-300 to-accent-500 bg-clip-text text-transparent">{t('public.contact.heroTitleHighlight')}</span>{t('public.contact.heroTitlePart2')}
           </h1>
           <p className="text-lg text-primary-100 max-w-2xl">
-            Whether you have a question about admissions, programs, or campus life — our team is here to help.
+            {t('public.contact.heroSubtitle')}
           </p>
         </div>
       </section>
@@ -58,16 +61,17 @@ export function Contact() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {CONTACT_INFO.map((c) => {
               const Icon = c.icon;
+              const value = c.valueKey ? t(`public.contact.${c.valueKey}`) : c.value;
               return (
                 <div
-                  key={c.label}
+                  key={c.labelKey}
                   className="rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-5 shadow-lg hover:-translate-y-1 transition-all"
                 >
                   <div className={`inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${c.color} text-white mb-3`}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">{c.label}</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{c.value}</p>
+                  <p className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">{t(`public.contact.${c.labelKey}`)}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{value}</p>
                 </div>
               );
             })}
@@ -79,53 +83,53 @@ export function Contact() {
       <section className="py-16 bg-white dark:bg-slate-950">
         <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-8">
           <div className="rounded-3xl bg-gradient-to-br from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 border border-gray-100 dark:border-slate-800 p-8">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Send us a Message</h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">We typically respond within 24 hours.</p>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('public.contact.sendMessage')}</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">{t('public.contact.respondNote')}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Name</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">{t('public.contact.labelName')}</label>
                   <input
                     type="text"
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 outline-none transition-all text-sm"
-                    placeholder="Your full name"
+                    placeholder={t('public.contact.placeholderName')}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">{t('public.contact.labelEmail')}</label>
                   <input
                     type="email"
                     required
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 outline-none transition-all text-sm"
-                    placeholder="you@example.com"
+                    placeholder={t('public.contact.placeholderEmail')}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Subject</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">{t('public.contact.labelSubject')}</label>
                 <input
                   type="text"
                   required
                   value={form.subject}
                   onChange={(e) => setForm({ ...form, subject: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 outline-none transition-all text-sm"
-                  placeholder="How can we help?"
+                  placeholder={t('public.contact.placeholderSubject')}
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Message</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">{t('public.contact.labelMessage')}</label>
                 <textarea
                   required
                   value={form.message}
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                   rows={5}
                   className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 outline-none transition-all text-sm resize-none"
-                  placeholder="Tell us a little about your question..."
+                  placeholder={t('public.contact.placeholderMessage')}
                 />
               </div>
               <button
@@ -139,11 +143,11 @@ export function Contact() {
               >
                 {sent ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5" /> Message sent!
+                    <CheckCircle2 className="h-5 w-5" /> {t('public.contact.messageSent')}
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4" /> Send Message
+                    <Send className="h-4 w-4" /> {t('public.contact.sendButton')}
                   </>
                 )}
               </button>
@@ -153,7 +157,7 @@ export function Contact() {
           <div className="flex flex-col gap-4">
             <div className="relative rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-700 shadow-xl flex-1 min-h-[400px] group">
               <iframe
-                title="Beni Suef University Map"
+                title={t('public.contact.mapTitle')}
                 src="https://www.openstreetmap.org/export/embed.html?bbox=31.0700%2C29.0580%2C31.0950%2C29.0750&amp;layer=mapnik&amp;marker=29.0656%2C31.0828"
                 className="absolute inset-0 w-full h-full"
                 style={{ border: 0 }}
@@ -167,7 +171,7 @@ export function Contact() {
                 className="absolute top-4 right-4 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg text-xs font-semibold text-primary-700 dark:text-accent-400 hover:bg-white dark:hover:bg-slate-800 transition-all"
               >
                 <MapPin className="h-3.5 w-3.5" />
-                Open in Maps
+                {t('public.contact.openInMaps')}
               </a>
               <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-white/20 p-4 shadow-lg pointer-events-none">
                 <div className="flex items-start gap-3">
@@ -175,22 +179,22 @@ export function Contact() {
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">Beni Suef University</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Salah Salem St., Beni Suef 62511, Egypt</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">{t('public.contact.universityName')}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">{t('public.contact.mapAddress')}</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { l: 'Latitude', v: '29.0656°N' },
-                { l: 'Longitude', v: '31.0828°E' },
-                { l: 'From Cairo', v: '~120 km' },
-                { l: 'Bus Routes', v: '12, 14, 22' },
+                { lKey: 'labelLatitude', vKey: 'valueLatitude' },
+                { lKey: 'labelLongitude', vKey: 'valueLongitude' },
+                { lKey: 'labelFromCairo', vKey: 'valueFromCairo' },
+                { lKey: 'labelBusRoutes', vKey: 'valueBusRoutes' },
               ].map((d) => (
-                <div key={d.l} className="rounded-xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3 text-center hover:shadow-md transition-all">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{d.l}</p>
-                  <p className="font-bold text-slate-900 dark:text-white text-sm">{d.v}</p>
+                <div key={d.lKey} className="rounded-xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3 text-center hover:shadow-md transition-all">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{t(`public.contact.${d.lKey}`)}</p>
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">{t(`public.contact.${d.vKey}`)}</p>
                 </div>
               ))}
             </div>
@@ -203,22 +207,22 @@ export function Contact() {
         <div className="container mx-auto px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <p className="inline-block px-3 py-1 rounded-full bg-primary-100 dark:bg-primary-500/10 text-primary-700 dark:text-primary-300 text-xs font-semibold uppercase tracking-wider mb-3">
-              Direct Contacts
+              {t('public.contact.directContacts')}
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Reach the Right Team</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">{t('public.contact.reachTeam')}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {DEPARTMENTS.map((d) => {
               const Icon = d.icon;
               return (
                 <div
-                  key={d.name}
+                  key={d.nameKey}
                   className="group rounded-2xl bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-6 hover:shadow-xl hover:-translate-y-1 transition-all"
                 >
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md mb-4 group-hover:scale-110 transition-transform">
                     <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="font-bold text-slate-900 dark:text-white mb-3">{d.name}</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-3">{t(`public.contact.${d.nameKey}`)}</h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 mb-1.5">
                     <Mail className="h-3.5 w-3.5" /> {d.email}
                   </p>
@@ -237,9 +241,9 @@ export function Contact() {
         <div className="container mx-auto px-6 max-w-3xl">
           <div className="text-center mb-12">
             <p className="inline-block px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3">
-              FAQ
+              {t('public.contact.faqKicker')}
             </p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Quick Answers</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">{t('public.contact.quickAnswers')}</h2>
           </div>
           <div className="space-y-3">
             {FAQ.map((f, i) => (
@@ -249,11 +253,11 @@ export function Contact() {
                 className="block w-full text-left rounded-2xl bg-gradient-to-br from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 border border-gray-100 dark:border-slate-800 p-5 hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <h4 className="font-bold text-slate-900 dark:text-white">{f.q}</h4>
+                  <h4 className="font-bold text-slate-900 dark:text-white">{t(`public.contact.${f.qKey}`)}</h4>
                   <span className={`text-2xl text-primary-600 dark:text-accent-400 transition-transform duration-300 ${openIdx === i ? 'rotate-45' : ''}`}>+</span>
                 </div>
                 <div className={`grid transition-all duration-300 ${openIdx === i ? 'grid-rows-[1fr] mt-3' : 'grid-rows-[0fr]'}`}>
-                  <p className="overflow-hidden text-sm text-slate-600 dark:text-slate-400">{f.a}</p>
+                  <p className="overflow-hidden text-sm text-slate-600 dark:text-slate-400">{t(`public.contact.${f.aKey}`)}</p>
                 </div>
               </button>
             ))}

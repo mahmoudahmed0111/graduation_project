@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, Clock, Save, Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -40,6 +41,7 @@ function seedAnswerStateFromSubmission(submission?: IPhase4Submission | null): R
 }
 
 export function TakeAssessment() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { offeringId, id } = useParams<{ offeringId: string; id: string }>();
   const { success, error: showError, info } = useToastStore();
@@ -65,7 +67,7 @@ export function TakeAssessment() {
         const res = await start.mutateAsync(id);
         if (cancelled) return;
         if (res.autoSubmitted) {
-          info('Time expired — your answers were submitted automatically.');
+          info(t('student.takeAssessment.timeExpired'));
           if (res.submission?._id) navigate(`/dashboard/submissions/${res.submission._id}`);
           return;
         }
@@ -74,7 +76,7 @@ export function TakeAssessment() {
         setDeadline(res.deadline);
         setAnswerState(seedAnswerStateFromSubmission(res.submission));
       } catch (err) {
-        showError(getApiErrorMessage(err, 'Failed to start assessment.'));
+        showError(getApiErrorMessage(err, t('student.takeAssessment.startFailed')));
       }
     })();
     return () => {
@@ -85,14 +87,14 @@ export function TakeAssessment() {
 
   // Tick clock for the cosmetic countdown.
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   // Autosave loop.
   useEffect(() => {
     if (!submission?._id) return;
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       if (!dirtyRef.current) return;
       dirtyRef.current = false;
       save.mutate(
@@ -100,7 +102,7 @@ export function TakeAssessment() {
         {
           onSuccess: (res) => {
             if (res.autoSubmitted) {
-              info('Time expired — your answers were submitted automatically.');
+              info(t('student.takeAssessment.timeExpired'));
               navigate(`/dashboard/submissions/${res.submission._id}`);
             }
           },
@@ -110,7 +112,7 @@ export function TakeAssessment() {
         }
       );
     }, AUTOSAVE_INTERVAL_MS);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [submission?._id, answerState, save, info, navigate]);
 
   const setAnswer = (questionId: string, patch: Partial<AnswerState>) => {
@@ -141,11 +143,11 @@ export function TakeAssessment() {
       if (res.autoSubmitted) {
         info('Time expired — your answers were submitted automatically.');
       } else {
-        success('Submitted.');
+        success(t('student.takeAssessment.submitted'));
       }
       navigate(`/dashboard/submissions/${res.submission._id}`);
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to submit.'));
+      showError(getApiErrorMessage(err, t('student.takeAssessment.submitFailed')));
     } finally {
       setSubmitting(false);
     }
@@ -162,7 +164,7 @@ export function TakeAssessment() {
   if (!assessment || !submission) {
     return (
       <Card>
-        <CardContent className="p-12 text-center text-red-600">Could not load assessment.</CardContent>
+        <CardContent className="p-12 text-center text-red-600">{t('student.takeAssessment.couldNotLoad')}</CardContent>
       </Card>
     );
   }
@@ -172,7 +174,7 @@ export function TakeAssessment() {
       <div className="flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur p-4 -m-4 z-10 border-b border-gray-100">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{assessment.title}</h1>
-          <p className="text-sm text-gray-500">{assessment.totalPoints} pts</p>
+          <p className="text-sm text-gray-500">{t('student.takeAssessment.ptsCount', { count: assessment.totalPoints })}</p>
         </div>
         {remainingLabel && (
           <div
@@ -195,7 +197,7 @@ export function TakeAssessment() {
                 <span>
                   Q{idx + 1}. {q.questionText}
                 </span>
-                <span className="text-sm font-normal text-gray-500">{q.points} pt{q.points !== 1 ? 's' : ''}</span>
+                <span className="text-sm font-normal text-gray-500">{t('student.takeAssessment.ptCount', { count: q.points })}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -257,7 +259,7 @@ export function TakeAssessment() {
                   value={a.answerText ?? ''}
                   onChange={(e) => setAnswer(q._id!, { answerText: e.target.value })}
                   className="field"
-                  placeholder="Your answer…"
+                  placeholder={t('student.takeAssessment.yourAnswerPlaceholder')}
                 />
               )}
               {q.questionType === 'Paragraph' && (
@@ -266,15 +268,14 @@ export function TakeAssessment() {
                   value={a.answerText ?? ''}
                   onChange={(e) => setAnswer(q._id!, { answerText: e.target.value })}
                   className="field"
-                  placeholder="Your answer…"
+                  placeholder={t('student.takeAssessment.yourAnswerPlaceholder')}
                 />
               )}
               {q.questionType === 'FileUpload' && (
                 <div className="p-3 border border-amber-300 bg-amber-50 rounded text-sm text-amber-800 flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 mt-0.5" />
                   <span>
-                    File upload answers are not yet wired to a backend uploader. Please contact your instructor if this question
-                    requires a file submission.
+                    {t('student.takeAssessment.fileUploadNotice')}
                   </span>
                 </div>
               )}
@@ -288,13 +289,13 @@ export function TakeAssessment() {
           type="button"
           variant="secondary"
           className="flex-1"
-          onClick={() => save.mutate({ answers: answersToList(answerState) }, { onSuccess: () => success('Saved.') })}
+          onClick={() => save.mutate({ answers: answersToList(answerState) }, { onSuccess: () => success(t('student.takeAssessment.saved')) })}
           isLoading={save.isPending}
         >
-          <Save className="h-4 w-4 mr-2" /> Save draft
+          <Save className="h-4 w-4 mr-2" /> {t('student.takeAssessment.saveDraft')}
         </Button>
         <Button type="button" className="flex-1" onClick={handleSubmit} isLoading={submitting}>
-          <Send className="h-4 w-4 mr-2" /> Submit
+          <Send className="h-4 w-4 mr-2" /> {t('student.takeAssessment.submit')}
         </Button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Activity,
   AlertTriangle,
@@ -16,26 +17,27 @@ import { BarChart } from '@/components/charts/BarChart';
 import { LineChart } from '@/components/charts/LineChart';
 import { PieChart } from '@/components/charts/PieChart';
 
-const enrollmentStatusData = [
-  { name: 'Enrolled', value: 1240 },
-  { name: 'Passed', value: 860 },
-  { name: 'Withdrawn', value: 114 },
-  { name: 'Failed', value: 89 },
-];
-
-const recentActivity = [
-  { title: 'Course offering published', meta: 'CS402 · 2 minutes ago', tone: 'success' },
-  { title: 'Enrollment window updated', meta: 'Spring 2026 · 8 minutes ago', tone: 'neutral' },
-  { title: 'Capacity override requested', meta: 'ENG201 · 14 minutes ago', tone: 'warning' },
-  { title: 'Grades batch submitted', meta: 'Fall 2025 · 21 minutes ago', tone: 'success' },
-  { title: 'Staff assignment changed', meta: 'Department of CS · 35 minutes ago', tone: 'neutral' },
+// Note: data labels below are translated at render time using t() keys.
+const enrollmentStatusKeys = [
+  { key: 'enrolled', value: 1240 },
+  { key: 'passed', value: 860 },
+  { key: 'withdrawn', value: 114 },
+  { key: 'failed', value: 89 },
 ] as const;
 
-const progressRows = [
-  { label: 'Registration Completion', value: 78 },
-  { label: 'Results Publication', value: 64 },
-  { label: 'Attendance Sync', value: 91 },
-];
+const recentActivityKeys = [
+  { titleKey: 'activityCourseOffering', metaKey: 'activityCourseOfferingMeta', tone: 'success' },
+  { titleKey: 'activityEnrollmentWindow', metaKey: 'activityEnrollmentWindowMeta', tone: 'neutral' },
+  { titleKey: 'activityCapacityOverride', metaKey: 'activityCapacityOverrideMeta', tone: 'warning' },
+  { titleKey: 'activityGradesBatch', metaKey: 'activityGradesBatchMeta', tone: 'success' },
+  { titleKey: 'activityStaffAssignment', metaKey: 'activityStaffAssignmentMeta', tone: 'neutral' },
+] as const;
+
+const progressRowKeys = [
+  { labelKey: 'registrationCompletion', value: 78 },
+  { labelKey: 'resultsPublication', value: 64 },
+  { labelKey: 'attendanceSync', value: 91 },
+] as const;
 
 const monthlyTrend = [
   { month: 'Jan', enrollments: 780, attendance: 89 },
@@ -54,6 +56,7 @@ const departmentPerformance = [
 ];
 
 export function StaticUiDashboard() {
+  const { t } = useTranslation();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -61,20 +64,25 @@ export function StaticUiDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  const enrollmentStatusData = enrollmentStatusKeys.map((d) => ({
+    name: t(`shared.staticUiDashboard.${d.key}`),
+    value: d.value,
+  }));
+
   const kpis = useMemo(
     () => [
-      { label: 'Active Students', value: '12,480', delta: '+8.4%', icon: Users },
-      { label: 'Running Offerings', value: '318', delta: '+2.1%', icon: GraduationCap },
-      { label: 'Avg Attendance', value: '92.1%', delta: '+1.4%', icon: TrendingUp },
-      { label: 'Catalog Courses', value: '612', delta: '+3.0%', icon: BookOpen },
-      { label: 'Open Incidents', value: '14', delta: '-12.0%', icon: AlertTriangle },
-      { label: 'Completed Tasks', value: '86', delta: '+5.3%', icon: CheckCircle2 },
+      { label: t('shared.staticUiDashboard.activeStudents'), value: '12,480', delta: '+8.4%', icon: Users },
+      { label: t('shared.staticUiDashboard.runningOfferings'), value: '318', delta: '+2.1%', icon: GraduationCap },
+      { label: t('shared.staticUiDashboard.avgAttendance'), value: '92.1%', delta: '+1.4%', icon: TrendingUp },
+      { label: t('shared.staticUiDashboard.catalogCourses'), value: '612', delta: '+3.0%', icon: BookOpen },
+      { label: t('shared.staticUiDashboard.openIncidents'), value: '14', delta: '-12.0%', icon: AlertTriangle },
+      { label: t('shared.staticUiDashboard.completedTasks'), value: '86', delta: '+5.3%', icon: CheckCircle2 },
     ],
-    []
+    [t]
   );
 
   return (
-    <AdminPageShell title="UI Preview Dashboard" subtitle="Static demo data for layout and component testing.">
+    <AdminPageShell title={t('shared.staticUiDashboard.title')} subtitle={t('shared.staticUiDashboard.subtitle')}>
       <div className="space-y-6">
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 p-6 text-white shadow-xl">
           <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-accent-500/20 blur-3xl" />
@@ -82,17 +90,17 @@ export function StaticUiDashboard() {
             <div>
               <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
                 <Activity className="h-3.5 w-3.5" />
-                Static UI Mode
+                {t('shared.staticUiDashboard.staticUiMode')}
               </p>
-              <h1 className="text-3xl font-bold tracking-tight">University Operations Snapshot</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{t('shared.staticUiDashboard.opsSnapshot')}</h1>
               <p className="mt-1 text-sm text-primary-100">
-                Purely visual data for dashboard iteration, theme tuning, and responsive QA.
+                {t('shared.staticUiDashboard.opsSnapshotDesc')}
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
               <div className="mb-1 flex items-center gap-2 text-accent-300">
                 <Clock className="h-4 w-4" />
-                Live Clock
+                {t('shared.staticUiDashboard.liveClock')}
               </div>
               <div className="font-mono text-2xl font-bold">
                 {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -121,7 +129,7 @@ export function StaticUiDashboard() {
                   <kpi.icon className="h-8 w-8 text-primary-600 dark:text-accent-400" />
                 </div>
                 <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  {kpi.delta} vs previous week
+                  {t('shared.staticUiDashboard.deltaVsPrevWeek', { delta: kpi.delta })}
                 </p>
               </CardContent>
             </Card>
@@ -131,7 +139,7 @@ export function StaticUiDashboard() {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader>
-              <CardTitle>Enrollment Distribution</CardTitle>
+              <CardTitle>{t('shared.staticUiDashboard.enrollmentDistribution')}</CardTitle>
             </CardHeader>
             <CardContent>
               <PieChart data={enrollmentStatusData} innerRadius={36} outerRadius={98} height={320} />
@@ -139,13 +147,13 @@ export function StaticUiDashboard() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>{t('shared.staticUiDashboard.recentActivity')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recentActivity.map((item) => (
-                <div key={item.title} className="rounded-xl border border-gray-100 p-3 dark:border-slate-700">
+              {recentActivityKeys.map((item) => (
+                <div key={item.titleKey} className="rounded-xl border border-gray-100 p-3 dark:border-slate-700">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.title}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{t(`shared.staticUiDashboard.${item.titleKey}`)}</p>
                     <span
                       className={[
                         'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
@@ -156,10 +164,10 @@ export function StaticUiDashboard() {
                             : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
                       ].join(' ')}
                     >
-                      {item.tone}
+                      {t(`shared.staticUiDashboard.tone_${item.tone}`)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.meta}</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t(`shared.staticUiDashboard.${item.metaKey}`)}</p>
                 </div>
               ))}
             </CardContent>
@@ -169,16 +177,16 @@ export function StaticUiDashboard() {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Enrollment and Attendance Trend</CardTitle>
+              <CardTitle>{t('shared.staticUiDashboard.monthlyTrend')}</CardTitle>
             </CardHeader>
             <CardContent>
               <LineChart
                 data={monthlyTrend}
                 dataKey="month"
-                yAxisLabel="Enrollments"
+                yAxisLabel={t('shared.staticUiDashboard.enrollmentsLabel')}
                 lines={[
-                  { dataKey: 'enrollments', name: 'Enrollments' },
-                  { dataKey: 'attendance', name: 'Attendance %' },
+                  { dataKey: 'enrollments', name: t('shared.staticUiDashboard.enrollmentsLabel') },
+                  { dataKey: 'attendance', name: t('shared.staticUiDashboard.attendancePct') },
                 ]}
                 height={300}
               />
@@ -186,16 +194,16 @@ export function StaticUiDashboard() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Department Outcomes</CardTitle>
+              <CardTitle>{t('shared.staticUiDashboard.departmentOutcomes')}</CardTitle>
             </CardHeader>
             <CardContent>
               <BarChart
                 data={departmentPerformance}
                 dataKey="department"
-                yAxisLabel="Students"
+                yAxisLabel={t('shared.staticUiDashboard.studentsLabel')}
                 bars={[
-                  { dataKey: 'passed', name: 'Passed' },
-                  { dataKey: 'atRisk', name: 'At Risk' },
+                  { dataKey: 'passed', name: t('shared.staticUiDashboard.passed') },
+                  { dataKey: 'atRisk', name: t('shared.staticUiDashboard.atRisk') },
                 ]}
                 height={300}
               />
@@ -208,14 +216,14 @@ export function StaticUiDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary-600 dark:text-accent-400" />
-                Pipeline Progress
+                {t('shared.staticUiDashboard.pipelineProgress')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {progressRows.map((row) => (
-                <div key={row.label}>
+              {progressRowKeys.map((row) => (
+                <div key={row.labelKey}>
                   <div className="mb-1 flex items-center justify-between">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{row.label}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{t(`shared.staticUiDashboard.${row.labelKey}`)}</p>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{row.value}%</p>
                   </div>
                   <div className="h-2 rounded-full bg-gray-100 dark:bg-slate-800">
@@ -227,27 +235,27 @@ export function StaticUiDashboard() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Alerts and Tasks</CardTitle>
+              <CardTitle>{t('shared.staticUiDashboard.alertsAndTasks')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center justify-between rounded-lg bg-red-50 px-3 py-2 text-red-700 dark:bg-red-900/20 dark:text-red-300">
-                <span>2 critical alerts pending review</span>
+                <span>{t('shared.staticUiDashboard.alertCritical')}</span>
                 <span className="font-semibold">P1</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
-                <span>7 moderate issues awaiting assignment</span>
+                <span>{t('shared.staticUiDashboard.alertModerate')}</span>
                 <span className="font-semibold">P2</span>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
-                <span>23 tasks completed today</span>
-                <span className="font-semibold">Done</span>
+                <span>{t('shared.staticUiDashboard.alertDone')}</span>
+                <span className="font-semibold">{t('shared.staticUiDashboard.done')}</span>
               </div>
             </CardContent>
           </Card>
         </section>
 
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          This page is static and intentionally disconnected from backend APIs. Use it for visual QA only.
+          {t('shared.staticUiDashboard.staticNote')}
         </p>
       </div>
     </AdminPageShell>

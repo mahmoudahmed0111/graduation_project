@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Shield, ArrowLeft, Home, AlertTriangle } from 'lucide-react';
 
 export function Error403() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-gray-100/50 p-4 relative overflow-hidden">
       {/* Background decoration */}
@@ -35,7 +37,7 @@ export function Error403() {
             403
           </CardTitle>
           <p className="text-center text-2xl font-semibold text-gray-900 mt-2 animate-fade-in" style={{ animationDelay: '0.35s' }}>
-            Access Forbidden
+            {t('authPages.error403.heading')}
           </p>
         </CardHeader>
 
@@ -45,17 +47,17 @@ export function Error403() {
               <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <p className="text-sm font-medium text-red-900 mb-1">
-                  You don't have permission to access this resource
+                  {t('authPages.error403.noPermission')}
                 </p>
                 <p className="text-xs text-red-700">
-                  If you believe this is an error, please contact your administrator.
+                  {t('authPages.error403.contactAdmin')}
                 </p>
               </div>
             </div>
 
             <div className="space-y-3">
               <p className="text-gray-600">
-                The page or resource you're trying to access requires special permissions that your account doesn't have.
+                {t('authPages.error403.description')}
               </p>
             </div>
 
@@ -63,13 +65,13 @@ export function Error403() {
               <Link to="/">
                 <Button variant="primary" className="w-full sm:w-auto flex items-center gap-2">
                   <Home className="h-4 w-4" />
-                  Go to Home
+                  {t('authPages.error403.goHome')}
                 </Button>
               </Link>
               <Link to="/login">
                 <Button variant="secondary" className="w-full sm:w-auto flex items-center gap-2">
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Login
+                  {t('auth.backToLogin')}
                 </Button>
               </Link>
             </div>

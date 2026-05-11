@@ -126,7 +126,7 @@ export function OTP() {
                 <div className="p-1 rounded-full bg-white">
                   <img
                     src="/logo/logo.png.png"
-                    alt="Beni-Suef University Logo"
+                    alt={t('authPages.otp.logoAlt')}
                     className="h-24 w-24 rounded-full transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
@@ -139,7 +139,7 @@ export function OTP() {
           </CardTitle>
 
           <p className="text-center text-base font-semibold mt-2 animate-fade-in" style={{ color: '#0a2472' }}>
-            Beni-Suef University
+            {t('authPages.otp.universityName')}
           </p>
 
           <div className="flex items-center justify-center mt-3 mb-1 animate-fade-in">
@@ -153,7 +153,7 @@ export function OTP() {
           </p>
           {email?.trim() ? (
             <p className="text-center text-sm text-primary-700 font-medium mt-2 break-all px-2 animate-fade-in">
-              Code sent to: {email.trim()}
+              {t('authPages.otp.codeSentTo')} {email.trim()}
             </p>
           ) : null}
         </CardHeader>
@@ -211,7 +211,7 @@ export function OTP() {
           <div className="mt-6 pt-4 border-t border-gray-100 text-center animate-fade-in">
             <p className="text-xs text-gray-500">
               © {new Date().getFullYear()}{' '}
-              <span className="text-primary-700 font-semibold">Beni-Suef University</span>
+              <span className="text-primary-700 font-semibold">{t('authPages.otp.universityName')}</span>
             </p>
           </div>
         </CardContent>

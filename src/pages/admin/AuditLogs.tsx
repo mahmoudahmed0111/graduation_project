@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -17,6 +18,7 @@ export interface AuditLogEntry {
 }
 
 export function AuditLogs() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,15 +63,15 @@ export function AuditLogs() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
-        <p className="text-gray-600 mt-1">Monitor sensitive operations and system changes</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('admin.auditLogs.title')}</h1>
+        <p className="text-gray-600 mt-1">{t('admin.auditLogs.subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Monitoring Logs
+            {t('admin.auditLogs.monitoringLogs')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -77,7 +79,7 @@ export function AuditLogs() {
             <Search className="h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search by actor, action, or target..."
+              placeholder={t('admin.auditLogs.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-sm"
@@ -87,17 +89,17 @@ export function AuditLogs() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80">
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">Actor</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">Action</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">Target</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">Timestamp</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.actor')}</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.action')}</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.target')}</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.timestamp')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredLogs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                      No audit log entries found
+                      {t('admin.auditLogs.noEntries')}
                     </TableCell>
                   </TableRow>
                 ) : (

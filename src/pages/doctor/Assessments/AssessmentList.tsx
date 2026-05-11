@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Archive, Edit, FileQuestion, Plus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -11,6 +12,7 @@ import { getApiErrorMessage } from '@/lib/http/client';
 import type { IPhase4Assessment } from '@/types';
 
 export function AssessmentList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { offeringId } = useParams<{ offeringId: string }>();
   const { user } = useAuthStore();
@@ -25,10 +27,10 @@ export function AssessmentList() {
     if (!confirmTarget) return;
     try {
       await archive.mutateAsync(confirmTarget._id);
-      success('Assessment archived.');
+      success(t('doctor.assessmentList.archived'));
       setConfirmTarget(null);
     } catch (err) {
-      showError(getApiErrorMessage(err, 'Failed to archive assessment.'));
+      showError(getApiErrorMessage(err, t('doctor.assessmentList.failedArchive')));
     }
   };
 
@@ -36,13 +38,13 @@ export function AssessmentList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Assessments</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Quizzes, exams, and assignments</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.assessmentList.title')}</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.assessmentList.subtitle')}</p>
         </div>
         {isDoctor && (
           <Link to={`/dashboard/course-offerings/${offeringId}/assessments/create`}>
             <Button>
-              <Plus className="h-4 w-4 mr-2" /> New Assessment
+              <Plus className="h-4 w-4 mr-2" /> {t('doctor.assessmentList.newAssessment')}
             </Button>
           </Link>
         )}
@@ -56,7 +58,7 @@ export function AssessmentList() {
         <Card>
           <CardContent className="p-12 text-center">
             <FileQuestion className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No assessments yet.</p>
+            <p className="text-gray-600">{t('doctor.assessmentList.noAssessments')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -66,26 +68,26 @@ export function AssessmentList() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>{a.title}</span>
-                  <span className="text-sm font-normal text-gray-500">{a.totalPoints} pts</span>
+                  <span className="text-sm font-normal text-gray-500">{t('doctor.assessmentList.points', { pts: a.totalPoints })}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {a.description && <p className="text-sm text-gray-600">{a.description}</p>}
                 <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-gray-500">Due: </span>
+                    <span className="text-gray-500">{t('doctor.assessmentList.due')} </span>
                     {new Date(a.dueDate).toLocaleString()}
                   </div>
                   <div>
-                    <span className="text-gray-500">Time limit: </span>
-                    {a.timeLimitMinutes ? `${a.timeLimitMinutes} min` : 'Untimed'}
+                    <span className="text-gray-500">{t('doctor.assessmentList.timeLimit')} </span>
+                    {a.timeLimitMinutes ? t('doctor.assessmentList.minutes', { min: a.timeLimitMinutes }) : t('doctor.assessmentList.untimed')}
                   </div>
                   <div>
-                    <span className="text-gray-500">Status: </span>
+                    <span className="text-gray-500">{t('doctor.assessmentList.status')} </span>
                     {a.settings?.acceptingResponses === false ? (
-                      <span className="text-red-600 font-medium">Closed</span>
+                      <span className="text-red-600 font-medium">{t('doctor.assessmentList.closed')}</span>
                     ) : (
-                      <span className="text-green-600 font-medium">Accepting</span>
+                      <span className="text-green-600 font-medium">{t('doctor.assessmentList.accepting')}</span>
                     )}
                   </div>
                 </div>
@@ -95,7 +97,7 @@ export function AssessmentList() {
                     size="sm"
                     onClick={() => navigate(`/dashboard/course-offerings/${offeringId}/assessments/${a._id}`)}
                   >
-                    View
+                    {t('doctor.assessmentList.view')}
                   </Button>
                   {isDoctor && (
                     <>
@@ -104,10 +106,10 @@ export function AssessmentList() {
                         size="sm"
                         onClick={() => navigate(`/dashboard/course-offerings/${offeringId}/assessments/${a._id}/edit`)}
                       >
-                        <Edit className="h-3 w-3 mr-1" /> Edit
+                        <Edit className="h-3 w-3 mr-1" /> {t('doctor.assessmentList.edit')}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => setConfirmTarget(a)}>
-                        <Archive className="h-3 w-3 mr-1" /> Archive
+                        <Archive className="h-3 w-3 mr-1" /> {t('doctor.assessmentList.archive')}
                       </Button>
                     </>
                   )}
@@ -116,7 +118,7 @@ export function AssessmentList() {
                     size="sm"
                     onClick={() => navigate(`/dashboard/course-offerings/${offeringId}/assessments/${a._id}/submissions`)}
                   >
-                    <Users className="h-3 w-3 mr-1" /> Submissions
+                    <Users className="h-3 w-3 mr-1" /> {t('doctor.assessmentList.submissions')}
                   </Button>
                 </div>
               </CardContent>
@@ -129,9 +131,9 @@ export function AssessmentList() {
         isOpen={Boolean(confirmTarget)}
         onClose={() => setConfirmTarget(null)}
         onConfirm={handleArchive}
-        title="Archive assessment"
-        message={`Archive "${confirmTarget?.title}"? Students will no longer see it. Blocked if any submissions exist.`}
-        confirmText="Archive"
+        title={t('doctor.assessmentList.confirmTitle')}
+        message={t('doctor.assessmentList.confirmMessage', { title: confirmTarget?.title })}
+        confirmText={t('doctor.assessmentList.archive')}
         variant="warning"
         isLoading={archive.isPending}
       />

@@ -41,22 +41,22 @@ export function Profile() {
 
   const handleChangePassword = async () => {
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      showError('All password fields are required');
+      showError(t('shared.profile.errAllFields'));
       return;
     }
 
     if (passwordData.newPassword.length < 8) {
-      showError('New password must be at least 8 characters long');
+      showError(t('shared.profile.errMinLen'));
       return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      showError('New passwords do not match');
+      showError(t('shared.profile.errMismatch'));
       return;
     }
 
     if (passwordData.currentPassword === passwordData.newPassword) {
-      showError('New password must be different from current password');
+      showError(t('shared.profile.errSameAsCurrent'));
       return;
     }
 
@@ -72,14 +72,14 @@ export function Profile() {
         newPassword: '',
         confirmPassword: '',
       });
-      success('Password changed successfully');
+      success(t('shared.profile.passwordChanged'));
     } catch (err: unknown) {
       logger.error('Failed to change password', {
         context: 'Profile',
         error: err,
       });
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      showError(msg || 'Failed to change password');
+      showError(msg || t('shared.profile.failedChange'));
     } finally {
       setLoading(false);
     }
@@ -97,13 +97,13 @@ export function Profile() {
   const getAcademicStatusLabel = (status?: string) => {
     switch (status) {
       case 'good_standing':
-        return 'Good Standing';
+        return t('shared.profile.statusGoodStanding');
       case 'probation':
-        return 'Probation';
+        return t('shared.profile.statusProbation');
       case 'honors':
-        return 'Honors';
+        return t('shared.profile.statusHonors');
       default:
-        return 'N/A';
+        return t('shared.profile.notAvailable');
     }
   };
 
@@ -123,7 +123,7 @@ export function Profile() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-600">Loading profile...</p>
+        <p className="text-gray-600">{t('shared.profile.loading')}</p>
       </div>
     );
   }
@@ -133,7 +133,7 @@ export function Profile() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">{t('nav.profile')}</h1>
-        <p className="text-gray-600 mt-1">Manage your profile information and account settings</p>
+        <p className="text-gray-600 mt-1">{t('shared.profile.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -144,7 +144,7 @@ export function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Personal Information
+                {t('shared.profile.personalInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -158,7 +158,7 @@ export function Profile() {
                 <div>
                   <p className="font-semibold text-lg">{user.name}</p>
                   <p className="text-sm text-gray-600">
-                    {user.role === 'student' ? 'Student' : user.role}
+                    {user.role === 'student' ? t('shared.profile.student') : user.role}
                   </p>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export function Profile() {
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                  {t('shared.profile.fullName')}
                 </label>
                 <p className="text-gray-900 py-2">{user.name}</p>
               </div>
@@ -174,7 +174,7 @@ export function Profile() {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
+                  {t('shared.profile.emailAddress')}
                 </label>
                 <p className="text-gray-900 py-2">{user.email}</p>
               </div>
@@ -183,10 +183,10 @@ export function Profile() {
               {user.nationalId && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    National ID
+                    {t('shared.profile.nationalId')}
                   </label>
                   <p className="text-gray-900 py-2">{user.nationalId}</p>
-                  <p className="text-xs text-gray-500 mt-1">This cannot be changed</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('shared.profile.cannotChange')}</p>
                 </div>
               )}
 
@@ -199,35 +199,35 @@ export function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5" />
-                  Academic Information
+                  {t('shared.profile.academicInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Year
+                      {t('shared.profile.year')}
                     </label>
-                    <p className="text-gray-900 py-2">Year {student.year}</p>
+                    <p className="text-gray-900 py-2">{t('shared.profile.yearValue', { year: student.year })}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Semester
+                      {t('shared.profile.semester')}
                     </label>
-                    <p className="text-gray-900 py-2">Semester {student.semester}</p>
+                    <p className="text-gray-900 py-2">{t('shared.profile.semesterValue', { semester: student.semester })}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Credits Earned
+                      {t('shared.profile.creditsEarned')}
                     </label>
-                    <p className="text-gray-900 py-2">{student.creditsEarned} credits</p>
+                    <p className="text-gray-900 py-2">{t('shared.profile.creditsValue', { credits: student.creditsEarned })}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      GPA
+                      {t('shared.profile.gpa')}
                     </label>
                     <p className="text-gray-900 py-2 font-semibold">
-                      {student.gpa > 0 ? student.gpa.toFixed(2) : 'N/A'}
+                      {student.gpa > 0 ? student.gpa.toFixed(2) : t('shared.profile.notAvailable')}
                     </p>
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export function Profile() {
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Department
+                        {t('shared.profile.department')}
                       </label>
                       <p className="text-gray-900 py-2">
                         {student.department.name} ({student.department.code})
@@ -245,7 +245,7 @@ export function Profile() {
                     {student.department.college && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          College
+                          {t('shared.profile.college')}
                         </label>
                         <p className="text-gray-900 py-2">
                           {student.department.college.name} ({student.department.college.code})
@@ -258,7 +258,7 @@ export function Profile() {
                 {student.academicStatus && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Academic Status
+                      {t('shared.profile.academicStatus')}
                     </label>
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getAcademicStatusColor(
@@ -282,12 +282,12 @@ export function Profile() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Lock className="h-5 w-5" />
-                  Security
+                  {t('shared.profile.security')}
                 </CardTitle>
                 {!isChangingPassword && (
                   <Button variant="ghost" size="sm" onClick={() => setIsChangingPassword(true)}>
                     <Edit2 className="h-4 w-4 mr-2" />
-                    Change
+                    {t('shared.profile.change')}
                   </Button>
                 )}
               </div>
@@ -297,7 +297,7 @@ export function Profile() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Current Password
+                      {t('shared.profile.currentPassword')}
                     </label>
                     <div className="relative">
                       <Input
@@ -306,7 +306,7 @@ export function Profile() {
                         onChange={(e) =>
                           setPasswordData({ ...passwordData, currentPassword: e.target.value })
                         }
-                        placeholder="Enter current password"
+                        placeholder={t('shared.profile.enterCurrentPassword')}
                       />
                       <button
                         type="button"
@@ -324,7 +324,7 @@ export function Profile() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      New Password
+                      {t('shared.profile.newPassword')}
                     </label>
                     <div className="relative">
                       <Input
@@ -333,7 +333,7 @@ export function Profile() {
                         onChange={(e) =>
                           setPasswordData({ ...passwordData, newPassword: e.target.value })
                         }
-                        placeholder="Enter new password"
+                        placeholder={t('shared.profile.enterNewPassword')}
                       />
                       <button
                         type="button"
@@ -348,13 +348,13 @@ export function Profile() {
                       </button>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Must be at least 8 characters long
+                      {t('shared.profile.minCharsHint')}
                     </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm New Password
+                      {t('shared.profile.confirmNewPassword')}
                     </label>
                     <div className="relative">
                       <Input
@@ -363,7 +363,7 @@ export function Profile() {
                         onChange={(e) =>
                           setPasswordData({ ...passwordData, confirmPassword: e.target.value })
                         }
-                        placeholder="Confirm new password"
+                        placeholder={t('shared.profile.confirmNewPlaceholder')}
                       />
                       <button
                         type="button"
@@ -386,7 +386,7 @@ export function Profile() {
                       disabled={loading}
                       className="flex-1"
                     >
-                      Cancel
+                      {t('shared.profile.cancel')}
                     </Button>
                     <Button
                       variant="primary"
@@ -395,14 +395,14 @@ export function Profile() {
                       disabled={loading}
                       className="flex-1"
                     >
-                      Change Password
+                      {t('shared.profile.changePassword')}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div>
                   <p className="text-sm text-gray-600">
-                    Keep your account secure by changing your password regularly.
+                    {t('shared.profile.securityNote')}
                   </p>
                 </div>
               )}
@@ -414,25 +414,25 @@ export function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Account Information
+                {t('shared.profile.accountInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  User ID
+                  {t('shared.profile.userId')}
                 </label>
                 <p className="text-gray-900 text-sm font-mono">{user.id}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  University ID
+                  {t('shared.profile.universityId')}
                 </label>
                 <p className="text-gray-900 text-sm font-mono">{user.universityId}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
+                  {t('shared.profile.role')}
                 </label>
                 <p className="text-gray-900 text-sm capitalize">{user.role}</p>
               </div>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -38,6 +39,7 @@ const iconStyles = {
 };
 
 export function ToastComponent({ toast, onClose }: ToastProps) {
+  const { t } = useTranslation();
   const Icon = toastIcons[toast.type];
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function ToastComponent({ toast, onClose }: ToastProps) {
       <button
         onClick={() => onClose(toast.id)}
         className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-white/50"
-        aria-label="Close"
+        aria-label={t('chrome.toast.close')}
       >
         <X className="h-4 w-4" />
       </button>

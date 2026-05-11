@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -14,6 +15,7 @@ import { useInvalidateDepartments } from '@/hooks/queries/useDepartments';
 const FORM_ID = 'edit-department-form';
 
 export function EditDepartment() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const invalidateDepartments = useInvalidateDepartments();
@@ -61,7 +63,7 @@ export function EditDepartment() {
         });
       } catch (error) {
         logger.error('Failed to fetch department', { context: 'EditDepartment', error });
-        showError(getApiErrorMessage(error, 'Failed to load department'));
+        showError(getApiErrorMessage(error, t('admin.editDepartment.loadFail')));
       } finally {
         setFetching(false);
       }
@@ -80,12 +82,12 @@ export function EditDepartment() {
         ...(formData.description.trim() && { description: formData.description.trim() }),
         head_id: formData.headId.trim() || null,
       });
-      success('Department updated successfully');
+      success(t('admin.editDepartment.updated'));
       invalidateDepartments();
       navigate('/dashboard/organizational/departments');
     } catch (error) {
       logger.error('Failed to update department', { context: 'EditDepartment', error });
-      showError(getApiErrorMessage(error, 'Failed to update department'));
+      showError(getApiErrorMessage(error, t('admin.editDepartment.updateFail')));
     } finally {
       setLoading(false);
     }
@@ -96,7 +98,7 @@ export function EditDepartment() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading department…</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.editDepartment.loading')}</p>
         </div>
       </div>
     );
@@ -106,44 +108,44 @@ export function EditDepartment() {
     <div className="space-y-6">
       <OrganizationalEditBreadcrumb
         segments={[
-          { label: 'University Structure' },
-          { label: 'Departments', href: '/dashboard/organizational/departments' },
-          { label: formData.name.trim() || 'Department' },
-          { label: 'Edit' },
+          { label: t('admin.editDepartment.section') },
+          { label: t('admin.editDepartment.departments'), href: '/dashboard/organizational/departments' },
+          { label: formData.name.trim() || t('admin.editDepartment.departmentFallback') },
+          { label: t('admin.editDepartment.edit') },
         ]}
       />
 
       <Card>
         <CardContent className="py-4">
           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            The linked college cannot be changed after creation.
+            {t('admin.editDepartment.collegeImmutable')}
           </p>
           <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editDepartment.college')}</label>
               <Input value={collegeLabel} readOnly className="bg-gray-50 text-gray-700 dark:bg-slate-800/50 dark:text-gray-300" />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Department name <span className="text-red-500">*</span>
+                  {t('admin.editDepartment.departmentName')} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Computer Science"
+                  placeholder={t('admin.editDepartment.namePlaceholder')}
                   required
                 />
               </div>
               <div className="md:col-span-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Department code <span className="text-red-500">*</span>
+                  {t('admin.editDepartment.departmentCode')} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  placeholder="e.g., CS"
+                  placeholder={t('admin.editDepartment.codePlaceholder')}
                   required
                   maxLength={10}
                 />
@@ -151,23 +153,23 @@ export function EditDepartment() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editDepartment.description')}</label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of the department"
+                placeholder={t('admin.editDepartment.descriptionPlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Head user ID <span className="font-normal text-gray-400">(optional)</span>
+                  {t('admin.editDepartment.headUserId')} <span className="font-normal text-gray-400">{t('admin.editDepartment.optional')}</span>
                 </label>
                 <Input
                   value={formData.headId}
                   onChange={(e) => setFormData({ ...formData, headId: e.target.value })}
-                  placeholder="MongoDB ObjectId — field head_id"
+                  placeholder={t('admin.editDepartment.headPlaceholder')}
                 />
               </div>
             </div>
@@ -178,7 +180,7 @@ export function EditDepartment() {
       <div className="flex flex-wrap justify-end gap-2">
         <Link to="/dashboard/organizational/departments">
           <Button type="button" variant="secondary" className="rounded-xl">
-            Cancel
+            {t('admin.editDepartment.cancel')}
           </Button>
         </Link>
         <Button
@@ -188,7 +190,7 @@ export function EditDepartment() {
           className="inline-flex items-center gap-2 rounded-xl"
         >
           <Save className="h-4 w-4" />
-          Save
+          {t('admin.editDepartment.save')}
         </Button>
       </div>
     </div>

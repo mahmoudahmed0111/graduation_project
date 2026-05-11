@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Plus, Save, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -48,6 +49,7 @@ function isObjective(type: Phase4QuestionType): boolean {
 }
 
 export function CreateAssessment() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const params = useParams<{ offeringId?: string }>();
   const [searchParams] = useSearchParams();
@@ -71,7 +73,7 @@ export function CreateAssessment() {
   const [acceptingResponses, setAcceptingResponses] = useState(true);
   const [allowEditAfterSubmit, setAllowEditAfterSubmit] = useState(false);
   const [limitToOneResponse, setLimitToOneResponse] = useState(true);
-  const [confirmationMessage, setConfirmationMessage] = useState('Your response has been recorded.');
+  const [confirmationMessage, setConfirmationMessage] = useState(t('doctor.createAssessment.defaultConfirmation'));
 
   const calculatedTotal = useMemo(
     () => questions.reduce((acc, q) => acc + (Number.isFinite(q.points) ? q.points : 0), 0),
@@ -127,20 +129,20 @@ export function CreateAssessment() {
   };
 
   function validate(): string | null {
-    if (!offeringId) return 'Course offering is required.';
-    if (!title.trim()) return 'Title is required.';
-    if (!dueDate) return 'Due date is required.';
-    if (questions.length === 0) return 'At least one question is required.';
-    if (totalMismatch) return `Total points mismatch: declared ${declaredTotalNumber}, calculated ${calculatedTotal}.`;
+    if (!offeringId) return t('doctor.createAssessment.errCourseRequired');
+    if (!title.trim()) return t('doctor.createAssessment.errTitleRequired');
+    if (!dueDate) return t('doctor.createAssessment.errDueDateRequired');
+    if (questions.length === 0) return t('doctor.createAssessment.errQuestionRequired');
+    if (totalMismatch) return t('doctor.createAssessment.errTotalMismatch', { declared: declaredTotalNumber, calculated: calculatedTotal });
     for (const [idx, q] of questions.entries()) {
-      if (!q.questionText.trim()) return `Question ${idx + 1}: text is required.`;
-      if (q.points <= 0) return `Question ${idx + 1}: points must be > 0.`;
+      if (!q.questionText.trim()) return t('doctor.createAssessment.errQuestionText', { n: idx + 1 });
+      if (q.points <= 0) return t('doctor.createAssessment.errQuestionPoints', { n: idx + 1 });
       if (isObjective(q.questionType)) {
-        if (q.options.length === 0) return `Question ${idx + 1}: objective questions must have options.`;
-        if (!q.options.some((o) => o.isCorrect)) return `Question ${idx + 1}: at least one option must be correct.`;
-        if (q.options.some((o) => !o.text.trim())) return `Question ${idx + 1}: option text cannot be empty.`;
+        if (q.options.length === 0) return t('doctor.createAssessment.errObjOptions', { n: idx + 1 });
+        if (!q.options.some((o) => o.isCorrect)) return t('doctor.createAssessment.errObjCorrect', { n: idx + 1 });
+        if (q.options.some((o) => !o.text.trim())) return t('doctor.createAssessment.errOptionEmpty', { n: idx + 1 });
       } else {
-        if (q.options.length > 0) return `Question ${idx + 1}: subjective questions cannot have options.`;
+        if (q.options.length > 0) return t('doctor.createAssessment.errSubjOptions', { n: idx + 1 });
       }
     }
     return null;
@@ -178,36 +180,36 @@ export function CreateAssessment() {
     };
     try {
       const created = await create.mutateAsync(payload);
-      success('Assessment created.');
+      success(t('doctor.createAssessment.created'));
       navigate(`/dashboard/course-offerings/${offeringId}/assessments/${created._id}`);
     } catch (e2) {
-      showError(getApiErrorMessage(e2, 'Failed to create assessment.'));
+      showError(getApiErrorMessage(e2, t('doctor.createAssessment.failedCreate')));
     }
   };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create Assessment</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Build a quiz, exam, or assignment</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.createAssessment.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.createAssessment.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Info</CardTitle>
+            <CardTitle>{t('doctor.createAssessment.basicInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {!params.offeringId && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Course Offering *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.createAssessment.courseOfferingLabel')} *</label>
                 <select
                   value={offeringId}
                   onChange={(e) => setOfferingId(e.target.value)}
                   disabled={offeringsLoading}
                   className="field"
                 >
-                  <option value="">{offeringsLoading ? 'Loading…' : 'Select a course…'}</option>
+                  <option value="">{offeringsLoading ? t('doctor.createAssessment.loading') : t('doctor.createAssessment.selectCourse')}</option>
                   {offerings.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
@@ -217,9 +219,9 @@ export function CreateAssessment() {
               </div>
             )}
 
-            <Input label="Title *" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Quiz 1 — Arrays" />
+            <Input label={t('doctor.createAssessment.titleLabel')} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('doctor.createAssessment.titlePlaceholder')} />
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.createAssessment.descriptionLabel')}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -229,27 +231,27 @@ export function CreateAssessment() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Input
-                label="Due date *"
+                label={t('doctor.createAssessment.dueDateLabel')}
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
               <Input
-                label="Time limit (minutes)"
+                label={t('doctor.createAssessment.timeLimitLabel')}
                 type="number"
                 min={1}
                 value={timeLimitMinutes}
                 onChange={(e) => setTimeLimitMinutes(e.target.value)}
-                placeholder="Leave empty = untimed"
+                placeholder={t('doctor.createAssessment.untimedPlaceholder')}
               />
               <Input
-                label="Declared total (optional)"
+                label={t('doctor.createAssessment.declaredTotalLabel')}
                 type="number"
                 min={0}
                 value={doctorDeclaredTotal}
                 onChange={(e) => setDoctorDeclaredTotal(e.target.value)}
-                placeholder={`Calc: ${calculatedTotal}`}
-                error={totalMismatch ? `Mismatch — calc is ${calculatedTotal}` : undefined}
+                placeholder={t('doctor.createAssessment.calcPlaceholder', { calc: calculatedTotal })}
+                error={totalMismatch ? t('doctor.createAssessment.mismatchError', { calc: calculatedTotal }) : undefined}
               />
             </div>
           </CardContent>
@@ -258,9 +260,9 @@ export function CreateAssessment() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Questions ({questions.length}) — total {calculatedTotal} pts</CardTitle>
+              <CardTitle>{t('doctor.createAssessment.questionsHeader', { count: questions.length, total: calculatedTotal })}</CardTitle>
               <Button type="button" variant="outline" onClick={() => setQuestions((qs) => [...qs, blankQuestion()])}>
-                <Plus className="h-4 w-4 mr-2" /> Add question
+                <Plus className="h-4 w-4 mr-2" /> {t('doctor.createAssessment.addQuestion')}
               </Button>
             </div>
           </CardHeader>
@@ -268,7 +270,7 @@ export function CreateAssessment() {
             {questions.map((q, idx) => (
               <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">
-                  <span className="text-sm font-semibold text-gray-700">Q{idx + 1}</span>
+                  <span className="text-sm font-semibold text-gray-700">{t('doctor.createAssessment.qN', { n: idx + 1 })}</span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -281,13 +283,13 @@ export function CreateAssessment() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="md:col-span-2">
                     <Input
-                      label="Question *"
+                      label={t('doctor.createAssessment.questionLabel')}
                       value={q.questionText}
                       onChange={(e) => updateQuestion(idx, { questionText: e.target.value })}
                     />
                   </div>
                   <Input
-                    label="Points *"
+                    label={t('doctor.createAssessment.pointsLabel')}
                     type="number"
                     min={1}
                     value={q.points}
@@ -296,7 +298,7 @@ export function CreateAssessment() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Type</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.createAssessment.typeLabel')}</label>
                     <select
                       value={q.questionType}
                       onChange={(e) => onTypeChange(idx, e.target.value as Phase4QuestionType)}
@@ -315,17 +317,17 @@ export function CreateAssessment() {
                       checked={q.isRequired}
                       onChange={(e) => updateQuestion(idx, { isRequired: e.target.checked })}
                     />
-                    <span className="text-sm">Required</span>
+                    <span className="text-sm">{t('doctor.createAssessment.required')}</span>
                   </label>
                 </div>
 
                 {isObjective(q.questionType) ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Options</span>
+                      <span className="text-sm font-medium text-gray-700">{t('doctor.createAssessment.options')}</span>
                       {q.questionType !== 'TrueFalse' && (
                         <Button type="button" variant="ghost" size="sm" onClick={() => addOption(idx)}>
-                          <Plus className="h-3 w-3 mr-1" /> Add option
+                          <Plus className="h-3 w-3 mr-1" /> {t('doctor.createAssessment.addOption')}
                         </Button>
                       )}
                     </div>
@@ -358,7 +360,7 @@ export function CreateAssessment() {
                               ),
                             })
                           }
-                          placeholder={`Option ${oi + 1}`}
+                          placeholder={t('doctor.createAssessment.optionN', { n: oi + 1 })}
                           className="flex-1"
                         />
                         {q.questionType !== 'TrueFalse' && (
@@ -378,7 +380,7 @@ export function CreateAssessment() {
                 ) : (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                      Model answer (staff-only, optional)
+                      {t('doctor.createAssessment.modelAnswerLabel')}
                     </label>
                     <textarea
                       rows={2}
@@ -395,12 +397,12 @@ export function CreateAssessment() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Settings</CardTitle>
+            <CardTitle>{t('doctor.createAssessment.settings')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={shuffleQuestions} onChange={(e) => setShuffleQuestions(e.target.checked)} />
-              <span className="text-sm">Shuffle questions per student</span>
+              <span className="text-sm">{t('doctor.createAssessment.shuffleQuestions')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -408,7 +410,7 @@ export function CreateAssessment() {
                 checked={showGradesImmediately}
                 onChange={(e) => setShowGradesImmediately(e.target.checked)}
               />
-              <span className="text-sm">Show grades immediately after grading</span>
+              <span className="text-sm">{t('doctor.createAssessment.showGradesImmediately')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -416,7 +418,7 @@ export function CreateAssessment() {
                 checked={acceptingResponses}
                 onChange={(e) => setAcceptingResponses(e.target.checked)}
               />
-              <span className="text-sm">Accepting responses</span>
+              <span className="text-sm">{t('doctor.createAssessment.acceptingResponses')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -424,7 +426,7 @@ export function CreateAssessment() {
                 checked={allowEditAfterSubmit}
                 onChange={(e) => setAllowEditAfterSubmit(e.target.checked)}
               />
-              <span className="text-sm">Allow edit after submit</span>
+              <span className="text-sm">{t('doctor.createAssessment.allowEditAfterSubmit')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -432,10 +434,10 @@ export function CreateAssessment() {
                 checked={limitToOneResponse}
                 onChange={(e) => setLimitToOneResponse(e.target.checked)}
               />
-              <span className="text-sm">Limit to one response per student</span>
+              <span className="text-sm">{t('doctor.createAssessment.limitOneResponse')}</span>
             </label>
             <Input
-              label="Confirmation message"
+              label={t('doctor.createAssessment.confirmationMessageLabel')}
               value={confirmationMessage}
               onChange={(e) => setConfirmationMessage(e.target.value)}
             />
@@ -444,10 +446,10 @@ export function CreateAssessment() {
 
         <div className="flex gap-4">
           <Button type="button" variant="secondary" className="flex-1" onClick={() => navigate(-1)}>
-            Cancel
+            {t('doctor.createAssessment.cancel')}
           </Button>
           <Button type="submit" isLoading={create.isPending} disabled={!offeringId} className="flex-1">
-            <Save className="h-4 w-4 mr-2" /> Create Assessment
+            <Save className="h-4 w-4 mr-2" /> {t('doctor.createAssessment.createAssessment')}
           </Button>
         </div>
       </form>

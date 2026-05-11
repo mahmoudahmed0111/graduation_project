@@ -3,14 +3,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
-import { 
-  ArrowLeft, 
-  User, 
-  Mail, 
+import {
+  ArrowLeft,
+  User,
+  Mail,
   GraduationCap,
   Save,
   X
@@ -35,6 +36,7 @@ const studentSchema = z.object({
 type StudentFormData = z.infer<typeof studentSchema>;
 
 export function CreateStudent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { success, error: showError } = useToastStore();
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,7 @@ export function CreateStudent() {
       // await api.createStudent(data);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       logger.info('Student created successfully', { context: 'CreateStudent', data });
-      success('Student created successfully');
+      success(t('admin.studentsCreate.createdToast'));
       navigate('/dashboard/students');
     } catch (err: unknown) {
       logger.error('Failed to create student', {
@@ -68,7 +70,7 @@ export function CreateStudent() {
         error: err,
       });
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      showError(msg || 'Failed to create student');
+      showError(msg || t('admin.studentsCreate.createFail'));
     } finally {
       setLoading(false);
     }
@@ -92,8 +94,8 @@ export function CreateStudent() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create New Student</h1>
-          <p className="text-gray-600 mt-1">Add a new student to the system</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('admin.studentsCreate.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('admin.studentsCreate.subtitle')}</p>
         </div>
       </div>
 
@@ -103,24 +105,24 @@ export function CreateStudent() {
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <User className="h-4 w-4 text-primary-600" />
-                Personal Information
+                {t('admin.studentsCreate.personalInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Full Name"
-                  placeholder="Enter student's full name"
+                  label={t('admin.studentsCreate.fullName')}
+                  placeholder={t('admin.studentsCreate.fullNamePlaceholder')}
                   error={errors.name?.message}
                   {...register('name')}
                 />
                 <Input
-                  label="Email"
+                  label={t('admin.studentsCreate.email')}
                   type="email"
                   placeholder="student@university.edu"
                   error={errors.email?.message}
                   {...register('email')}
                 />
                 <Input
-                  label="National ID"
+                  label={t('admin.studentsCreate.nationalId')}
                   placeholder="12345678901234"
                   error={errors.nationalId?.message}
                   {...register('nationalId')}
@@ -133,45 +135,45 @@ export function CreateStudent() {
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-primary-600" />
-                Academic Information
+                {t('admin.studentsCreate.academicInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select2
-                  label="Year"
+                  label={t('admin.studentsCreate.year')}
                   value={watchYear || ''}
                   onChange={(value) => setValue('year', value)}
                   options={[
-                    { value: '', label: 'Select Year' },
-                    { value: '1', label: 'Year 1' },
-                    { value: '2', label: 'Year 2' },
-                    { value: '3', label: 'Year 3' },
-                    { value: '4', label: 'Year 4' },
+                    { value: '', label: t('admin.studentsCreate.selectYear') },
+                    { value: '1', label: t('admin.studentsCreate.year1') },
+                    { value: '2', label: t('admin.studentsCreate.year2') },
+                    { value: '3', label: t('admin.studentsCreate.year3') },
+                    { value: '4', label: t('admin.studentsCreate.year4') },
                   ]}
                   error={errors.year?.message}
-                  placeholder="Select Year"
+                  placeholder={t('admin.studentsCreate.selectYear')}
                 />
                 <Select2
-                  label="Semester"
+                  label={t('admin.studentsCreate.semester')}
                   value={watchSemester || ''}
                   onChange={(value) => setValue('semester', value)}
                   options={[
-                    { value: '', label: 'Select Semester' },
-                    { value: '1', label: 'Semester 1' },
-                    { value: '2', label: 'Semester 2' },
+                    { value: '', label: t('admin.studentsCreate.selectSemester') },
+                    { value: '1', label: t('admin.studentsCreate.semester1') },
+                    { value: '2', label: t('admin.studentsCreate.semester2') },
                   ]}
                   error={errors.semester?.message}
-                  placeholder="Select Semester"
+                  placeholder={t('admin.studentsCreate.selectSemester')}
                 />
                 <Select2
-                  label="Department"
+                  label={t('admin.studentsCreate.department')}
                   value={watchDepartment || ''}
                   onChange={(value) => setValue('department', value)}
                   options={[
-                    { value: '', label: 'Select Department' },
+                    { value: '', label: t('admin.studentsCreate.selectDepartment') },
                     ...departments,
                   ]}
                   error={errors.department?.message}
-                  placeholder="Select Department"
+                  placeholder={t('admin.studentsCreate.selectDepartment')}
                 />
               </div>
             </div>
@@ -181,25 +183,25 @@ export function CreateStudent() {
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary-600" />
-                Account Information
+                {t('admin.studentsCreate.accountInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Password"
+                  label={t('admin.studentsCreate.password')}
                   type="password"
-                  placeholder="Enter password"
+                  placeholder={t('admin.studentsCreate.passwordPlaceholder')}
                   error={errors.password?.message}
                   {...register('password')}
                 />
                 <Input
-                  label="Confirm Password"
+                  label={t('admin.studentsCreate.confirmPassword')}
                   type="password"
-                  placeholder="Confirm password"
+                  placeholder={t('admin.studentsCreate.confirmPasswordPlaceholder')}
                   error={errors.confirmPassword?.message}
                   {...register('confirmPassword')}
                 />
               </div>
-              <p className="text-sm text-gray-500 mt-2">Password must be at least 8 characters long. All fields are required. National ID must be 14 digits.</p>
+              <p className="text-sm text-gray-500 mt-2">{t('admin.studentsCreate.passwordHint')}</p>
             </div>
           </CardContent>
         </Card>
@@ -207,12 +209,12 @@ export function CreateStudent() {
         <div className="flex items-center justify-end gap-3 mt-6">
           <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
             <Save className="h-4 w-4 mr-2" />
-            Create Student
+            {t('admin.studentsCreate.createStudent')}
           </Button>
           <Link to="/dashboard/students">
             <Button type="button" variant="secondary" disabled={loading}>
               <X className="h-4 w-4 mr-2" />
-              Cancel
+              {t('admin.studentsCreate.cancel')}
             </Button>
           </Link>
         </div>

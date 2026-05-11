@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -7,13 +8,14 @@ import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
 
 export function ComingSoon() {
+  const { t } = useTranslation();
   const { success } = useToastStore();
   const [email, setEmail] = useState('');
 
   const handleNotifyMe = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      success('We\'ll notify you when this feature is available!');
+      success(t('authPages.comingSoon.notifyToast'));
       setEmail('');
     }
   };
@@ -41,7 +43,7 @@ export function ComingSoon() {
             className="inline-flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors mb-4 group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-medium">Back to Home</span>
+            <span className="text-sm font-medium">{t('authPages.comingSoon.backToHome')}</span>
           </Link>
 
           <div className="flex justify-center mb-6 animate-scale-in" style={{ animationDelay: '0.2s' }}>
@@ -55,11 +57,11 @@ export function ComingSoon() {
 
           <div className="text-center">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent animate-fade-in font-cairo" style={{ animationDelay: '0.3s' }}>
-              Coming Soon
+              {t('authPages.comingSoon.title')}
             </h1>
           </div>
           <p className="text-center text-lg text-gray-600 mt-4 animate-fade-in" style={{ animationDelay: '0.35s' }}>
-            We're working hard to bring you something amazing!
+            {t('authPages.comingSoon.subtitle')}
           </p>
         </CardHeader>
 
@@ -68,22 +70,22 @@ export function ComingSoon() {
             <div className="flex items-center justify-center gap-2 text-gray-500">
               <Sparkles className="h-5 w-5 text-primary-500" />
               <p className="text-sm">
-                This feature is currently under development and will be available soon.
+                {t('authPages.comingSoon.underDevelopment')}
               </p>
             </div>
 
             {/* Notify Me Form */}
             <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Get Notified
+                {t('authPages.comingSoon.getNotified')}
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                Enter your email and we'll notify you when this feature is ready.
+                {t('authPages.comingSoon.getNotifiedDesc')}
               </p>
               <form onSubmit={handleNotifyMe} className="flex gap-2">
                 <Input
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder={t('authPages.comingSoon.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="flex-1"
@@ -91,7 +93,7 @@ export function ComingSoon() {
                 />
                 <Button type="submit" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  Notify Me
+                  {t('authPages.comingSoon.notifyMe')}
                 </Button>
               </form>
             </div>
@@ -99,7 +101,7 @@ export function ComingSoon() {
             {/* Progress Indicator */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>Development Progress</span>
+                <span>{t('authPages.comingSoon.devProgress')}</span>
                 <span className="font-semibold text-primary-600">75%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">

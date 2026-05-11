@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { CheckCircle2, Clock, FileText } from 'lucide-react';
@@ -17,6 +18,7 @@ interface OfferingMeta {
 }
 
 export function MySubmissions() {
+  const { t } = useTranslation();
   const { error: showError } = useToastStore();
   const [enrollments, setEnrollments] = useState<IEnrollment[]>([]);
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(true);
@@ -29,7 +31,7 @@ export function MySubmissions() {
         const rows = await api.getMyCourses({ semester: 'current' });
         if (!cancelled) setEnrollments(Array.isArray(rows) ? rows : []);
       } catch {
-        if (!cancelled) showError('Failed to load courses.');
+        if (!cancelled) showError(t('student.mySubmissions.loadCoursesFailed'));
       } finally {
         if (!cancelled) setEnrollmentsLoading(false);
       }
@@ -84,15 +86,15 @@ export function MySubmissions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Submissions</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">All your assessment attempts</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('student.mySubmissions.title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('student.mySubmissions.subtitle')}</p>
       </div>
 
       {submissions.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No submissions yet.</p>
+            <p className="text-gray-600">{t('student.mySubmissions.noSubmissions')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -107,15 +109,15 @@ export function MySubmissions() {
                     {my.status === 'graded' ? (
                       <span className="flex items-center gap-1 text-sm text-green-700 font-normal">
                         <CheckCircle2 className="h-4 w-4" />
-                        Graded
+                        {t('student.mySubmissions.graded')}
                       </span>
                     ) : my.status === 'submitted' ? (
                       <span className="flex items-center gap-1 text-sm text-blue-700 font-normal">
                         <Clock className="h-4 w-4" />
-                        Awaiting grade
+                        {t('student.mySubmissions.awaitingGrade')}
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-500 font-normal">In progress</span>
+                      <span className="text-sm text-gray-500 font-normal">{t('student.mySubmissions.inProgress')}</span>
                     )}
                   </CardTitle>
                   <p className="text-xs text-gray-500 mt-1">
@@ -130,11 +132,11 @@ export function MySubmissions() {
                     </div>
                   )}
                   {my.submittedAt && (
-                    <p className="text-sm text-gray-500">Submitted {new Date(my.submittedAt).toLocaleString()}</p>
+                    <p className="text-sm text-gray-500">{t('student.mySubmissions.submittedAt', { date: new Date(my.submittedAt).toLocaleString() })}</p>
                   )}
                   <Link to={`/dashboard/submissions/${my._id}`}>
                     <Button variant="outline" className="w-full">
-                      View details
+                      {t('student.mySubmissions.viewDetails')}
                     </Button>
                   </Link>
                 </CardContent>

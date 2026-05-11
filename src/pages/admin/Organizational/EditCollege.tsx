@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -14,6 +15,7 @@ import { formatDate } from '@/utils/formatters';
 const FORM_ID = 'edit-college-form';
 
 export function EditCollege() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { success, error: showError } = useToastStore();
@@ -67,7 +69,7 @@ export function EditCollege() {
         });
       } catch (error) {
         logger.error('Failed to fetch college', { context: 'EditCollege', error });
-        showError(getApiErrorMessage(error, 'Failed to load college'));
+        showError(getApiErrorMessage(error, t('admin.editCollege.loadFail')));
       } finally {
         setFetching(false);
       }
@@ -87,11 +89,11 @@ export function EditCollege() {
         dean_id: formData.deanId.trim() || null,
         ...(year != null && !Number.isNaN(year) ? { establishedYear: year } : {}),
       });
-      success('College updated successfully');
+      success(t('admin.editCollege.updated'));
       navigate(`/dashboard/organizational/colleges/${id}`);
     } catch (error) {
       logger.error('Failed to update college', { context: 'EditCollege', error });
-      showError(getApiErrorMessage(error, 'Failed to update college'));
+      showError(getApiErrorMessage(error, t('admin.editCollege.updateFail')));
     } finally {
       setLoading(false);
     }
@@ -102,7 +104,7 @@ export function EditCollege() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-primary-500 dark:border-accent" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading college…</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.editCollege.loading')}</p>
         </div>
       </div>
     );
@@ -112,13 +114,13 @@ export function EditCollege() {
     <div className="space-y-6">
       <OrganizationalEditBreadcrumb
         segments={[
-          { label: 'University Structure' },
-          { label: 'Colleges', href: '/dashboard/organizational/colleges' },
+          { label: t('admin.editCollege.section') },
+          { label: t('admin.editCollege.colleges'), href: '/dashboard/organizational/colleges' },
           {
-            label: formData.name.trim() || 'College',
+            label: formData.name.trim() || t('admin.editCollege.collegeFallback'),
             href: `/dashboard/organizational/colleges/${id}`,
           },
-          { label: 'Edit' },
+          { label: t('admin.editCollege.edit') },
         ]}
       />
 
@@ -126,22 +128,22 @@ export function EditCollege() {
         <CardContent className="py-4">
           <div className="mb-4 flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-xs dark:border-dark-border dark:bg-slate-900/40">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Created</span>{' '}
+              <span className="text-gray-500 dark:text-gray-400">{t('admin.editCollege.created')}</span>{' '}
               <span className="font-medium text-gray-800 dark:text-gray-200">
                 {recordMeta.createdAt ? formatDate(recordMeta.createdAt, 'full') : '—'}
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Status</span>{' '}
+              <span className="text-gray-500 dark:text-gray-400">{t('admin.editCollege.status')}</span>{' '}
               {recordMeta.isArchived ? (
-                <span className="font-medium text-gray-800 dark:text-gray-200">Archived</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{t('admin.editCollege.archived')}</span>
               ) : (
-                <span className="font-medium text-emerald-800 dark:text-emerald-300">Active</span>
+                <span className="font-medium text-emerald-800 dark:text-emerald-300">{t('admin.editCollege.active')}</span>
               )}
             </div>
             {recordMeta.isArchived && recordMeta.archivedAt ? (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Archived at</span>{' '}
+                <span className="text-gray-500 dark:text-gray-400">{t('admin.editCollege.archivedAt')}</span>{' '}
                 <span className="font-medium text-gray-800 dark:text-gray-200">
                   {formatDate(recordMeta.archivedAt, 'full')}
                 </span>
@@ -149,28 +151,28 @@ export function EditCollege() {
             ) : null}
           </div>
           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            College code cannot be changed after creation.
+            {t('admin.editCollege.codeImmutable')}
           </p>
           <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  College name <span className="text-red-500">*</span>
+                  {t('admin.editCollege.collegeName')} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Faculty of Engineering"
+                  placeholder={t('admin.editCollege.namePlaceholder')}
                   required
                 />
               </div>
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">College code</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editCollege.collegeCode')}</label>
                 <Input
                   value={formData.code}
                   readOnly
                   className="bg-gray-50 text-gray-600 dark:bg-slate-800/50 dark:text-gray-300"
-                  title="Code is set at creation and cannot be changed"
+                  title={t('admin.editCollege.codeImmutableTitle')}
                 />
               </div>
             </div>
@@ -178,22 +180,22 @@ export function EditCollege() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Slug <span className="font-normal text-gray-400">(read-only)</span>
+                  {t('admin.editCollege.slug')} <span className="font-normal text-gray-400">{t('admin.editCollege.readOnly')}</span>
                 </label>
                 <Input
                   value={formData.slug}
                   readOnly
                   className="bg-gray-50 text-gray-600 dark:bg-slate-800/50 dark:text-gray-300"
-                  title="Read-only: supplied by the server"
+                  title={t('admin.editCollege.slugTitle')}
                 />
               </div>
               <div className="md:col-span-1">
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Established year</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editCollege.establishedYear')}</label>
                 <Input
                   type="number"
                   value={formData.establishedYear}
                   onChange={(e) => setFormData({ ...formData, establishedYear: e.target.value })}
-                  placeholder="e.g. 1985"
+                  placeholder={t('admin.editCollege.yearPlaceholder')}
                   min={1800}
                   max={2100}
                 />
@@ -201,23 +203,23 @@ export function EditCollege() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.editCollege.description')}</label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of the college"
+                placeholder={t('admin.editCollege.descriptionPlaceholder')}
               />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Dean user ID <span className="font-normal text-gray-400">(optional)</span>
+                  {t('admin.editCollege.deanUserId')} <span className="font-normal text-gray-400">{t('admin.editCollege.optional')}</span>
                 </label>
                 <Input
                   value={formData.deanId}
                   onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
-                  placeholder="MongoDB ObjectId — field dean_id"
+                  placeholder={t('admin.editCollege.deanPlaceholder')}
                 />
               </div>
             </div>
@@ -228,7 +230,7 @@ export function EditCollege() {
       <div className="flex flex-wrap justify-end gap-2">
         <Link to={`/dashboard/organizational/colleges/${id}`}>
           <Button type="button" variant="secondary" className="rounded-xl">
-            Cancel
+            {t('admin.editCollege.cancel')}
           </Button>
         </Link>
         <Button
@@ -238,7 +240,7 @@ export function EditCollege() {
           className="inline-flex items-center gap-2 rounded-xl"
         >
           <Save className="h-4 w-4" />
-          Save
+          {t('admin.editCollege.save')}
         </Button>
       </div>
     </div>

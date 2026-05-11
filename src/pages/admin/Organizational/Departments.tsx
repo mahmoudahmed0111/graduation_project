@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
@@ -25,12 +26,6 @@ import { useDepartments, useInvalidateDepartments } from '@/hooks/queries/useDep
 import { useColleges } from '@/hooks/queries/useColleges';
 import { mapDeanIdPopulate } from '@/lib/phase1Dean';
 import { formatDate } from '@/utils/formatters';
-
-const ARCHIVE_FILTER_OPTS = [
-  { value: 'all', label: 'Activation' },
-  { value: 'false', label: 'Active' },
-  { value: 'true', label: 'Archived' },
-] as const;
 
 function mapDepartment(department: Record<string, unknown>): IDepartment {
   const rawCollege = department.college_id;
@@ -83,6 +78,12 @@ function mapDepartment(department: Record<string, unknown>): IDepartment {
 }
 
 export function Departments() {
+  const { t } = useTranslation();
+  const ARCHIVE_FILTER_OPTS = [
+    { value: 'all', label: t('admin.organizationalDepartments.activation') },
+    { value: 'false', label: t('admin.organizationalDepartments.active') },
+    { value: 'true', label: t('admin.organizationalDepartments.archived') },
+  ];
   const { user } = useAuthStore();
   const { success, error: showError } = useToastStore();
   const isUniversityAdmin = user?.role === 'universityAdmin';
@@ -112,7 +113,7 @@ export function Departments() {
   const collegeFilterOptions = useMemo(() => {
     const items = collegesData?.items ?? [];
     return [
-      { value: '', label: 'All colleges' },
+      { value: '', label: t('admin.organizationalDepartments.allColleges') },
       ...items.map((c) => {
         const r = c as Record<string, unknown>;
         return {
@@ -139,22 +140,22 @@ export function Departments() {
   const handleArchive = async (department: IDepartment) => {
     try {
       await api.archiveDepartment(department.id);
-      success(`Department "${department.name}" archived successfully`);
+      success(t('admin.organizationalDepartments.archivedToast', { name: department.name }));
       invalidateDepartments();
       setArchiveDialog({ open: false, department: null });
     } catch (error) {
-      showError(getApiErrorMessage(error, 'Failed to archive department'));
+      showError(getApiErrorMessage(error, t('admin.organizationalDepartments.archiveFail')));
     }
   };
 
   const handleRestore = async (department: IDepartment) => {
     try {
       await api.restoreDepartment(department.id);
-      success(`Department "${department.name}" restored`);
+      success(t('admin.organizationalDepartments.restoredToast', { name: department.name }));
       invalidateDepartments();
       setRestoreDialog({ open: false, department: null });
     } catch (error) {
-      showError(getApiErrorMessage(error, 'Failed to restore department'));
+      showError(getApiErrorMessage(error, t('admin.organizationalDepartments.restoreFail')));
     }
   };
 
@@ -182,13 +183,13 @@ export function Departments() {
   if (isLoading) {
     return (
       <AdminPageShell
-        titleStack={{ section: 'University Structure', page: 'Departments' }}
-        subtitle="Loading…"
+        titleStack={{ section: t('admin.organizationalDepartments.section'), page: t('admin.organizationalDepartments.page') }}
+        subtitle={t('admin.organizationalDepartments.loadingShort')}
       >
         <div className="flex min-h-[320px] items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-accent" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading departments...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">{t('admin.organizationalDepartments.loading')}</p>
           </div>
         </div>
       </AdminPageShell>
@@ -198,16 +199,16 @@ export function Departments() {
   if (isError) {
     return (
       <AdminPageShell
-        titleStack={{ section: 'University Structure', page: 'Departments' }}
-        subtitle="Could not load data"
+        titleStack={{ section: t('admin.organizationalDepartments.section'), page: t('admin.organizationalDepartments.page') }}
+        subtitle={t('admin.organizationalDepartments.loadFailSubtitle')}
       >
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/40 dark:bg-red-500/10">
-          <p className="font-medium text-red-800 dark:text-red-200">Failed to load departments</p>
+          <p className="font-medium text-red-800 dark:text-red-200">{t('admin.organizationalDepartments.loadFail')}</p>
           <p className="mt-1 text-sm text-red-600 dark:text-red-300">
-            {error instanceof Error ? error.message : 'Unknown error'}
+            {error instanceof Error ? error.message : t('admin.organizationalDepartments.unknownError')}
           </p>
           <Button variant="secondary" className="mt-4" type="button" onClick={() => void refetch()}>
-            Retry
+            {t('admin.organizationalDepartments.retry')}
           </Button>
         </div>
       </AdminPageShell>
@@ -215,7 +216,7 @@ export function Departments() {
   }
 
   return (
-    <AdminPageShell titleStack={{ section: 'University Structure', page: 'Departments' }}>
+    <AdminPageShell titleStack={{ section: t('admin.organizationalDepartments.section'), page: t('admin.organizationalDepartments.page') }}>
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -223,7 +224,7 @@ export function Departments() {
               <div className="relative w-full min-w-0 sm:max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search name, code, description, college, head, email…"
+                  placeholder={t('admin.organizationalDepartments.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -234,7 +235,7 @@ export function Departments() {
                   value={collegeIdFilter}
                   onChange={setCollegeIdFilter}
                   options={collegeFilterOptions}
-                  placeholder="College"
+                  placeholder={t('admin.organizationalDepartments.college')}
                   className="sm:w-56"
                 />
               )}
@@ -242,7 +243,7 @@ export function Departments() {
                 value={archiveFilter}
                 onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')}
                 options={[...ARCHIVE_FILTER_OPTS]}
-                placeholder="Archive status"
+                placeholder={t('admin.organizationalDepartments.archiveStatus')}
                 className="sm:w-56"
               />
             </div>
@@ -250,7 +251,7 @@ export function Departments() {
               <Link to="/dashboard/organizational/departments/create">
                 <Button className="inline-flex items-center gap-2 rounded-xl">
                   <Plus className="h-4 w-4" />
-                  Add Department
+                  {t('admin.organizationalDepartments.addDepartment')}
                 </Button>
               </Link>
             </div>
@@ -262,8 +263,8 @@ export function Departments() {
               <School className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-500 dark:text-gray-400">
                 {allDepartments.length === 0
-                  ? 'No departments for the selected filters.'
-                  : 'No departments match your search.'}
+                  ? t('admin.organizationalDepartments.noDepartments')
+                  : t('admin.organizationalDepartments.noMatch')}
               </p>
             </div>
           ) : (
@@ -271,14 +272,14 @@ export function Departments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>College</TableHead>
-                  <TableHead>Head</TableHead>
-                  <TableHead className="hidden lg:table-cell whitespace-nowrap">Created</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('admin.organizationalDepartments.code')}</TableHead>
+                  <TableHead>{t('admin.organizationalDepartments.name')}</TableHead>
+                  <TableHead>{t('admin.organizationalDepartments.description')}</TableHead>
+                  <TableHead>{t('admin.organizationalDepartments.college')}</TableHead>
+                  <TableHead>{t('admin.organizationalDepartments.head')}</TableHead>
+                  <TableHead className="hidden lg:table-cell whitespace-nowrap">{t('admin.organizationalDepartments.created')}</TableHead>
+                  <TableHead>{t('admin.organizationalDepartments.status')}</TableHead>
+                  <TableHead className="text-right">{t('admin.organizationalDepartments.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -317,7 +318,7 @@ export function Departments() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-400">Not assigned</span>
+                        <span className="text-gray-400">{t('admin.organizationalDepartments.notAssigned')}</span>
                       )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-sm text-gray-600 dark:text-gray-400">
@@ -333,7 +334,7 @@ export function Departments() {
                       {dept.isArchived ? (
                         <div className="space-y-0.5">
                           <span className="inline-flex rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                            Archived
+                            {t('admin.organizationalDepartments.archived')}
                           </span>
                           {dept.archivedAt ? (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -343,7 +344,7 @@ export function Departments() {
                         </div>
                       ) : (
                         <span className="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                          Active
+                          {t('admin.organizationalDepartments.active')}
                         </span>
                       )}
                     </TableCell>
@@ -367,7 +368,7 @@ export function Departments() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            title="Restore (UA only)"
+                            title={t('admin.organizationalDepartments.restoreTitle')}
                             onClick={() => setRestoreDialog({ open: true, department: dept })}
                           >
                             <RotateCcw className="h-4 w-4" />
@@ -388,18 +389,18 @@ export function Departments() {
         isOpen={archiveDialog.open}
         onClose={() => setArchiveDialog({ open: false, department: null })}
         onConfirm={() => archiveDialog.department && handleArchive(archiveDialog.department)}
-        title="Archive Department"
-        message={`Are you sure you want to archive "${archiveDialog.department?.name}"?`}
-        confirmText="Archive"
+        title={t('admin.organizationalDepartments.archiveDepartment')}
+        message={t('admin.organizationalDepartments.archiveConfirm', { name: archiveDialog.department?.name ?? '' })}
+        confirmText={t('admin.organizationalDepartments.archive')}
         variant="danger"
       />
       <ConfirmDialog
         isOpen={restoreDialog.open}
         onClose={() => setRestoreDialog({ open: false, department: null })}
         onConfirm={() => restoreDialog.department && handleRestore(restoreDialog.department)}
-        title="Restore Department"
-        message={`Restore "${restoreDialog.department?.name}"? (University administrators only.)`}
-        confirmText="Restore"
+        title={t('admin.organizationalDepartments.restoreDepartment')}
+        message={t('admin.organizationalDepartments.restoreConfirm', { name: restoreDialog.department?.name ?? '' })}
+        confirmText={t('admin.organizationalDepartments.restore')}
         variant="info"
       />
     </AdminPageShell>

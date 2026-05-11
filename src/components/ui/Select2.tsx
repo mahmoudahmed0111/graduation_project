@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Search } from 'lucide-react';
 
@@ -28,10 +29,11 @@ export function Select2({
   value,
   onChange,
   error,
-  placeholder = 'Select an option...',
+  placeholder,
   className,
   searchable = true,
 }: Select2Props) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [menuRect, setMenuRect] = useState<MenuRect | null>(null);
@@ -122,7 +124,7 @@ export function Select2({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search..."
+                placeholder={t('chrome.select.searchPlaceholder')}
                 className={cn(
                   'w-full rounded-lg border py-2 pl-10 pr-4 text-sm transition-colors',
                   'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400',
@@ -136,7 +138,7 @@ export function Select2({
         )}
         <div className="max-h-60 overflow-auto">
           {filteredOptions.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No options found</div>
+            <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{t('chrome.select.noOptionsFound')}</div>
           ) : (
             filteredOptions.map((option) => {
               const isSelected = value === option.value;
@@ -221,7 +223,7 @@ export function Select2({
                 </span>
               </>
             ) : (
-              <span className="truncate text-gray-400 dark:text-gray-500">{placeholder}</span>
+              <span className="truncate text-gray-400 dark:text-gray-500">{placeholder ?? t('chrome.select.placeholder')}</span>
             )}
           </div>
           <ChevronDown

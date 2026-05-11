@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Users,
   GraduationCap,
@@ -125,6 +126,7 @@ const SYSTEM_HEALTH = [
 // ============ COMPONENT ============
 
 export function AdminDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const admin = user as IUser;
   const { success, error: showError } = useToastStore();
@@ -144,19 +146,19 @@ export function AdminDashboard() {
 
   const handleRestoreUser = async () => {
     if (!restoreNationalId.trim()) {
-      showError('Enter a National ID');
+      showError(t('admin.adminDashboard.enterNationalId'));
       return;
     }
     setRestoring(true);
     await new Promise((r) => setTimeout(r, 800));
-    success(`User with National ID ${restoreNationalId.trim()} restored`);
+    success(t('admin.adminDashboard.userRestored', { id: restoreNationalId.trim() }));
     setRestoreNationalId('');
     setRestoring(false);
   };
 
   const statCards = [
     {
-      label: 'Total Students',
+      label: t('admin.adminDashboard.totalStudents'),
       value: STATS.totalStudents.toLocaleString(),
       delta: STATS.studentsDelta,
       trend: 'up',
@@ -164,10 +166,10 @@ export function AdminDashboard() {
       gradient: 'from-blue-500 to-blue-600',
       bg: 'bg-blue-50',
       iconColor: 'text-blue-600',
-      hint: 'Active enrollments',
+      hint: t('admin.adminDashboard.activeEnrollments'),
     },
     {
-      label: 'Total Faculty',
+      label: t('admin.adminDashboard.totalFaculty'),
       value: STATS.totalDoctors,
       delta: STATS.doctorsDelta,
       trend: 'up',
@@ -175,10 +177,10 @@ export function AdminDashboard() {
       gradient: 'from-purple-500 to-purple-600',
       bg: 'bg-purple-50',
       iconColor: 'text-purple-600',
-      hint: 'Doctors and TAs',
+      hint: t('admin.adminDashboard.doctorsAndTas'),
     },
     {
-      label: 'Colleges',
+      label: t('admin.adminDashboard.colleges'),
       value: STATS.totalColleges,
       delta: STATS.collegesDelta,
       trend: 'up',
@@ -186,10 +188,10 @@ export function AdminDashboard() {
       gradient: 'from-amber-500 to-amber-600',
       bg: 'bg-amber-50',
       iconColor: 'text-amber-600',
-      hint: 'Across the university',
+      hint: t('admin.adminDashboard.acrossUniversity'),
     },
     {
-      label: 'Departments',
+      label: t('admin.adminDashboard.departments'),
       value: STATS.totalDepartments,
       delta: STATS.departmentsDelta,
       trend: 'up',
@@ -197,19 +199,19 @@ export function AdminDashboard() {
       gradient: 'from-emerald-500 to-emerald-600',
       bg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
-      hint: 'Across all colleges',
+      hint: t('admin.adminDashboard.acrossColleges'),
     },
   ];
 
   const kpiCards = [
-    { label: 'Active Users', value: STATS.activeUsers.toLocaleString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'System Uptime', value: `${STATS.systemUptime}%`, icon: Server, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Storage Used', value: `${STATS.storageUsed}%`, icon: HardDrive, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'CPU Load', value: `${STATS.cpuUsage}%`, icon: Cpu, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: t('admin.adminDashboard.activeUsers'), value: STATS.activeUsers.toLocaleString(), icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: t('admin.adminDashboard.systemUptime'), value: `${STATS.systemUptime}%`, icon: Server, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: t('admin.adminDashboard.storageUsed'), value: `${STATS.storageUsed}%`, icon: HardDrive, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: t('admin.adminDashboard.cpuLoad'), value: `${STATS.cpuUsage}%`, icon: Cpu, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
   return (
-    <AdminPageShell title="Operations Room" subtitle="Overview and control">
+    <AdminPageShell title={t('admin.adminDashboard.title')} subtitle={t('admin.adminDashboard.subtitle')}>
       <div className="animate-fade-in-up space-y-6">
         {/* Hero Header */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900 p-6 lg:p-8 text-white shadow-xl">
@@ -227,19 +229,19 @@ export function AdminDashboard() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-[11px] font-semibold tracking-wider uppercase text-accent-300 mb-3">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent-400 animate-pulse" />
-                Live • All Systems Operational
+                {t('admin.adminDashboard.liveBadge')}
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-1.5 tracking-tight">Operations Room</h1>
-              <p className="text-primary-200 text-sm lg:text-base">Welcome back, {admin?.name || 'Administrator'}</p>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-1.5 tracking-tight">{t('admin.adminDashboard.title')}</h1>
+              <p className="text-primary-200 text-sm lg:text-base">{t('admin.adminDashboard.welcomeBack', { name: admin?.name || t('admin.adminDashboard.administrator') })}</p>
               <div className="flex flex-wrap items-center gap-3 mt-3 text-primary-100 text-sm">
                 <div className="flex items-center gap-1.5">
                   <Building2 className="h-4 w-4 text-accent-400" />
-                  <span>{admin?.role === 'universityAdmin' ? 'University Administrator' : 'College Administrator'}</span>
+                  <span>{admin?.role === 'universityAdmin' ? t('admin.adminDashboard.universityAdministrator') : t('admin.adminDashboard.collegeAdministrator')}</span>
                 </div>
                 <span className="text-primary-500">•</span>
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-accent-400" />
-                  <span>{academicYear} — {currentSemester === 'fall' ? 'Fall' : 'Spring'}</span>
+                  <span>{academicYear} — {currentSemester === 'fall' ? t('admin.adminDashboard.fall') : t('admin.adminDashboard.spring')}</span>
                 </div>
               </div>
             </div>
@@ -311,7 +313,7 @@ export function AdminDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary-600" />
-              System Health
+              {t('admin.adminDashboard.systemHealth')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -349,7 +351,7 @@ export function AdminDashboard() {
         </Card>
 
         {/* Charts row 1 */}
-        <ChartCard title="Enrollment Trend" description="Total student enrollment over the past 6 years">
+        <ChartCard title={t('admin.adminDashboard.enrollmentTrend')} description={t('admin.adminDashboard.enrollmentTrendDesc')}>
           <AreaChart
             data={ENROLLMENT_TREND}
             dataKey="year"
@@ -360,11 +362,11 @@ export function AdminDashboard() {
 
         {/* Charts row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="Students by College" description="Distribution across colleges">
+          <ChartCard title={t('admin.adminDashboard.studentsByCollege')} description={t('admin.adminDashboard.studentsByCollegeDesc')}>
             <PieChart data={STUDENTS_BY_COLLEGE} height={300} />
           </ChartCard>
 
-          <ChartCard title="User Growth (6 months)" description="Students and faculty over time">
+          <ChartCard title={t('admin.adminDashboard.userGrowth')} description={t('admin.adminDashboard.userGrowthDesc')}>
             <LineChart
               data={USER_GROWTH}
               dataKey="month"
@@ -379,7 +381,7 @@ export function AdminDashboard() {
 
         {/* Charts row 3 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="System Load (24h)" description="CPU and memory usage">
+          <ChartCard title={t('admin.adminDashboard.systemLoad')} description={t('admin.adminDashboard.systemLoadDesc')}>
             <AreaChart
               data={SYSTEM_LOAD}
               dataKey="hour"
@@ -391,7 +393,7 @@ export function AdminDashboard() {
             />
           </ChartCard>
 
-          <ChartCard title="User Roles" description="Breakdown by role">
+          <ChartCard title={t('admin.adminDashboard.userRoles')} description={t('admin.adminDashboard.userRolesDesc')}>
             <BarChart
               data={ROLE_DISTRIBUTION}
               dataKey="name"
@@ -407,7 +409,7 @@ export function AdminDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary-600" />
-                Top Colleges
+                {t('admin.adminDashboard.topColleges')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -424,16 +426,16 @@ export function AdminDashboard() {
                         </div>
                         <div>
                           <h4 className="font-semibold text-gray-900">{c.name}</h4>
-                          <p className="text-xs text-gray-500">{c.departments} departments</p>
+                          <p className="text-xs text-gray-500">{t('admin.adminDashboard.departmentsCount', { count: c.departments })}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-900">{c.students.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">students</p>
+                        <p className="text-xs text-gray-500">{t('admin.adminDashboard.studentsLabel')}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Avg GPA</span>
+                      <span className="text-gray-600">{t('admin.adminDashboard.avgGpa')}</span>
                       <span className="font-semibold text-primary-600">{c.avgGpa.toFixed(2)}</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden mt-1">
@@ -452,7 +454,7 @@ export function AdminDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary-600" />
-                Recent Activity
+                {t('admin.adminDashboard.recentActivity')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -482,34 +484,34 @@ export function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary-600" />
-                System Config
+                {t('admin.adminDashboard.systemConfig')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center text-sm py-2 border-b border-gray-100">
-                <span className="text-gray-600">Registration status</span>
+                <span className="text-gray-600">{t('admin.adminDashboard.registrationStatus')}</span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${registrationOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                  {registrationOpen ? 'Open' : 'Closed'}
+                  {registrationOpen ? t('admin.adminDashboard.open') : t('admin.adminDashboard.closed')}
                 </span>
               </div>
               <div className="flex justify-between text-sm py-2 border-b border-gray-100">
-                <span className="text-gray-600">Academic year</span>
+                <span className="text-gray-600">{t('admin.adminDashboard.academicYear')}</span>
                 <span className="font-semibold text-gray-900">{academicYear}</span>
               </div>
               <div className="flex justify-between text-sm py-2 border-b border-gray-100">
-                <span className="text-gray-600">Current semester</span>
-                <span className="font-semibold text-gray-900">{currentSemester === 'spring' ? 'Spring' : 'Fall'}</span>
+                <span className="text-gray-600">{t('admin.adminDashboard.currentSemester')}</span>
+                <span className="font-semibold text-gray-900">{currentSemester === 'spring' ? t('admin.adminDashboard.spring') : t('admin.adminDashboard.fall')}</span>
               </div>
               <div className="flex justify-between text-sm py-2">
-                <span className="text-gray-600">Tuition fee status</span>
+                <span className="text-gray-600">{t('admin.adminDashboard.tuitionFeeStatus')}</span>
                 <span className="font-semibold text-emerald-600 flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
-                  Collecting
+                  {t('admin.adminDashboard.collecting')}
                 </span>
               </div>
               <Button onClick={() => setSystemConfigModalOpen(true)} className="w-full mt-2">
                 <Settings className="h-4 w-4 mr-2" />
-                Quick Action
+                {t('admin.adminDashboard.quickAction')}
               </Button>
             </CardContent>
           </Card>
@@ -518,25 +520,25 @@ export function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <RotateCcw className="h-5 w-5 text-amber-600" />
-                Quick Restore
+                {t('admin.adminDashboard.quickRestore')}
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">Restore a soft-deleted user by National ID</p>
+              <p className="text-sm text-gray-600 mt-1">{t('admin.adminDashboard.quickRestoreDesc')}</p>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
                 <Input
-                  placeholder="National ID"
+                  placeholder={t('admin.adminDashboard.nationalIdPlaceholder')}
                   value={restoreNationalId}
                   onChange={(e) => setRestoreNationalId(e.target.value)}
                   className="flex-1"
                 />
                 <Button onClick={handleRestoreUser} disabled={restoring}>
-                  {restoring ? 'Restoring...' : 'Restore'}
+                  {restoring ? t('admin.adminDashboard.restoring') : t('admin.adminDashboard.restore')}
                 </Button>
               </div>
               <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-white border border-amber-100 text-xs text-gray-600">
                 <Lock className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                <p>Soft-deleted users can be restored within 30 days. After that, account data is permanently purged.</p>
+                <p>{t('admin.adminDashboard.restoreNote')}</p>
               </div>
             </CardContent>
           </Card>
@@ -546,38 +548,38 @@ export function AdminDashboard() {
         <Modal
           isOpen={systemConfigModalOpen}
           onClose={() => setSystemConfigModalOpen(false)}
-          title="Quick Action – System Config"
+          title={t('admin.adminDashboard.quickActionModalTitle')}
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Registration status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.adminDashboard.registrationStatus')}</label>
               <div className="flex gap-2">
                 <Button variant={registrationOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setRegistrationOpen(true)}>
-                  Open
+                  {t('admin.adminDashboard.open')}
                 </Button>
                 <Button variant={!registrationOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setRegistrationOpen(false)}>
-                  Closed
+                  {t('admin.adminDashboard.closed')}
                 </Button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Academic year</label>
-              <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="e.g. 2025-2026" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.adminDashboard.academicYear')}</label>
+              <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder={t('admin.adminDashboard.yearPlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current semester</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.adminDashboard.currentSemester')}</label>
               <div className="flex gap-2">
                 <Button variant={currentSemester === 'fall' ? 'primary' : 'secondary'} size="sm" onClick={() => setCurrentSemester('fall')}>
-                  Fall
+                  {t('admin.adminDashboard.fall')}
                 </Button>
                 <Button variant={currentSemester === 'spring' ? 'primary' : 'secondary'} size="sm" onClick={() => setCurrentSemester('spring')}>
-                  Spring
+                  {t('admin.adminDashboard.spring')}
                 </Button>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="secondary" onClick={() => setSystemConfigModalOpen(false)}>Cancel</Button>
-              <Button onClick={() => { setSystemConfigModalOpen(false); success('System config updated'); }}>Save</Button>
+              <Button variant="secondary" onClick={() => setSystemConfigModalOpen(false)}>{t('admin.adminDashboard.cancel')}</Button>
+              <Button onClick={() => { setSystemConfigModalOpen(false); success(t('admin.adminDashboard.configUpdated')); }}>{t('admin.adminDashboard.save')}</Button>
             </div>
           </div>
         </Modal>

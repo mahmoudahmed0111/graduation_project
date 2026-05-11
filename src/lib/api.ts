@@ -492,10 +492,15 @@ export const api = {
 
 // Auth API – aligned with Node backend (authRouter)
 export const authApi = {
-  /** Step 1: send credentials, receive 2FA email (no token yet) */
-  loginStepOne: async (credentials: LoginStepOneCredentials): Promise<{ message: string }> => {
-    const response = await axiosInstance.post<{ status: string; message: string }>('/auth/login', credentials);
-    return { message: response.data.message ?? '2FA Code sent to your email.' };
+  /** Step 1: send credentials, receive token + user directly (OTP disabled on backend) */
+  loginStepOne: async (credentials: LoginStepOneCredentials): Promise<AuthResponse> => {
+    const response = await axiosInstance.post<{ status: string; token: string; data: { user: Record<string, unknown> } }>(
+      '/auth/login',
+      credentials
+    );
+    const token = response.data.token;
+    const user = normalizeUser(response.data.data?.user ?? null);
+    return { user, accessToken: token };
   },
 
   /** Step 2: send email + OTP, receive token and user */
