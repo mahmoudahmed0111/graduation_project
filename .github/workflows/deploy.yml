@@ -3,10 +3,10 @@ name: Build and Deploy Frontend
 on:
   push:
     branches:
-      - main # اتأكدي إن ده اسم البرانش بتاعك
+      - main
 
 jobs:
-  build-and-deploy:
+  build-frontend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -21,18 +21,7 @@ jobs:
 
       - name: 'Build and Push Docker Image'
         run: |
-          # بنعمل Tag برقم الـ Run عشان نضمن إن الـ Image دايما جديدة ومختلفة
           docker build \
             --build-arg VITE_API_URL="${{ secrets.VITE_API_URL }}" \
-            -t ${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:${{ github.run_number }} \
             -t ${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:latest .
-            
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:${{ github.run_number }}
           docker push ${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:latest
-
-      - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: '${{ secrets.ACR_LOGIN_SERVER }}/smart-frontend:${{ github.run_number }}'
