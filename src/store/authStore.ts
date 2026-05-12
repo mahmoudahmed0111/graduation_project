@@ -127,8 +127,16 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        // Note: accessToken is NOT persisted - it's stored in memory only
+        accessToken: state.accessToken,
       }),
+      // Rehydrate the in-memory token mirror after persist restores the store,
+      // so the request interceptor's getAccessToken() returns the token on first
+      // API call after a page refresh.
+      onRehydrateStorage: () => (state) => {
+        if (state?.accessToken) {
+          inMemoryToken = state.accessToken;
+        }
+      },
     }
   )
 );
