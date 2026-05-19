@@ -1,46 +1,38 @@
-name: Build and Deploy Frontend
+name: CI/CD Pipeline Frontend
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
 
 jobs:
-  build-and-deploy:
+  build-and-deploy-frontend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # 1. تسجيل الدخول إلى Docker Hub
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 2. بناء الصورة ورفعها إلى Docker Hub
-      - name: Build and Push Docker Image
-        run: |
-          docker build \
-            --build-arg VITE_API_URL="${{ secrets.VITE_API_URL }}" \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-frontend:latest .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smart-frontend:latest
-
-      # 3. تسجيل الدخول إلى Azure للوصول لـ AKS
-      - name: Azure Login
-        uses: azure/login@v1
+      # 2. بناء الـ Image وتمرير عنوان الباكيند الداخلي جوة الـ Cluster
+      - name: Build and Push Frontend Image (with SHA tag)
+        uses: docker/build-push-action@v5
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # 4. ضبط سياق kubectl للاتصال بـ AKS
-      - name: Set AKS Context
-        uses: azure/aks-set-context@v3
-        with:
-          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
-          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
-
-      # 5. عمل Deploy على AKS (إعادة تشغيل الـ Deployment لتحديث الصورة)
-      - name: Deploy to AKS
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: hadeernasser7/smart-frontend:${{ github.sha }}
+          build-args: |
+            VITE_API_URL=http://backend-service:3000
+          
+      # 3. إعطاء الـ Image تاغ latest ورفعها كنسخة أساسية
+      - name: Tag as latest and Push
         run: |
-          kubectl rollout restart deployment/smart-frontend-deployment
+          docker tag hadeernasser7/smart-frontend:${{ github.sha }} hadeernasser7/smart-frontend:latest
+          docker push hadeernasser7/smart-frontend:latest
