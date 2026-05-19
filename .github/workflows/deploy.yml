@@ -1,4 +1,4 @@
-Name: Build and Deploy Frontend
+name: Build and Deploy Frontend
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }} # يفضل استخدام Token وليس الباسورد العادي
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # 2. بناء الصورة ورفعها إلى Docker Hub
       - name: Build and Push Docker Image
@@ -27,20 +27,20 @@ jobs:
             -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-frontend:latest .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/smart-frontend:latest
 
-      # 3. تسجيل الدخول إلى Azure (مطلوب للوصول إلى AKS)
+      # 3. تسجيل الدخول إلى Azure للوصول لـ AKS
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 4. ضبط سياق kubectl ليتصل بـ AKS
+      # 4. ضبط سياق kubectl للاتصال بـ AKS
       - name: Set AKS Context
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
-      # 5. عمل Deploy على AKS (تحديث الـ Pods بالصورة الجديدة)
+      # 5. عمل Deploy على AKS (إعادة تشغيل الـ Deployment لتحديث الصورة)
       - name: Deploy to AKS
         run: |
           kubectl rollout restart deployment/smart-frontend-deployment
