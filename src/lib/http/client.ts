@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, isAxiosError } from 'axios';
 import { useToastStore } from '@/store/toastStore';
 
-const AZURE_API_BASE = 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net';
+const AZURE_API_BASE = 'http://4.232.14.242:3000';
 
 /** Base path `/api/v1` — dev uses localhost or Vite proxy per env. */
 export const API_BASE_URL = import.meta.env.DEV

@@ -13,10 +13,10 @@ export default defineConfig({
   server: {
     port: 3000,
     middlewareMode: false,
-    // Dev proxy: avoid CORS by forwarding /api to Azure HTTPS (requests still hit the HTTPS university API)
+    // Dev proxy: avoid CORS by forwarding /api to the backend API
     proxy: {
       '/api': {
-        target: 'https://smart-university-api-hzbmh3eph8g5aucq.eastus-01.azurewebsites.net',
+        target: 'http://4.232.14.242:3000',
         changeOrigin: true,
       },
     },
