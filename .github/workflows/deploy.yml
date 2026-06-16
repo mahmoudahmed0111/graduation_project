@@ -29,7 +29,7 @@ jobs:
           push: true
           tags: hadeernasser7/smart-frontend:${{ github.sha }}
           build-args: |
-            VITE_API_URL=smart-backend-fmapeqeueha2gkbv.austriaeast-01.azurewebsites.net
+            VITE_API_URL=https://smart-backend-fmapeqeueha2gkbv.austriaeast-01.azurewebsites.net
           
       # 3. إعطاء الـ Image تاغ latest ورفعها كنسخة أساسية
       - name: Tag as latest and Push
