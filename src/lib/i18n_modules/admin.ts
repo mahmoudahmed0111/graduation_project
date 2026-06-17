@@ -2,7 +2,7 @@
 const admin = {
   en: {
     adminDashboard: {
-      title: 'Operations Room',
+      title: 'Dashboard',
       subtitle: 'Overview and control',
       enterNationalId: 'Enter a National ID',
       userRestored: 'User with National ID {{id}} restored',
@@ -928,7 +928,7 @@ const admin = {
   } as Record<string, unknown>,
   ar: {
     adminDashboard: {
-      title: 'غرفة العمليات',
+      title: 'لوحة التحكم',
       subtitle: 'نظرة عامة وتحكم',
       enterNationalId: 'أدخل الرقم القومي',
       userRestored: 'تم استعادة المستخدم برقم قومي {{id}}',

@@ -35,7 +35,6 @@ import { BarChart } from '@/components/charts/BarChart';
 import { LineChart } from '@/components/charts/LineChart';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { ChartCard } from '@/components/charts';
-import { AdminPageShell } from '@/components/admin';
 
 // ============ STATIC DATA ============
 
@@ -205,8 +204,7 @@ export function AdminDashboard() {
   ];
 
   return (
-    <AdminPageShell title={t('admin.adminDashboard.title')} subtitle={t('admin.adminDashboard.subtitle')}>
-      <div className="animate-fade-in-up space-y-6">
+    <div className="animate-fade-in-up space-y-6">
         {/* Hero Header */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900 p-6 lg:p-8 text-white shadow-xl">
           <div
@@ -562,7 +560,6 @@ export function AdminDashboard() {
             </div>
           </div>
         </Modal>
-      </div>
-    </AdminPageShell>
+    </div>
   );
 }

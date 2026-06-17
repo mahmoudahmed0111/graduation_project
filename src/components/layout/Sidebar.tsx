@@ -169,9 +169,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
 
   const adminNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
-    ...(import.meta.env.DEV
-      ? [{ path: '/dashboard/ui-preview', label: t('chrome.sidebar.uiPreviewStatic'), icon: LayoutDashboard } satisfies NavItem]
-      : []),
     {
       path: '/dashboard/organizational',
       label: t('chrome.sidebar.universityStructure'),
