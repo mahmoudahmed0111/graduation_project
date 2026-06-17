@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Select2 } from '@/components/ui/Select2';
 import { Button } from '@/components/ui/Button';
+import { useUsers } from '@/hooks/queries/useUsers';
 import { 
   Building2, 
   ArrowLeft,
@@ -26,6 +28,22 @@ export function CreateCollege() {
     deanId: '',
     establishedYear: '' as string,
   });
+
+  // Eligible deans — active doctors in scope. The dropdown replaces the old
+  // free-text "dean user ID" field so admins pick a real user, not type an id.
+  const deansQuery = useUsers({ role: 'doctor', limit: 200 });
+  const deanOptions = useMemo(() => {
+    const items = (deansQuery.data?.items ?? []) as unknown as Array<Record<string, unknown>>;
+    const opts = items
+      .map((u) => {
+        const id = typeof u._id === 'string' ? u._id : typeof u.id === 'string' ? u.id : '';
+        const name = typeof u.name === 'string' ? u.name : '';
+        const email = typeof u.email === 'string' ? u.email : '';
+        return { value: id, label: `${name}${email ? ` · ${email}` : ''}`.trim() || id };
+      })
+      .filter((o) => o.value);
+    return [{ value: '', label: '—' }, ...opts];
+  }, [deansQuery.data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,15 +141,16 @@ export function CreateCollege() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t('admin.createCollege.deanUserId')} <span className="text-gray-400 font-normal">{t('admin.createCollege.optional')}</span>
               </label>
-              <Input
+              <Select2
                 value={formData.deanId}
-                onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
-                placeholder={t('admin.createCollege.deanPlaceholder')}
+                onChange={(v) => setFormData({ ...formData, deanId: v })}
+                options={deanOptions}
+                placeholder={deansQuery.isLoading ? t('common.loading') : t('admin.createCollege.deanPlaceholder')}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                 {t('admin.createCollege.deanHint')}
               </p>
             </div>

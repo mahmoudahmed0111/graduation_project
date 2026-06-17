@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AdminDataTableShell, AdminPageShell } from '@/components/admin';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Modal } from '@/components/ui/Modal';
 import { Pagination } from '@/components/ui/Pagination';
-import { Library, Search, Plus, Edit, Archive, RotateCcw, School } from 'lucide-react';
+import { Library, Plus, Edit, Archive, RotateCcw, School } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -141,44 +142,38 @@ export function CourseCatalog() {
 
   return (
     <AdminPageShell titleStack={{ section: t('admin.courseCatalog.section'), page: t('admin.courseCatalog.page') }}>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full min-w-0 sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder={t('admin.courseCatalog.searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            {(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') && (
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                <Link to="/dashboard/academic/catalog/create">
-                  <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
-                    <Plus className="h-4 w-4" />
-                    {t('admin.courseCatalog.addCourse')}
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </CardHeader>
+      <Card bare>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {isUA && (
-              <Select2 label={t('admin.courseCatalog.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
-            )}
-            <Select2 label={t('admin.courseCatalog.department')} options={departmentOptions} value={departmentId} onChange={setDepartmentId} />
-            <Select2
-              label={t('admin.courseCatalog.recordStatus')}
-              options={ARCHIVE_FILTERS}
-              value={isArchived}
-              onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
-              searchable={false}
-            />
-          </div>
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder={t('admin.courseCatalog.searchPlaceholder')}
+            actions={(user?.role === 'universityAdmin' || user?.role === 'collegeAdmin') ? (
+              <Link to="/dashboard/academic/catalog/create">
+                <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  {t('admin.courseCatalog.addCourse')}
+                </Button>
+              </Link>
+            ) : undefined}
+            activeFilterCount={[isUA && collegeId, departmentId, isArchived !== 'false' ? isArchived : ''].filter(Boolean).length}
+            onClearFilters={() => { setCollegeId(''); setDepartmentId(''); setIsArchived('false'); }}
+            filters={
+              <>
+                {isUA && (
+                  <Select2 label={t('admin.courseCatalog.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
+                )}
+                <Select2 label={t('admin.courseCatalog.department')} options={departmentOptions} value={departmentId} onChange={setDepartmentId} />
+                <Select2
+                  label={t('admin.courseCatalog.recordStatus')}
+                  options={ARCHIVE_FILTERS}
+                  value={isArchived}
+                  onChange={(v) => setIsArchived(v as 'true' | 'false' | 'all')}
+                  searchable={false}
+                />
+              </>
+            }
+          />
 
           {items.length === 0 ? (
             <div className="py-12 text-center">

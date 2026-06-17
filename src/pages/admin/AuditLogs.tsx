@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Input } from '@/components/ui/Input';
-import { Search, FileText, User, Target, Clock } from 'lucide-react';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { FileText, User, Target, Clock } from 'lucide-react';
 import { formatDate } from '@/utils/formatters';
 
 export interface AuditLogEntry {
@@ -75,14 +75,11 @@ export function AuditLogs() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex items-center gap-2">
-            <Search className="h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder={t('admin.auditLogs.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
+          <div className="mb-4">
+            <FilterBar
+              search={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder={t('admin.auditLogs.searchPlaceholder')}
             />
           </div>
           <div className="overflow-x-auto">

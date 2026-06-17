@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { StatCard, type StatTone } from '@/components/ui/StatCard';
 import { useState, useEffect } from 'react';
 import {
   BookOpen,
@@ -13,8 +14,6 @@ import {
   Bell,
   ClipboardList,
   Building2,
-  TrendingUp,
-  TrendingDown,
   GraduationCap,
   Award,
   CheckCircle2,
@@ -137,49 +136,49 @@ export function DoctorDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const statCards = [
+  const statCards: Array<{
+    label: string;
+    value: string | number;
+    delta: string;
+    dir: 'up' | 'down';
+    icon: typeof BookOpen;
+    tone: StatTone;
+    hint: string;
+  }> = [
     {
       label: t('doctor.doctorDashboard.statMyCourses'),
       value: STATS.totalCourses,
       delta: STATS.coursesDelta,
-      trend: 'up',
+      dir: 'up',
       icon: BookOpen,
-      gradient: 'from-blue-500 to-blue-600',
-      bg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
+      tone: 'brand',
       hint: t('doctor.doctorDashboard.statMyCoursesHint'),
     },
     {
       label: t('doctor.doctorDashboard.statTotalStudents'),
       value: STATS.totalStudents,
       delta: STATS.studentsDelta,
-      trend: 'up',
+      dir: 'up',
       icon: Users,
-      gradient: 'from-purple-500 to-purple-600',
-      bg: 'bg-purple-50',
-      iconColor: 'text-purple-600',
+      tone: 'info',
       hint: t('doctor.doctorDashboard.statTotalStudentsHint'),
     },
     {
       label: t('doctor.doctorDashboard.statPendingReviews'),
       value: STATS.pendingAssessments,
       delta: STATS.assessmentsDelta,
-      trend: 'down',
+      dir: 'down',
       icon: ClipboardList,
-      gradient: 'from-orange-500 to-orange-600',
-      bg: 'bg-orange-50',
-      iconColor: 'text-orange-600',
+      tone: 'gold',
       hint: t('doctor.doctorDashboard.statPendingReviewsHint'),
     },
     {
       label: t('doctor.doctorDashboard.statUpcomingClasses'),
       value: STATS.upcomingClasses,
       delta: STATS.classesDelta,
-      trend: 'up',
+      dir: 'up',
       icon: Calendar,
-      gradient: 'from-emerald-500 to-emerald-600',
-      bg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
+      tone: 'success',
       hint: t('doctor.doctorDashboard.statUpcomingClassesHint'),
     },
   ];
@@ -232,35 +231,21 @@ export function DoctorDashboard() {
         </div>
       </div>
 
-      {/* Main Stat Cards */}
+      {/* Main Stat Cards — reusable StatCard primitive (brand-toned, staggered) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-          const TrendIcon = stat.trend === 'up' ? TrendingUp : TrendingDown;
-          const trendColor = stat.trend === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
-          return (
-            <div
-              key={stat.label}
-              className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className={`absolute -top-6 -right-6 h-24 w-24 rounded-full bg-gradient-to-br ${stat.gradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-2.5 rounded-xl ${stat.bg}`}>
-                    <Icon className={`h-5 w-5 ${stat.iconColor}`} />
-                  </div>
-                  <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${trendColor}`}>
-                    <TrendIcon className="h-3 w-3" />
-                    {stat.delta}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.hint}</p>
-              </div>
-            </div>
-          );
-        })}
+        {statCards.map((stat, i) => (
+          <StatCard
+            key={stat.label}
+            index={i}
+            label={stat.label}
+            value={stat.value}
+            delta={stat.delta}
+            deltaDirection={stat.dir}
+            hint={stat.hint}
+            icon={stat.icon}
+            tone={stat.tone}
+          />
+        ))}
       </div>
 
       {/* Secondary KPI Strip */}

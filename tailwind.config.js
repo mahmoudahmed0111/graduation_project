@@ -62,10 +62,29 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        // Display face for headings / titles — matches the CRM's
+        // 'Plus Jakarta Sans' usage. Use via `font-display`.
+        display: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
       },
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
+      },
+      // ─── Standardized elevation scale (premium, brand-tinted) ───────────
+      // A single, consistent shadow ramp replaces the ad-hoc shadow-sm /
+      // shadow-md / shadow-xl mix sprinkled across pages.
+      boxShadow: {
+        soft: '0 8px 24px -10px rgba(10, 20, 40, 0.10), 0 2px 6px -2px rgba(10, 20, 40, 0.06)',
+        card: '0 12px 30px -16px rgba(10, 20, 40, 0.14), 0 2px 8px -4px rgba(10, 20, 40, 0.08)',
+        'card-hover': '0 20px 44px -18px rgba(10, 20, 40, 0.22), 0 6px 14px -6px rgba(10, 20, 40, 0.12)',
+        elevated: '0 24px 60px -24px rgba(10, 20, 40, 0.30)',
+        'focus-ring': '0 0 0 3px rgba(0, 85, 204, 0.18)',
+      },
+      transitionTimingFunction: {
+        premium: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      maxWidth: {
+        content: '1400px',
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.6s ease-out',
@@ -74,8 +93,34 @@ export default {
         'scale-in': 'scaleIn 0.5s ease-out',
         'pulse-slow': 'pulse 3s ease-in-out infinite',
         'gradient': 'gradient 15s ease infinite',
+        // New premium primitives
+        'enter': 'enterUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'modal-in': 'modalIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'backdrop-in': 'backdropIn 0.2s ease-out both',
+        'shimmer': 'shimmer 1.6s ease-in-out infinite',
+        'pop-in': 'popIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both',
       },
       keyframes: {
+        enterUp: {
+          '0%': { opacity: '0', transform: 'translate3d(0, 12px, 0)' },
+          '100%': { opacity: '1', transform: 'translate3d(0, 0, 0)' },
+        },
+        modalIn: {
+          '0%': { opacity: '0', transform: 'translate3d(0, 16px, 0) scale(0.97)' },
+          '100%': { opacity: '1', transform: 'translate3d(0, 0, 0) scale(1)' },
+        },
+        backdropIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.96)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },

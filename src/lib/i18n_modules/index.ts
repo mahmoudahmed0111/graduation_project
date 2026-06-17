@@ -10,6 +10,8 @@ import shared from './shared';
 import authPages from './auth';
 import chrome from './chrome';
 import publicSite from './public';
+import attendance5 from './attendance5';
+import phase6 from './phase6';
 
 type AreaBundle = { en: Record<string, unknown>; ar: Record<string, unknown> };
 // NOTE: the auth module is registered under `authPages` (NOT `auth`) to
@@ -25,6 +27,8 @@ const modules: Record<string, AreaBundle> = {
   authPages,
   chrome,
   public: publicSite,
+  attendance5,
+  phase6,
 };
 
 export function buildAreaResources() {

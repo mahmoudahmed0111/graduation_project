@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
+import { FilterBar } from '@/components/ui/FilterBar';
 import {
   School,
-  Search,
   Plus,
   Edit,
   Archive,
@@ -217,47 +216,46 @@ export function Departments() {
 
   return (
     <AdminPageShell titleStack={{ section: t('admin.organizationalDepartments.section'), page: t('admin.organizationalDepartments.page') }}>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <div className="relative w-full min-w-0 sm:max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder={t('admin.organizationalDepartments.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              {isUniversityAdmin && (
-                <Select2
-                  value={collegeIdFilter}
-                  onChange={setCollegeIdFilter}
-                  options={collegeFilterOptions}
-                  placeholder={t('admin.organizationalDepartments.college')}
-                  className="sm:w-56"
-                />
-              )}
-              <Select2
-                value={archiveFilter}
-                onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')}
-                options={[...ARCHIVE_FILTER_OPTS]}
-                placeholder={t('admin.organizationalDepartments.archiveStatus')}
-                className="sm:w-56"
-              />
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-              <Link to="/dashboard/organizational/departments/create">
-                <Button className="inline-flex items-center gap-2 rounded-xl">
-                  <Plus className="h-4 w-4" />
-                  {t('admin.organizationalDepartments.addDepartment')}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </CardHeader>
+      <Card bare>
         <CardContent>
+          <div className="mb-6">
+            <FilterBar
+              search={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder={t('admin.organizationalDepartments.searchPlaceholder')}
+              actions={
+                <Link to="/dashboard/organizational/departments/create">
+                  <Button className="inline-flex items-center gap-2 rounded-xl">
+                    <Plus className="h-4 w-4" />
+                    {t('admin.organizationalDepartments.addDepartment')}
+                  </Button>
+                </Link>
+              }
+              activeFilterCount={[isUniversityAdmin && collegeIdFilter, archiveFilter !== 'all' ? archiveFilter : ''].filter(Boolean).length}
+              onClearFilters={() => { setCollegeIdFilter(''); setArchiveFilter('all'); }}
+              filters={
+                <>
+                  {isUniversityAdmin && (
+                    <Select2
+                      label={t('admin.organizationalDepartments.college')}
+                      value={collegeIdFilter}
+                      onChange={setCollegeIdFilter}
+                      options={collegeFilterOptions}
+                      placeholder={t('admin.organizationalDepartments.college')}
+                    />
+                  )}
+                  <Select2
+                    label={t('admin.organizationalDepartments.archiveStatus')}
+                    value={archiveFilter}
+                    onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')}
+                    options={[...ARCHIVE_FILTER_OPTS]}
+                    placeholder={t('admin.organizationalDepartments.archiveStatus')}
+                    searchable={false}
+                  />
+                </>
+              }
+            />
+          </div>
           {filteredDepartments.length === 0 ? (
             <div className="py-12 text-center">
               <School className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
@@ -274,7 +272,6 @@ export function Departments() {
                 <TableRow>
                   <TableHead>{t('admin.organizationalDepartments.code')}</TableHead>
                   <TableHead>{t('admin.organizationalDepartments.name')}</TableHead>
-                  <TableHead>{t('admin.organizationalDepartments.description')}</TableHead>
                   <TableHead>{t('admin.organizationalDepartments.college')}</TableHead>
                   <TableHead>{t('admin.organizationalDepartments.head')}</TableHead>
                   <TableHead className="hidden lg:table-cell whitespace-nowrap">{t('admin.organizationalDepartments.created')}</TableHead>
@@ -287,9 +284,6 @@ export function Departments() {
                   <TableRow key={dept.id}>
                     <TableCell className="font-medium">{dept.code}</TableCell>
                     <TableCell className="font-medium">{dept.name}</TableCell>
-                    <TableCell className="max-w-md text-sm text-gray-600 break-words dark:text-gray-400">
-                      <span title={dept.description}>{dept.description ?? '—'}</span>
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-gray-400" />

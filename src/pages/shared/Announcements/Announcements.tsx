@@ -1,173 +1,191 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { Bell, Plus, Trash2, Clock, User as UserIcon, Globe2, Building2, School, BookOpen } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import type { BadgeTone } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Spinner } from '@/components/ui/Spinner';
+import { Select2 } from '@/components/ui/Select2';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { Pagination } from '@/components/ui/Pagination';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
-import { IAnnouncement } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { 
-  Bell, 
-  Calendar,
-  Search
-} from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
-import { Input } from '@/components/ui/Input';
-import { scopeIcons, scopeColors } from '@/constants/ui';
-import { logger } from '@/lib/logger';
-import { formatTimeAgo } from '@/utils/formatters';
+import { getApiErrorMessage } from '@/lib/http/client';
+import { useAnnouncements, useDeleteAnnouncement } from '@/hooks/queries/usePhase6Announcements';
+import type { Announcement, ScopeLevel } from '@/types/phase6';
+import { formatTimeAgo, formatDate } from '@/utils/formatters';
+
+const SCOPE_TONE: Record<ScopeLevel, BadgeTone> = {
+  Global: 'brand',
+  College: 'info',
+  Department: 'gold',
+  Course: 'success',
+};
+const SCOPE_ICON: Record<ScopeLevel, typeof Globe2> = {
+  Global: Globe2,
+  College: Building2,
+  Department: School,
+  Course: BookOpen,
+};
+
+const STAFF_ROLES = ['universityAdmin', 'collegeAdmin', 'doctor', 'teacher', 'ta'];
+const ADMIN_ROLES = ['universityAdmin', 'collegeAdmin', 'admin', 'superAdmin'];
 
 export function Announcements() {
   const { t } = useTranslation();
-  useAuthStore();
-  const { error: showError } = useToastStore();
-  const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedScope, setSelectedScope] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuthStore();
+  const { success, error: showError } = useToastStore();
+  const role = user?.role ?? '';
+  const isAdmin = ADMIN_ROLES.includes(role);
+  const canCreate = STAFF_ROLES.includes(role);
 
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-      try {
-        setLoading(true);
-        const data = await api.getMyAnnouncements();
-        const announcementsArray = Array.isArray(data) ? data : [];
-        setAnnouncements(announcementsArray);
-      } catch (error) {
-        logger.error('Failed to fetch announcements', {
-          context: 'Announcements',
-          error,
-        });
-        showError(t('shared.announcements.failedLoad'));
-        setAnnouncements([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [scope, setScope] = useState<string>('all');
+  const [isArchived, setIsArchived] = useState<'true' | 'false' | 'all'>('false');
+  const [toDelete, setToDelete] = useState<Announcement | null>(null);
 
-    fetchAnnouncements();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- showError stable, fetch once
+  const query = useAnnouncements({ page, limit: 12, sort: '-createdAt', ...(isAdmin ? { isArchived } : {}) });
+  const deleteMutation = useDeleteAnnouncement();
 
-  // Filter announcements
-  const filteredAnnouncements = announcements.filter(announcement => {
-    const matchesScope = selectedScope === 'all' || 
-      announcement.scope.level === selectedScope;
-    const matchesSearch = 
-      announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      announcement.content.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesScope && matchesSearch;
-  });
+  const items = query.data?.items ?? [];
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((a) => {
+      const matchScope = scope === 'all' || a.scope?.level === scope;
+      const matchSearch = !q || a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q);
+      return matchScope && matchSearch;
+    });
+  }, [items, search, scope]);
 
-  // Sort by date (most recent first)
-  const sortedAnnouncements = [...filteredAnnouncements].sort((a, b) => {
-    const dateA = new Date(a.createdAt).getTime();
-    const dateB = new Date(b.createdAt).getTime();
-    return dateB - dateA;
-  });
+  const canDelete = (a: Announcement) => {
+    if (role === 'student') return false;
+    if (isAdmin) return true;
+    return a.author?._id === user?.id; // DR/TA: only their own
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    try {
+      await deleteMutation.mutateAsync(toDelete._id);
+      success(t('phase6.announcements.deleted'));
+      setToDelete(null);
+    } catch (err) {
+      showError(getApiErrorMessage(err, t('phase6.announcements.deleteFailed')));
+    }
+  };
+
+  const scopeOptions = [
+    { value: 'all', label: t('phase6.scope.all') },
+    { value: 'Global', label: t('phase6.scope.Global') },
+    { value: 'College', label: t('phase6.scope.College') },
+    { value: 'Department', label: t('phase6.scope.Department') },
+    { value: 'Course', label: t('phase6.scope.Course') },
+  ];
+  const archiveOptions = [
+    { value: 'false', label: t('phase6.archive.active') },
+    { value: 'true', label: t('phase6.archive.archived') },
+    { value: 'all', label: t('phase6.archive.all') },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('nav.announcements')}</h1>
-        <p className="text-gray-600 mt-1">{t('shared.announcements.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('phase6.announcements.title')}
+        subtitle={t('phase6.announcements.subtitle')}
+        actions={
+          canCreate ? (
+            <Link to="/dashboard/announcements/create">
+              <Button className="inline-flex items-center gap-2 rounded-xl">
+                <Plus className="h-4 w-4" /> {t('phase6.announcements.new')}
+              </Button>
+            </Link>
+          ) : undefined
+        }
+      />
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder={t('shared.announcements.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <select
-              value={selectedScope}
-              onChange={(e) => setSelectedScope(e.target.value)}
-              className="field"
-            >
-              <option value="all">{t('shared.announcements.scopeAll')}</option>
-              <option value="Global">{t('shared.announcements.scopeGlobal')}</option>
-              <option value="College">{t('shared.announcements.scopeCollege')}</option>
-              <option value="Department">{t('shared.announcements.scopeDepartment')}</option>
-              <option value="Course">{t('shared.announcements.scopeCourse')}</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t('phase6.announcements.searchPlaceholder')}
+        activeFilterCount={[scope !== 'all' ? scope : '', isAdmin && isArchived !== 'false' ? isArchived : ''].filter(Boolean).length}
+        onClearFilters={() => { setScope('all'); setIsArchived('false'); }}
+        filters={
+          <>
+            <Select2 label={t('phase6.announcements.scopeFilter')} value={scope} onChange={setScope} options={scopeOptions} searchable={false} />
+            {isAdmin && (
+              <Select2 label={t('phase6.announcements.statusFilter')} value={isArchived} onChange={(v) => { setIsArchived(v as 'true' | 'false' | 'all'); setPage(1); }} options={archiveOptions} searchable={false} />
+            )}
+          </>
+        }
+      />
 
-      {/* Announcements List */}
-      {sortedAnnouncements.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('shared.announcements.noAnnouncements')}</p>
-          </CardContent>
-        </Card>
+      {query.isLoading ? (
+        <div className="flex justify-center p-12"><Spinner /></div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Bell} title={t('phase6.announcements.emptyTitle')} description={t('phase6.announcements.emptyDesc')} />
       ) : (
-        <div className="space-y-4">
-          {sortedAnnouncements.map((announcement) => {
-            const ScopeIcon = scopeIcons[announcement.scope.level];
-            const scopeColor = scopeColors[announcement.scope.level];
-            
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {filtered.map((a) => {
+            const Icon = SCOPE_ICON[a.scope?.level] ?? Globe2;
             return (
-              <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`p-1.5 rounded-lg ${scopeColor}`}>
-                          <ScopeIcon className="h-4 w-4" />
-                        </div>
-                        <span className={`text-xs font-medium px-2 py-1 rounded ${scopeColor}`}>
-                          {announcement.scope.level}
-                        </span>
-                      </div>
-                      <CardTitle className="text-lg mb-1">{announcement.title}</CardTitle>
-                    </div>
+              <article key={a._id} className="card-soft relative p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-accent-300">
+                      <Icon className="h-[18px] w-[18px]" />
+                    </span>
+                    <Badge tone={SCOPE_TONE[a.scope?.level] ?? 'neutral'} size="sm">{t(`phase6.scope.${a.scope?.level}`)}</Badge>
+                    {a.isArchived && <Badge tone="neutral" size="sm">{t('phase6.archive.archived')}</Badge>}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 mb-4 whitespace-pre-wrap">{announcement.content}</p>
-                  
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatTimeAgo(announcement.createdAt)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>{t('shared.announcements.by', { name: announcement.author.name })}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  {canDelete(a) && (
+                    <button
+                      onClick={() => setToDelete(a)}
+                      className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                      aria-label={t('phase6.announcements.delete')}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <h3 className="mt-3 font-display text-base font-bold tracking-tight text-gray-900 dark:text-white">{a.title}</h3>
+                <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-gray-600 dark:text-slate-300">{a.content}</p>
+                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-slate-400">
+                  <span className="inline-flex items-center gap-1.5">
+                    <UserIcon className="h-3.5 w-3.5" /> {a.author?.name}
+                    {a.author?.role && <span className="capitalize text-gray-400">· {a.author.role}</span>}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {formatTimeAgo(a.createdAt)}</span>
+                  {a.expiresAt && (
+                    <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                      <Clock className="h-3.5 w-3.5" /> {t('phase6.announcements.expires')} {formatDate(a.expiresAt)}
+                    </span>
+                  )}
+                </div>
+              </article>
             );
           })}
         </div>
       )}
 
-      {/* Results Count */}
-      {sortedAnnouncements.length > 0 && (
-        <div className="text-center text-sm text-gray-600">
-          {t('shared.announcements.showingOf', { shown: sortedAnnouncements.length, total: announcements.length })}
-        </div>
+      {(query.data?.totalPages ?? 1) > 1 && (
+        <Pagination currentPage={page} totalPages={query.data?.totalPages ?? 1} onPageChange={setPage} />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(toDelete)}
+        onClose={() => setToDelete(null)}
+        onConfirm={handleDelete}
+        title={t('phase6.announcements.confirmDeleteTitle')}
+        message={t('phase6.announcements.confirmDeleteMsg')}
+        confirmText={t('phase6.announcements.delete')}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }
-

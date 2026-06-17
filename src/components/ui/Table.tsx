@@ -4,12 +4,19 @@ import { cn } from '@/lib/utils';
 interface TableProps {
   children: ReactNode;
   className?: string;
+  /** Wrap the table in a soft, rounded, bordered panel. */
+  contained?: boolean;
 }
 
-export function Table({ children, className }: TableProps) {
+export function Table({ children, className, contained }: TableProps) {
   return (
-    <div className="w-full min-w-0 overflow-x-auto">
-      <table className={cn('w-full min-w-max table-auto border-collapse', className)}>
+    <div
+      className={cn(
+        'w-full min-w-0 overflow-x-auto thin-scrollbar',
+        contained && 'card-soft'
+      )}
+    >
+      <table className={cn('w-full min-w-max border-collapse text-sm', className)}>
         {children}
       </table>
     </div>
@@ -19,14 +26,16 @@ export function Table({ children, className }: TableProps) {
 interface TableHeaderProps {
   children: ReactNode;
   className?: string;
+  /** Keep the header visible while the body scrolls. */
+  sticky?: boolean;
 }
 
-export function TableHeader({ children, className }: TableHeaderProps) {
+/** SpareZone-style header: no fill, just a bottom border via the header row. */
+export function TableHeader({ children, className, sticky }: TableHeaderProps) {
   return (
     <thead
       className={cn(
-        'bg-gray-50',
-        'dark:bg-dark-surface-2',
+        sticky && 'sticky top-0 z-10 bg-white/90 backdrop-blur-sm dark:bg-dark-surface/90',
         className
       )}
     >
@@ -45,9 +54,9 @@ export function TableRow({ children, className, onClick }: TableRowProps) {
   return (
     <tr
       className={cn(
-        'border-b transition-colors',
-        'border-gray-200 hover:bg-gray-50',
-        'dark:border-dark-border dark:hover:bg-dark-surface-2',
+        'border-b transition-colors duration-150',
+        'border-gray-100 last:border-0 hover:bg-gray-50/70',
+        'dark:border-dark-border dark:hover:bg-dark-surface-2/50',
         onClick && 'cursor-pointer',
         className
       )}
@@ -66,9 +75,10 @@ interface TableHeadProps {
 export function TableHead({ children, className }: TableHeadProps) {
   return (
     <th
+      scope="col"
       className={cn(
-        'px-4 py-3 text-left align-top text-xs font-medium uppercase tracking-wider',
-        'text-gray-700 dark:text-gray-300',
+        'whitespace-nowrap px-4 py-3 text-start align-middle text-xs font-semibold uppercase tracking-wide',
+        'text-gray-400 dark:text-slate-500',
         className
       )}
     >
@@ -84,14 +94,7 @@ interface TableBodyProps {
 
 export function TableBody({ children, className }: TableBodyProps) {
   return (
-    <tbody
-      className={cn(
-        'divide-y bg-white',
-        'divide-gray-200',
-        'dark:bg-dark-surface dark:divide-dark-border',
-        className
-      )}
-    >
+    <tbody className={cn('bg-white dark:bg-dark-surface', className)}>
       {children}
     </tbody>
   );
@@ -108,12 +111,29 @@ export function TableCell({ children, className, colSpan }: TableCellProps) {
     <td
       colSpan={colSpan}
       className={cn(
-        'px-4 py-3 align-top text-sm break-words whitespace-normal',
-        'text-gray-900 dark:text-gray-100',
+        'px-4 py-3 align-middle text-sm break-words',
+        'text-gray-700 dark:text-gray-100',
         className
       )}
     >
       {children}
     </td>
+  );
+}
+
+interface TableEmptyProps {
+  colSpan: number;
+  children: ReactNode;
+  className?: string;
+}
+
+/** Full-width empty row for tables with no data. */
+export function TableEmpty({ colSpan, children, className }: TableEmptyProps) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className={cn('px-4 py-12 text-center text-gray-400 dark:text-slate-500', className)}>
+        {children}
+      </td>
+    </tr>
   );
 }

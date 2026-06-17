@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Select2 } from '@/components/ui/Select2';
 import { Button } from '@/components/ui/Button';
+import { useUsers } from '@/hooks/queries/useUsers';
 import { Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
@@ -29,6 +31,19 @@ export function EditCollege() {
     deanId: '',
     establishedYear: '' as string,
   });
+  const deansQuery = useUsers({ role: 'doctor', limit: 200 });
+  const deanOptions = useMemo(() => {
+    const items = (deansQuery.data?.items ?? []) as unknown as Array<Record<string, unknown>>;
+    const opts = items
+      .map((u) => {
+        const id = typeof u._id === 'string' ? u._id : typeof u.id === 'string' ? u.id : '';
+        const name = typeof u.name === 'string' ? u.name : '';
+        const email = typeof u.email === 'string' ? u.email : '';
+        return { value: id, label: `${name}${email ? ` · ${email}` : ''}`.trim() || id };
+      })
+      .filter((o) => o.value);
+    return [{ value: '', label: '—' }, ...opts];
+  }, [deansQuery.data]);
   const [recordMeta, setRecordMeta] = useState<{
     createdAt?: string;
     isArchived: boolean;
@@ -216,10 +231,11 @@ export function EditCollege() {
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('admin.editCollege.deanUserId')} <span className="font-normal text-gray-400">{t('admin.editCollege.optional')}</span>
                 </label>
-                <Input
+                <Select2
                   value={formData.deanId}
-                  onChange={(e) => setFormData({ ...formData, deanId: e.target.value })}
-                  placeholder={t('admin.editCollege.deanPlaceholder')}
+                  onChange={(v) => setFormData({ ...formData, deanId: v })}
+                  options={deanOptions}
+                  placeholder={deansQuery.isLoading ? t('common.loading') : t('admin.editCollege.deanPlaceholder')}
                 />
               </div>
             </div>

@@ -22,7 +22,6 @@ import { PrivacyPolicy as PublicPrivacy } from './pages/public/PrivacyPolicy';
 import { TermsOfUse as PublicTerms } from './pages/public/TermsOfUse';
 import { Sitemap as PublicSitemap } from './pages/public/Sitemap';
 import { Login } from './pages/auth/Login';
-import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { ResetPassword } from './pages/auth/ResetPassword';
 import { ComingSoon } from './pages/auth/ComingSoon';
 import { Error403 } from './pages/auth/Error403';
@@ -42,7 +41,7 @@ import { Materials } from './pages/shared/Materials';
 import { MyAssessments } from './pages/student/Assessments';
 import { MySubmissions } from './pages/student/Assessments';
 import { Attendance } from './pages/student/Attendance';
-import { Announcements } from './pages/shared/Announcements';
+import { Announcements, CreateAnnouncement } from './pages/shared/Announcements';
 import { Chatbot } from './pages/shared/Chatbot';
 import { Notifications } from './pages/shared/Notifications';
 import { Profile } from './pages/shared/Profile';
@@ -54,7 +53,8 @@ import { TakeAssessment, SubmissionResult } from './pages/student/Assessments';
 import { CourseGradebook } from './pages/doctor/Gradebook';
 import { FinalExamEntry, StudentGpaRebuild } from './pages/admin/Gradebook';
 import { MyGrades } from './pages/student/Grades';
-import { AttendanceSessions } from './pages/doctor/Attendance';
+import { AttendanceSessions, SessionMonitor } from './pages/doctor/Attendance';
+import { Fingerprints } from './pages/admin/Attendance/Fingerprints';
 import { CalculateFinalGrades } from './pages/doctor/Grades';
 import {
   Colleges,
@@ -145,7 +145,7 @@ function App() {
         />
         <Route
           path="/forgot-password"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
         />
         <Route path="/otp" element={<Navigate to="/login" replace />} />
 <Route
@@ -344,13 +344,29 @@ function App() {
             }
           />
           <Route path="attendance" element={<Attendance />} />
-          <Route 
-            path="attendance/sessions" 
+          <Route
+            path="attendance/sessions"
             element={
-              <ProtectedRoute allowedRoles={['doctor']}>
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta', 'collegeAdmin']}>
                 <AttendanceSessions />
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route
+            path="attendance/sessions/:sessionId"
+            element={
+              <ProtectedRoute allowedRoles={['doctor', 'teacher', 'ta', 'collegeAdmin']}>
+                <SessionMonitor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="attendance/fingerprints"
+            element={
+              <ProtectedRoute allowedRoles={['collegeAdmin']}>
+                <Fingerprints />
+              </ProtectedRoute>
+            }
           />
           <Route 
             path="grades" 
@@ -361,6 +377,14 @@ function App() {
             } 
           />
           <Route path="announcements" element={<Announcements />} />
+          <Route
+            path="announcements/create"
+            element={
+              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin', 'doctor', 'teacher', 'ta']}>
+                <CreateAnnouncement />
+              </ProtectedRoute>
+            }
+          />
           <Route path="chatbot" element={<Chatbot />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />

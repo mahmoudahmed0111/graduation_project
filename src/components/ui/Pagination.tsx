@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { IconButton } from './IconButton';
 
 interface PaginationProps {
   currentPage: number;
@@ -12,35 +11,41 @@ interface PaginationProps {
 export function Pagination({ currentPage, totalPages, onPageChange, className }: PaginationProps) {
   const visiblePages = getVisiblePages(currentPage, totalPages);
 
+  const navBtn =
+    'grid h-8 w-8 place-items-center rounded-md border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-dark-border dark:text-slate-300 dark:hover:bg-dark-surface-2';
+
   return (
-    <div className={cn('flex items-center justify-center gap-2', className)}>
-      <IconButton
+    <div className={cn('flex items-center justify-center gap-1', className)}>
+      <button
+        type="button"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        variant="ghost"
-        size="sm"
+        className={navBtn}
+        aria-label="Previous page"
       >
-        <ChevronLeft className="h-4 w-4" />
-      </IconButton>
+        <ChevronLeft className="h-4 w-4 rtl:-scale-x-100" />
+      </button>
 
       {visiblePages.map((page, index) => {
         if (page === '...') {
           return (
-            <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
-              ...
+            <span key={`ellipsis-${index}`} className="px-1 text-gray-400 dark:text-slate-500">
+              …
             </span>
           );
         }
 
+        const isActive = currentPage === page;
         return (
           <button
             key={page}
+            type="button"
             onClick={() => onPageChange(page as number)}
             className={cn(
-              'w-10 h-10 rounded-lg text-sm font-medium transition-colors',
-              currentPage === page
-                ? 'bg-primary-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              'h-8 min-w-8 rounded-md px-2 text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-primary-600 text-white dark:bg-accent-500 dark:text-primary-900'
+                : 'border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-dark-border dark:text-slate-300 dark:hover:bg-dark-surface-2'
             )}
           >
             {page}
@@ -48,14 +53,15 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
         );
       })}
 
-      <IconButton
+      <button
+        type="button"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        variant="ghost"
-        size="sm"
+        className={navBtn}
+        aria-label="Next page"
       >
-        <ChevronRight className="h-4 w-4" />
-      </IconButton>
+        <ChevronRight className="h-4 w-4 rtl:-scale-x-100" />
+      </button>
     </div>
   );
 }

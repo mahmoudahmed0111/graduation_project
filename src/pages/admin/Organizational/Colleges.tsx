@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import { Card, CardContent } from '@/components/ui/Card';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Button } from '@/components/ui/Button';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Building2, Search, Plus, User, School, Edit, Eye } from 'lucide-react';
+import { Building2, Plus, School, Edit, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ICollege } from '@/types';
 import { useColleges } from '@/hooks/queries';
@@ -127,29 +127,23 @@ export function Colleges() {
 
   return (
     <AdminPageShell titleStack={{ section: t('admin.organizationalColleges.section'), page: t('admin.organizationalColleges.page') }}>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full min-w-0 sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder={t('admin.organizationalColleges.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-              <Link to="/dashboard/organizational/colleges/create">
-                <Button className="inline-flex items-center gap-2 rounded-xl">
-                  <Plus className="h-4 w-4" />
-                  {t('admin.organizationalColleges.addCollege')}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </CardHeader>
+      <Card bare>
         <CardContent>
+          <div className="mb-6">
+            <FilterBar
+              search={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder={t('admin.organizationalColleges.searchPlaceholder')}
+              actions={
+                <Link to="/dashboard/organizational/colleges/create">
+                  <Button className="inline-flex items-center gap-2 rounded-xl">
+                    <Plus className="h-4 w-4" />
+                    {t('admin.organizationalColleges.addCollege')}
+                  </Button>
+                </Link>
+              }
+            />
+          </div>
           {filteredColleges.length === 0 ? (
             <div className="py-12 text-center">
               <Building2 className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
@@ -164,7 +158,6 @@ export function Colleges() {
                   <TableRow>
                     <TableHead>{t('admin.organizationalColleges.name')}</TableHead>
                     <TableHead>{t('admin.organizationalColleges.codeSlug')}</TableHead>
-                    <TableHead>{t('admin.organizationalColleges.description')}</TableHead>
                     <TableHead className="whitespace-nowrap">{t('admin.organizationalColleges.est')}</TableHead>
                     <TableHead>{t('admin.organizationalColleges.dean')}</TableHead>
                     <TableHead className="text-end tabular-nums">{t('admin.organizationalColleges.depts')}</TableHead>
@@ -176,7 +169,6 @@ export function Colleges() {
                 </TableHeader>
                 <TableBody>
                   {filteredColleges.map((college) => {
-                    const deanId = college.dean?.id ?? college.deanRefId;
                     const deanName = college.dean?.name?.trim();
                     const showDeanName = Boolean(deanName && deanName !== '—');
                     return (
@@ -195,62 +187,11 @@ export function Colleges() {
                           <span className="mt-0.5 block text-xs text-gray-400">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="max-w-xs">
-                        {college.description ? (
-                          <span
-                            className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400"
-                            title={college.description}
-                          >
-                            {college.description}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </TableCell>
                       <TableCell className="tabular-nums text-gray-700 dark:text-gray-300">
                         {college.establishedYear ?? '—'}
                       </TableCell>
-                      <TableCell>
-                        {showDeanName ? (
-                          <div className="flex min-w-0 items-start gap-2">
-                            <User className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-                            <div className="min-w-0">
-                              <div
-                                className="font-medium text-gray-900 dark:text-gray-100 truncate"
-                                title={deanName}
-                              >
-                                {deanName}
-                              </div>
-                              {college.dean?.email ? (
-                                <div
-                                  className="mt-0.5 truncate text-xs text-gray-600 dark:text-gray-400"
-                                  title={college.dean.email}
-                                >
-                                  {college.dean.email}
-                                </div>
-                              ) : null}
-                              {college.dean?.role ? (
-                                <div className="text-xs capitalize text-gray-500 dark:text-gray-400">
-                                  {college.dean.role}
-                                </div>
-                              ) : null}
-                              {deanId ? (
-                                <code
-                                  className="mt-0.5 block truncate text-xs text-gray-500 dark:text-gray-400"
-                                  title={deanId}
-                                >
-                                  {deanId}
-                                </code>
-                              ) : null}
-                            </div>
-                          </div>
-                        ) : deanId ? (
-                          <code className="text-xs text-gray-600 dark:text-gray-400" title={deanId}>
-                            {deanId}
-                          </code>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
+                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
+                        {showDeanName ? deanName : <span className="font-normal text-gray-400">—</span>}
                       </TableCell>
                       <TableCell className="text-end tabular-nums text-gray-900 dark:text-gray-100">
                         <span className="inline-flex items-center justify-end gap-1">

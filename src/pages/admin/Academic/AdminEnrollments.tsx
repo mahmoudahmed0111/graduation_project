@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AdminDataTableShell, AdminPageShell } from '@/components/admin';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -15,7 +16,7 @@ import { useColleges } from '@/hooks/queries/useColleges';
 import { useAdminEnrollments, useWithdrawEnrollmentMutation } from '@/hooks/queries/usePhase3Enrollments';
 import { getApiErrorMessage } from '@/lib/http/client';
 import { p3Id, p3RefName } from '@/lib/phase3Ui';
-import { GraduationCap, LogOut, Search, UserPlus } from 'lucide-react';
+import { GraduationCap, LogOut, UserPlus } from 'lucide-react';
 
 export function AdminEnrollments() {
   const { t } = useTranslation();
@@ -105,49 +106,45 @@ export function AdminEnrollments() {
 
   return (
     <AdminPageShell titleStack={{ section: t('admin.adminEnrollments.section'), page: t('admin.adminEnrollments.page') }}>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full min-w-0 sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder={t('admin.adminEnrollments.filterByStudentId')}
-                value={student_id}
-                onChange={(e) => setStudent_id(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+      <Card bare>
+        <CardContent className="space-y-6">
+          <FilterBar
+            search={student_id}
+            onSearchChange={setStudent_id}
+            searchPlaceholder={t('admin.adminEnrollments.filterByStudentId')}
+            actions={
               <Link to="/dashboard/academic/enrollments/force">
                 <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
                   <UserPlus className="h-4 w-4" />
                   {t('admin.adminEnrollments.forceEnroll')}
                 </Button>
               </Link>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {isUA && (
-              <Select2 label={t('admin.adminEnrollments.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
-            )}
-            <Select2
-              label={t('admin.adminEnrollments.status')}
-              options={STATUS_OPTS}
-              value={status}
-              onChange={setStatus}
-              searchable={false}
-            />
-            <Input label={t('admin.adminEnrollments.semester')} value={semester} onChange={(e) => setSemester(e.target.value)} placeholder={t('admin.adminEnrollments.semesterPlaceholder')} />
-            <Input label={t('admin.adminEnrollments.academicYear')} value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder={t('admin.adminEnrollments.yearPlaceholder')} />
-            <Input
-              label={t('admin.adminEnrollments.offeringId')}
-              value={course_id}
-              onChange={(e) => setCourse_id(e.target.value)}
-              placeholder={t('admin.adminEnrollments.offeringIdPlaceholder')}
-            />
-          </div>
+            }
+            activeFilterCount={[isUA && collegeId, status, semester, academicYear, course_id].filter(Boolean).length}
+            onClearFilters={() => { setCollegeId(''); setStatus(''); setSemester(''); setAcademicYear(''); setCourse_id(''); }}
+            filters={
+              <>
+                {isUA && (
+                  <Select2 label={t('admin.adminEnrollments.college')} options={collegeOptions} value={collegeId} onChange={setCollegeId} />
+                )}
+                <Select2
+                  label={t('admin.adminEnrollments.status')}
+                  options={STATUS_OPTS}
+                  value={status}
+                  onChange={setStatus}
+                  searchable={false}
+                />
+                <Input label={t('admin.adminEnrollments.semester')} value={semester} onChange={(e) => setSemester(e.target.value)} placeholder={t('admin.adminEnrollments.semesterPlaceholder')} />
+                <Input label={t('admin.adminEnrollments.academicYear')} value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder={t('admin.adminEnrollments.yearPlaceholder')} />
+                <Input
+                  label={t('admin.adminEnrollments.offeringId')}
+                  value={course_id}
+                  onChange={(e) => setCourse_id(e.target.value)}
+                  placeholder={t('admin.adminEnrollments.offeringIdPlaceholder')}
+                />
+              </>
+            }
+          />
 
           {items.length === 0 ? (
             <div className="py-12 text-center">

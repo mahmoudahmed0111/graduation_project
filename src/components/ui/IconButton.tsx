@@ -29,7 +29,7 @@ export function IconButton({
   return (
     <button
       className={cn(
-        'rounded-lg flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500',
+        'rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:pointer-events-none',
         sizeClasses[size],
         variantClasses[variant],
         className

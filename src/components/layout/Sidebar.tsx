@@ -22,9 +22,11 @@ import {
   Database,
   MapPin,
   Library,
+  Fingerprint,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Avatar } from '../ui/Avatar';
 
@@ -40,6 +42,10 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   children?: NavItem[];
+  /** If set, the item is shown only when the user's role is in this list.
+   *  Mirrors the route guards in App.tsx so the sidebar never shows a button
+   *  the user can't actually open. Omit = visible to everyone in this tree. */
+  roles?: string[];
 }
 
 export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _onToggleExpand }: SidebarProps) {
@@ -171,7 +177,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       label: t('chrome.sidebar.universityStructure'),
       icon: Building2,
       children: [
-        { path: '/dashboard/organizational/colleges', label: t('nav.colleges'), icon: Building2 },
+        { path: '/dashboard/organizational/colleges', label: t('nav.colleges'), icon: Building2, roles: ['universityAdmin'] },
         { path: '/dashboard/organizational/departments', label: t('nav.departments'), icon: School },
         { path: '/dashboard/organizational/locations', label: t('chrome.sidebar.locations'), icon: MapPin },
       ]
@@ -204,10 +210,22 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       children: [
         { path: '/dashboard/materials', label: t('nav.materials'), icon: FileText },
         { path: '/dashboard/gradebook', label: t('chrome.sidebar.gradebook'), icon: ClipboardList },
-        { path: '/dashboard/admin/gpa-rebuild', label: t('chrome.sidebar.gpaRebuild'), icon: GraduationCap },
+        { path: '/dashboard/admin/gpa-rebuild', label: t('chrome.sidebar.gpaRebuild'), icon: GraduationCap, roles: ['universityAdmin'] },
       ],
     },
-    { path: '/dashboard/system-settings', label: t('chrome.sidebar.systemSettings'), icon: Database },
+    // Fingerprint enrollment & attendance sessions are college-admin scoped
+    // (the backend restricts these endpoints to collegeAdmin).
+    {
+      path: '/dashboard/attendance',
+      label: t('attendance5.nav.attendanceBiometrics'),
+      icon: Fingerprint,
+      roles: ['collegeAdmin'],
+      children: [
+        { path: '/dashboard/attendance/fingerprints', label: t('attendance5.nav.fingerprintEnrollment'), icon: Fingerprint, roles: ['collegeAdmin'] },
+        { path: '/dashboard/attendance/sessions', label: t('attendance5.nav.attendanceSessions'), icon: Clock, roles: ['collegeAdmin'] },
+      ],
+    },
+    { path: '/dashboard/system-settings', label: t('chrome.sidebar.systemSettings'), icon: Database, roles: ['universityAdmin'] },
     { path: '/dashboard/announcements', label: t('chrome.sidebar.broadcastCenter'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('chrome.sidebar.aiAssistant'), icon: MessageSquare },
     { path: '/dashboard/audit-logs', label: t('chrome.sidebar.auditLogs'), icon: FileText },
@@ -216,7 +234,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
 
   const doctorNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
-    { path: '/dashboard/roster', label: t('nav.roster'), icon: Users },
+    { path: '/dashboard/roster', label: t('nav.roster'), icon: Users, roles: ['doctor', 'teacher', 'admin'] },
     { 
       path: '/dashboard/courses', 
       label: t('nav.courses'), 
@@ -241,7 +259,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       icon: ClipboardList,
       children: [
         { path: '/dashboard/assessments/my-assessments', label: t('nav.myAssessments'), icon: ClipboardList },
-        { path: '/dashboard/assessments/create', label: t('nav.createAssessment'), icon: ClipboardList },
+        { path: '/dashboard/assessments/create', label: t('nav.createAssessment'), icon: ClipboardList, roles: ['doctor', 'teacher'] },
         { path: '/dashboard/assessments/grade', label: t('nav.gradeSubmissions'), icon: ClipboardList },
       ]
     },
@@ -254,20 +272,30 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         { path: '/dashboard/attendance/sessions', label: t('nav.manageSessions'), icon: UserCheck },
       ]
     },
-    { path: '/dashboard/grades', label: t('nav.calculateFinalGrades'), icon: GraduationCap },
+    { path: '/dashboard/grades', label: t('nav.calculateFinalGrades'), icon: GraduationCap, roles: ['doctor', 'teacher'] },
     { path: '/dashboard/gradebook', label: t('chrome.sidebar.gradebook'), icon: ClipboardList },
     { path: '/dashboard/announcements', label: t('nav.announcements'), icon: Bell },
     { path: '/dashboard/chatbot', label: t('nav.chatbot'), icon: MessageSquare },
-    { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3 },
+    { path: '/dashboard/analytics', label: t('nav.analytics'), icon: BarChart3, roles: ['doctor', 'teacher'] },
     { path: '/dashboard/organizational/locations', label: t('chrome.sidebar.locations'), icon: MapPin },
     { path: '/dashboard/profile', label: t('nav.profile'), icon: User },
   ];
 
-  const navItems: NavItem[] = 
-    user?.role === 'student' ? studentNavItems :
-    user?.role === 'doctor' ? doctorNavItems :
-    user?.role === 'universityAdmin' || user?.role === 'collegeAdmin' ? adminNavItems :
+  const role = user?.role;
+  const baseTree: NavItem[] =
+    role === 'student' ? studentNavItems :
+    role === 'doctor' || role === 'teacher' || role === 'ta' ? doctorNavItems :
     adminNavItems;
+
+  // Show a button only if the user's role can actually open it. Items without
+  // a `roles` list are visible to everyone in their tree; group items are
+  // dropped when all of their children get filtered out. This mirrors the
+  // route guards in App.tsx so the sidebar never offers a forbidden page.
+  const canAccess = (item: NavItem) => !item.roles || (role !== undefined && item.roles.includes(role));
+  const navItems: NavItem[] = baseTree
+    .filter(canAccess)
+    .map((item) => (item.children ? { ...item, children: item.children.filter(canAccess) } : item))
+    .filter((item) => !item.children || item.children.length > 0);
 
   const renderNavItem = (item: NavItem, level: number = 0, parentPath?: string) => {
     const hasChildren = item.children && item.children.length > 0;
@@ -292,7 +320,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             <button
               onClick={() => toggleItem(item.path)}
               className={cn(
-                'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative',
+                'group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative',
                 active
                   ? 'bg-gradient-to-r from-primary-50 to-accent-50/40 text-primary-800 font-semibold shadow-sm dark:from-primary-900/40 dark:to-accent-500/10 dark:text-accent-300'
                   : 'text-slate-600 hover:bg-slate-100/70 hover:text-primary-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-accent-400',
@@ -356,7 +384,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             to={item.path}
             onClick={onClose}
             className={cn(
-              'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative',
+              'group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative',
               active
                 ? 'bg-gradient-to-r from-primary-50 to-accent-50/40 text-primary-800 font-semibold shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100/70 hover:text-primary-700',
@@ -366,7 +394,11 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             title={!isExpanded ? item.label : undefined}
           >
             {active && isExpanded && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-accent-500 rounded-r-full" />
+              <motion.span
+                layoutId="nav-active"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                className="absolute left-0 inset-y-0 my-auto h-6 w-1 bg-accent-500 rounded-r-full"
+              />
             )}
             <item.icon className={cn(
               'h-[18px] w-[18px] flex-shrink-0 transition-colors',

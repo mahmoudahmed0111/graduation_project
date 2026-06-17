@@ -5,14 +5,13 @@ import { api } from '@/lib/api';
 import { ICourseOffering } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { 
   BookOpen, 
   Users, 
   Clock, 
   MapPin, 
   Calendar,
-  Search,
   User,
   AlertCircle
 } from 'lucide-react';
@@ -98,28 +97,28 @@ export function AllCourses() {
           {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder={t('shared.allCourses.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <select
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="field"
-            >
-              <option value="">{t('shared.allCourses.allDepartments')}</option>
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-          </div>
+          <FilterBar
+            search={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={t('shared.allCourses.searchPlaceholder')}
+            activeFilterCount={selectedDepartment ? 1 : 0}
+            onClearFilters={() => setSelectedDepartment('')}
+            filters={
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('shared.allCourses.allDepartments')}</label>
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="field"
+                >
+                  <option value="">{t('shared.allCourses.allDepartments')}</option>
+                  {departments.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+            }
+          />
         </CardContent>
       </Card>
 

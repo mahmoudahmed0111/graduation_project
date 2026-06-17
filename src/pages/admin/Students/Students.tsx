@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Input } from '@/components/ui/Input';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Button } from '@/components/ui/Button';
-import { Users, Search, UserPlus, GraduationCap, Mail, CreditCard } from 'lucide-react';
+import { UserPlus, GraduationCap, Mail, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 import { api } from '@/lib/api';
@@ -134,24 +134,14 @@ export function Students() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {t('admin.students.allStudents')}
-          </CardTitle>
-        </CardHeader>
+      <Card bare>
         <CardContent className="p-0">
-          <div className="p-4 border-b border-gray-100">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder={t('admin.students.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          <div className="border-b border-gray-100 pb-4 dark:border-dark-border">
+            <FilterBar
+              search={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder={t('admin.students.searchPlaceholder')}
+            />
           </div>
           <div className="overflow-x-auto">
             <Table>

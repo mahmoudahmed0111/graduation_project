@@ -16,7 +16,7 @@ import {
 // Dev: VITE_USE_PRODUCTION_API=true → proxy to the backend. false → local. Prod: Backend IP
 const API_BASE = import.meta.env.DEV
   ? (import.meta.env.VITE_USE_PRODUCTION_API === 'true' ? '' : 'http://localhost:5000')
-  : (import.meta.env.VITE_API_URL || 'http://4.232.14.242:3000');
+  : (import.meta.env.VITE_API_URL || 'https://smart-backend-fmapeqeueha2gkbv.austriaeast-01.azurewebsites.net');
 
 export function Landing() {
   const [backendStatus, setBackendStatus] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false });

@@ -1,296 +1,223 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
-import { IAttendanceReport, IEnrollment } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { 
-  Clock, 
-  TrendingUp,
-  AlertCircle,
-  CheckCircle2,
-  Calendar
-} from 'lucide-react';
+import { QrCode, Keyboard, History, CheckCircle2, ScanLine, Fingerprint } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { StatCard } from '@/components/ui/StatCard';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Spinner } from '@/components/ui/Spinner';
+import { Select2 } from '@/components/ui/Select2';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+import { QrScanner } from '@/components/attendance/QrScanner';
 import { useToastStore } from '@/store/toastStore';
-import { logger } from '@/lib/logger';
+import { getApiErrorMessage } from '@/lib/http/client';
+import { api } from '@/lib/api';
+import { useQrMark, useMyAttendance } from '@/hooks/queries/usePhase5Attendance';
+import { parseQrPayload, type AttendanceSource } from '@/types/phase5';
+import type { IEnrollment } from '@/types';
+import { formatDate } from '@/utils/formatters';
+
+type Tab = 'mark' | 'history';
+
+const SOURCE_TONE: Record<AttendanceSource, 'brand' | 'info' | 'gold'> = {
+  fingerprint: 'brand',
+  qr: 'info',
+  manual_override: 'gold',
+};
 
 export function Attendance() {
   const { t } = useTranslation();
-  useAuthStore();
-  const { error: showError } = useToastStore();
-  const [attendanceReports, setAttendanceReports] = useState<IAttendanceReport[]>([]);
-  const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const { success, error: showError } = useToastStore();
+  const [tab, setTab] = useState<Tab>('mark');
+
+  // ─── courses (for both tabs) ───────────────────────────────────────────
+  const [courses, setCourses] = useState<IEnrollment[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [selectedOffering, setSelectedOffering] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
+    let alive = true;
+    (async () => {
       try {
-        setLoading(true);
-        const [coursesData, attendanceData] = await Promise.all([
-          api.getMyCourses({ semester: 'current' }).catch(() => []),
-          api.getMyAttendanceReport().catch(() => [])
-        ]);
-        
-        const coursesArray = Array.isArray(coursesData) ? coursesData : [];
-        const attendanceArray = Array.isArray(attendanceData) ? attendanceData : [];
-        
-        setMyCourses(coursesArray);
-        setAttendanceReports(attendanceArray);
-      } catch (error) {
-        logger.error('Failed to fetch attendance data', {
-          context: 'Attendance',
-          error,
-        });
-        showError(t('student.attendance.loadFailed'));
-        setAttendanceReports([]);
-        setMyCourses([]);
+        const data = await api.getMyCourses({ semester: 'current' }).catch(() => []);
+        if (alive) setCourses(Array.isArray(data) ? data : []);
       } finally {
-        setLoading(false);
+        if (alive) setCoursesLoading(false);
       }
+    })();
+    return () => {
+      alive = false;
     };
-
-    fetchData();
   }, []);
 
-  // Filter reports
-  const filteredReports = selectedCourse === 'all'
-    ? attendanceReports
-    : attendanceReports.filter(report => report.courseOffering.id === selectedCourse);
+  const offeringOptions = useMemo(
+    () => [
+      { value: '', label: t('attendance5.common.selectCourse') },
+      ...courses
+        .map((c) => ({
+          value: c.courseOffering?.id ?? '',
+          label: `${c.courseOffering?.course?.code ?? ''} — ${c.courseOffering?.course?.title ?? ''}`.trim(),
+        }))
+        .filter((o) => o.value),
+    ],
+    [courses, t]
+  );
 
-  // Calculate overall statistics
-  const overallStats = attendanceReports.reduce((acc, report) => {
-    acc.totalSessions += report.totalSessions;
-    acc.attendedSessions += report.attendedSessions;
-    return acc;
-  }, { totalSessions: 0, attendedSessions: 0 });
+  // ─── mark (QR scan + manual) ───────────────────────────────────────────
+  const qrMark = useQrMark();
+  const [scanning, setScanning] = useState(false);
+  const [manualCode, setManualCode] = useState('');
+  const [marked, setMarked] = useState(false);
 
-  const overallPercentage = overallStats.totalSessions > 0
-    ? (overallStats.attendedSessions / overallStats.totalSessions) * 100
-    : 0;
-
-  const getAttendanceColor = (percentage: number) => {
-    if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 75) return 'text-blue-600';
-    if (percentage >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getAttendanceBadge = (percentage: number) => {
-    if (percentage >= 90) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <CheckCircle2 className="h-3 w-3" />
-          {t('student.attendance.excellent')}
-        </span>
-      );
-    } else if (percentage >= 75) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          <CheckCircle2 className="h-3 w-3" />
-          {t('student.attendance.good')}
-        </span>
-      );
-    } else if (percentage >= 60) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-          <AlertCircle className="h-3 w-3" />
-          {t('student.attendance.warning')}
-        </span>
-      );
-    } else {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          <AlertCircle className="h-3 w-3" />
-          {t('student.attendance.low')}
-        </span>
-      );
+  const submitCode = async (raw: string) => {
+    const payload = parseQrPayload(raw);
+    if (!payload) {
+      showError(t('attendance5.student.invalidCode'));
+      return;
+    }
+    try {
+      const res = await qrMark.mutateAsync(payload);
+      setScanning(false);
+      if (res.alreadyMarked) {
+        success(t('attendance5.student.alreadyMarked'));
+      } else {
+        success(t('attendance5.student.recorded'));
+      }
+      setMarked(true);
+      setManualCode('');
+    } catch (err) {
+      showError(getApiErrorMessage(err, t('attendance5.student.recordFailed')));
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  // ─── history ───────────────────────────────────────────────────────────
+  const history = useMyAttendance(tab === 'history' ? selectedOffering : undefined);
+  const summary = history.data?.summary;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('nav.attendance')}</h1>
-        <p className="text-gray-600 mt-1">{t('student.attendance.subtitle')}</p>
+      <PageHeader title={t('attendance5.student.title')} subtitle={t('attendance5.student.subtitle')} />
+
+      {/* Tabs */}
+      <div className="inline-flex rounded-xl bg-gray-100 p-1 dark:bg-dark-surface-2">
+        <button
+          onClick={() => setTab('mark')}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${tab === 'mark' ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-surface dark:text-accent-300' : 'text-gray-500 dark:text-slate-400'}`}
+        >
+          <ScanLine className="h-4 w-4" /> {t('attendance5.student.tabMark')}
+        </button>
+        <button
+          onClick={() => setTab('history')}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${tab === 'history' ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-surface dark:text-accent-300' : 'text-gray-500 dark:text-slate-400'}`}
+        >
+          <History className="h-4 w-4" /> {t('attendance5.student.tabHistory')}
+        </button>
       </div>
 
-      {/* Overall Statistics */}
-      {attendanceReports.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{t('student.attendance.overallAttendance')}</p>
-                  <p className={`text-3xl font-bold ${getAttendanceColor(overallPercentage)}`}>
-                    {overallPercentage.toFixed(1)}%
-                  </p>
+      {tab === 'mark' ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <SectionCard title={t('attendance5.student.scanTitle')} subtitle={t('attendance5.student.scanSubtitle')}>
+            {marked ? (
+              <div className="py-6 text-center">
+                <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-500/15">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-300" />
                 </div>
-                <TrendingUp className="h-10 w-10 text-primary-600" />
+                <p className="font-semibold text-gray-900 dark:text-white">{t('attendance5.student.markedPresent')}</p>
+                <Button variant="ghost" className="mt-3" onClick={() => { setMarked(false); setScanning(false); }}>
+                  {t('attendance5.student.scanAgain')}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{t('student.attendance.totalSessions')}</p>
-                  <p className="text-3xl font-bold text-gray-900">{overallStats.totalSessions}</p>
+            ) : scanning ? (
+              <div className="space-y-3">
+                <QrScanner active={scanning} onResult={submitCode} onError={(m) => { setScanning(false); showError(m || t('attendance5.student.cameraUnavailable')); }} />
+                <Button variant="outline" className="w-full" onClick={() => setScanning(false)}>{t('attendance5.student.stopCamera')}</Button>
+              </div>
+            ) : (
+              <div className="py-6 text-center">
+                <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-accent-300">
+                  <QrCode className="h-8 w-8" />
                 </div>
-                <Calendar className="h-10 w-10 text-primary-600" />
+                <Button onClick={() => setScanning(true)}>
+                  <ScanLine className="h-4 w-4" /> {t('attendance5.student.openCamera')}
+                </Button>
+                {qrMark.isPending && <div className="mt-3 flex justify-center"><Spinner size="sm" /></div>}
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{t('student.attendance.attendedSessions')}</p>
-                  <p className="text-3xl font-bold text-gray-900">{overallStats.attendedSessions}</p>
-                </div>
-                <CheckCircle2 className="h-10 w-10 text-primary-600" />
+            )}
+          </SectionCard>
+
+          <SectionCard title={t('attendance5.student.manualTitle')} subtitle={t('attendance5.student.manualSubtitle')}>
+            <div className="space-y-3">
+              <div className="relative">
+                <Keyboard className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  className="input pl-9"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                  placeholder={t('attendance5.student.pasteCode')}
+                />
               </div>
-            </CardContent>
-          </Card>
+              <Button className="w-full" disabled={!manualCode.trim()} isLoading={qrMark.isPending} onClick={() => submitCode(manualCode)}>
+                {t('attendance5.student.markPresent')}
+              </Button>
+            </div>
+          </SectionCard>
         </div>
-      )}
-
-      {/* Filter */}
-      {attendanceReports.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="field"
-            >
-              <option value="all">{t('student.attendance.allCourses')}</option>
-              {myCourses.map(course => (
-                <option key={course.courseOffering?.id} value={course.courseOffering?.id}>
-                  {course.courseOffering?.course?.code} - {course.courseOffering?.course?.title}
-                </option>
-              ))}
-            </select>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Attendance Reports */}
-      {filteredReports.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('student.attendance.noData')}</p>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredReports.map((report) => {
-            const percentage = report.attendancePercentage;
-            const missedSessions = report.totalSessions - report.attendedSessions;
-            
-            return (
-              <Card key={report.courseOffering.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded">
-                          {report.courseOffering.course.code}
-                        </span>
-                        {getAttendanceBadge(percentage)}
-                      </div>
-                      <CardTitle className="text-lg mb-1">{report.courseOffering.course.title}</CardTitle>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Attendance Percentage */}
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">{t('student.attendance.attendanceRate')}</span>
-                      <span className={`text-3xl font-bold ${getAttendanceColor(percentage)}`}>
-                        {percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                    {/* Progress Bar */}
-                    <div className="w-full bg-gray-200 rounded-full h-3 mt-3">
-                      <div
-                        className={`h-3 rounded-full transition-all ${
-                          percentage >= 90 ? 'bg-green-600' :
-                          percentage >= 75 ? 'bg-blue-600' :
-                          percentage >= 60 ? 'bg-yellow-600' :
-                          'bg-red-600'
-                        }`}
-                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
+        <div className="space-y-6">
+          <SectionCard title={t('attendance5.student.chooseCourse')}>
+            {coursesLoading ? (
+              <div className="flex h-11 items-center"><Spinner size="sm" /></div>
+            ) : (
+              <Select2 value={selectedOffering} onChange={setSelectedOffering} options={offeringOptions} placeholder={t('attendance5.common.selectCourse')} />
+            )}
+          </SectionCard>
 
-                  {/* Session Details */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                        <span className="text-xs text-blue-700 font-medium">{t('student.attendance.attended')}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-blue-900">{report.attendedSessions}</p>
-                      <p className="text-xs text-blue-600">{t('student.attendance.sessions')}</p>
-                    </div>
-                    <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <span className="text-xs text-red-700 font-medium">{t('student.attendance.missed')}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-red-900">{missedSessions}</p>
-                      <p className="text-xs text-red-600">{t('student.attendance.sessions')}</p>
-                    </div>
-                  </div>
+          {!selectedOffering ? (
+            <EmptyState icon={History} title={t('attendance5.student.pickCourseTitle')} description={t('attendance5.student.pickCourseDesc')} />
+          ) : history.isLoading ? (
+            <div className="flex justify-center p-10"><Spinner /></div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <StatCard index={0} label={t('attendance5.student.attended')} value={summary?.attended ?? 0} tone="success" />
+                <StatCard index={1} label={t('attendance5.student.totalSessions')} value={summary?.total ?? 0} tone="neutral" />
+                <StatCard index={2} label={t('attendance5.student.percentage')} value={`${(summary?.percentage ?? 0).toFixed(0)}%`} tone="brand" />
+                <StatCard index={3} label={t('attendance5.student.attendanceGrade')} value={summary?.attendanceGrade ?? 0} tone="gold" />
+              </div>
 
-                  {/* Total Sessions */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <span className="text-sm text-gray-600">{t('student.attendance.totalSessions')}</span>
-                    <span className="text-sm font-semibold text-gray-900">{report.totalSessions}</span>
-                  </div>
-
-                  {/* Warning for Low Attendance */}
-                  {percentage < 75 && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-xs font-medium text-yellow-800">{t('student.attendance.attendanceWarning')}</p>
-                          <p className="text-xs text-yellow-700 mt-1">
-                            {t('student.attendance.warningMessage')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Results Count */}
-      {filteredReports.length > 0 && (
-        <div className="text-center text-sm text-gray-600">
-          {t('student.attendance.showingCount', { count: filteredReports.length, total: attendanceReports.length })}
+              <SectionCard title={t('attendance5.student.records')} noPadding>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('attendance5.common.date')}</TableHead>
+                      <TableHead>{t('attendance5.common.source')}</TableHead>
+                      <TableHead>{t('attendance5.common.status')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(history.data?.records ?? []).map((rec) => (
+                      <TableRow key={rec._id}>
+                        <TableCell>{formatDate(rec.timestamp ?? rec.scannedAt ?? rec.createdAt ?? '')}</TableCell>
+                        <TableCell>
+                          <Badge tone={SOURCE_TONE[rec.source] ?? 'neutral'} size="sm">
+                            {rec.source === 'manual_override' ? t('attendance5.common.manual') : rec.source === 'qr' ? t('attendance5.common.qr') : t('attendance5.common.fingerprint')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell><Badge tone="success" size="sm"><CheckCircle2 className="h-3 w-3" /> {t('attendance5.common.present')}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {(history.data?.records?.length ?? 0) === 0 && (
+                  <div className="p-5"><EmptyState variant="bare" icon={Fingerprint} title={t('attendance5.student.noRecordsTitle')} description={t('attendance5.student.noRecordsDesc')} /></div>
+                )}
+              </SectionCard>
+            </>
+          )}
         </div>
       )}
     </div>
   );
 }
-

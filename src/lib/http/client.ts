@@ -1,7 +1,10 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, isAxiosError } from 'axios';
 import { useToastStore } from '@/store/toastStore';
 
-const AZURE_API_BASE = 'http://4.232.14.242:3000';
+const AZURE_API_BASE = 'https://smart-backend-fmapeqeueha2gkbv.austriaeast-01.azurewebsites.net';
+
+/** Server origin (no `/api/v1`) — used by the Socket.io client (Phase 6). */
+export const API_ORIGIN: string = import.meta.env.VITE_API_URL || AZURE_API_BASE;
 
 /** Base path `/api/v1` — dev uses localhost or Vite proxy per env. */
 export const API_BASE_URL = import.meta.env.DEV

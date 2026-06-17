@@ -1,376 +1,230 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
-import { IEnrollment, ICourseOffering } from '@/types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { useNavigate } from 'react-router-dom';
+import { Radio, Play, MapPin, Clock, ChevronRight, Fingerprint, QrCode } from 'lucide-react';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SectionCard } from '@/components/ui/SectionCard';
 import { Button } from '@/components/ui/Button';
-import { 
-  Clock, 
-  Play,
-  Square,
-  Radio,
-  BookOpen,
-  MapPin,
-  Users,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { useToastStore } from '@/store/toastStore';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
+import { Spinner } from '@/components/ui/Spinner';
 import { Select2 } from '@/components/ui/Select2';
-import { logger } from '@/lib/logger';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/Table';
+import { useToastStore } from '@/store/toastStore';
+import { getApiErrorMessage } from '@/lib/http/client';
+import { useMyTeachingOfferings } from '@/hooks/queries/useMyOfferings';
+import { useSessions, useCreateSession } from '@/hooks/queries/usePhase5Attendance';
+import type { AttendanceSession } from '@/types/phase5';
 import { formatDate } from '@/utils/formatters';
 
-interface AttendanceSession {
-  id: string;
-  courseOffering: ICourseOffering;
-  location: string;
-  rfidReaderId: string;
-  startTime: string;
-  endTime?: string;
-  status: 'active' | 'ended';
-  attendedStudents: number;
-  totalStudents: number;
+function locationLabel(session: AttendanceSession): string {
+  const loc = session.location_id;
+  if (!loc) return '—';
+  if (typeof loc === 'string') return loc;
+  return [loc.name, loc.roomNumber].filter(Boolean).join(' · ') || '—';
 }
 
 export function AttendanceSessions() {
   const { t } = useTranslation();
-  useAuthStore();
+  const navigate = useNavigate();
   const { success, error: showError } = useToastStore();
-  const [myCourses, setMyCourses] = useState<IEnrollment[]>([]);
-  const [sessions, setSessions] = useState<AttendanceSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [startingSession, setStartingSession] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [selectedLocation, setSelectedLocation] = useState<string>('');
-  const [availableLocations, setAvailableLocations] = useState<string[]>([]);
+  const { offerings, isLoading: offeringsLoading } = useMyTeachingOfferings();
+  const [selectedOffering, setSelectedOffering] = useState('');
+  const [conflictReason, setConflictReason] = useState('');
+  const [conflictOpen, setConflictOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const coursesData = await api.getMyCourses({ semester: 'current' }).catch(() => []);
-        setMyCourses(Array.isArray(coursesData) ? coursesData : []);
-        
-        // Mock sessions - in real app, fetch from API
-        const mockSessions: AttendanceSession[] = [
-          {
-            id: 'session-1',
-            courseOffering: coursesData[0]?.courseOffering || {} as ICourseOffering,
-            location: 'Hall 501',
-            rfidReaderId: 'RFID-001',
-            startTime: new Date().toISOString(),
-            status: 'active',
-            attendedStudents: 15,
-            totalStudents: 20,
-          },
-        ];
-        setSessions(mockSessions);
-        
-        // Mock locations - in real app, fetch from API
-        setAvailableLocations(['Hall 501', 'Hall 502', 'Lab 201', 'Lab 202']);
-      } catch (error) {
-        logger.error('Failed to fetch data', {
-          context: 'AttendanceSessions',
-          error,
-        });
-        showError(t('doctor.attendanceSessions.failedLoadData'));
-      } finally {
-        setLoading(false);
-      }
-    };
+  const sessionsQuery = useSessions(
+    { courseOffering_id: selectedOffering },
+    Boolean(selectedOffering)
+  );
+  const createSession = useCreateSession();
 
-    fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- fetch once, showError stable
+  const sessions = sessionsQuery.data?.items ?? [];
+  const active = useMemo(() => sessions.filter((s) => s.status === 'active'), [sessions]);
+  const ended = useMemo(() => sessions.filter((s) => s.status === 'ended'), [sessions]);
 
-  const handleStartSession = async () => {
-    if (!selectedCourse || !selectedLocation) {
-      showError(
-        t('doctor.attendanceSessions.selectCourseAndLocation')
-      );
+  const offeringOptions = [
+    { value: '', label: t('attendance5.common.selectCourse') },
+    ...offerings.map((o) => ({
+      value: o.id,
+      label: `${o.courseCode ?? ''} — ${o.courseTitle ?? o.id}`.trim(),
+    })),
+  ];
+
+  const handleStart = async (force = false) => {
+    if (!selectedOffering) {
+      showError(t('attendance5.sessions.selectCourseFirst'));
       return;
     }
-
+    if (force && !conflictReason.trim()) {
+      showError(t('attendance5.sessions.reasonRequiredSwitch'));
+      return;
+    }
     try {
-      setStartingSession(true);
-      
-      // In real app, call API to start session
-      // await api.startAttendanceSession({
-      //   courseOffering: selectedCourse,
-      //   location: selectedLocation,
-      //   rfidReaderId: 'RFID-001', // Would come from location selection
-      // });
-      
-      const course = myCourses.find(c => c.courseOffering?.id === selectedCourse);
-      const newSession: AttendanceSession = {
-        id: `session-${Date.now()}`,
-        courseOffering: course?.courseOffering || {} as ICourseOffering,
-        location: selectedLocation,
-        rfidReaderId: 'RFID-001',
-        startTime: new Date().toISOString(),
-        status: 'active',
-        attendedStudents: 0,
-        totalStudents: 20, // Would come from enrollment count
-      };
-      
-      setSessions([newSession, ...sessions]);
-      success(
-        t('doctor.attendanceSessions.startedSuccess')
-      );
-      
-      // Reset form
-      setSelectedCourse('');
-      setSelectedLocation('');
-    } catch (error) {
-      logger.error('Failed to start session', {
-        context: 'AttendanceSessions',
-        error,
+      const res = await createSession.mutateAsync({
+        courseOffering_id: selectedOffering,
+        ...(force ? { forceHallSwitch: true, hallSwitchReason: conflictReason.trim() } : {}),
       });
-      showError(t('doctor.attendanceSessions.failedStart'));
-    } finally {
-      setStartingSession(false);
+      if (res.outcome === 'conflict') {
+        setConflictOpen(true);
+        return;
+      }
+      setConflictOpen(false);
+      setConflictReason('');
+      if (res.outcome === 'alreadyActive') {
+        success(t('attendance5.sessions.alreadyActiveToast'));
+      } else {
+        success(
+          res.templateLoadStatus === 'qr_fallback'
+            ? t('attendance5.sessions.startedQrToast')
+            : t('attendance5.sessions.startedLoadedToast', { count: res.session?.templatesLoadedCount ?? 0 })
+        );
+      }
+      const id = res.session?._id;
+      if (id) navigate(`/dashboard/attendance/sessions/${id}`);
+      else void sessionsQuery.refetch();
+    } catch (err) {
+      showError(getApiErrorMessage(err, t('attendance5.sessions.startFailed')));
     }
   };
-
-  const handleStopSession = async (sessionId: string) => {
-    try {
-      // In real app, call API to stop session
-      // await api.stopAttendanceSession(sessionId);
-      
-      setSessions(sessions.map(s => 
-        s.id === sessionId 
-          ? { ...s, status: 'ended', endTime: new Date().toISOString() }
-          : s
-      ));
-      
-      success(
-        t('doctor.attendanceSessions.stoppedSuccess')
-      );
-    } catch (error) {
-      logger.error('Failed to stop session', {
-        context: 'AttendanceSessions',
-        error,
-      });
-      showError(t('doctor.attendanceSessions.failedStop'));
-    }
-  };
-
-  const activeSessions = sessions.filter(s => s.status === 'active');
-  const endedSessions = sessions.filter(s => s.status === 'ended');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {t('doctor.attendanceSessions.title')}
-        </h1>
-        <p className="text-gray-600 mt-1">
-          {t('doctor.attendanceSessions.subtitle')}
-        </p>
-      </div>
+      <PageHeader
+        title={t('attendance5.sessions.title')}
+        subtitle={t('attendance5.sessions.subtitle')}
+      />
 
-      {/* Start New Session */}
-      <Card className="border-2 border-primary-200 bg-primary-50/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Radio className="h-5 w-5 text-primary-600" />
-            {t('doctor.attendanceSessions.startNew')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('doctor.attendanceSessions.course')} *
-              </label>
-              <Select2
-                value={selectedCourse}
-                onChange={setSelectedCourse}
-                options={[
-                  { value: '', label: t('doctor.attendanceSessions.selectCoursePlaceholder') },
-                  ...myCourses.map(course => ({
-                    value: course.courseOffering?.id || '',
-                    label: `${course.courseOffering?.course?.code} - ${course.courseOffering?.course?.title}`,
-                  })),
-                ]}
-                placeholder={t('doctor.attendanceSessions.selectCoursePlaceholder')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('doctor.attendanceSessions.locationRfid')} *
-              </label>
-              <Select2
-                value={selectedLocation}
-                onChange={setSelectedLocation}
-                options={[
-                  { value: '', label: t('doctor.attendanceSessions.selectLocationPlaceholder') },
-                  ...availableLocations.map(loc => ({
-                    value: loc,
-                    label: loc,
-                  })),
-                ]}
-                placeholder={t('doctor.attendanceSessions.selectLocationPlaceholder')}
-              />
-            </div>
+      <SectionCard title={t('attendance5.sessions.startTitle')} subtitle={t('attendance5.sessions.startSubtitle')}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">{t('attendance5.common.course')}</label>
+            {offeringsLoading ? (
+              <div className="flex h-11 items-center"><Spinner size="sm" /></div>
+            ) : (
+              <Select2 value={selectedOffering} onChange={setSelectedOffering} options={offeringOptions} placeholder={t('attendance5.common.selectCourse')} />
+            )}
           </div>
           <Button
-            onClick={handleStartSession}
-            isLoading={startingSession}
-            disabled={!selectedCourse || !selectedLocation}
-            className="w-full md:w-auto"
+            onClick={() => handleStart(false)}
+            isLoading={createSession.isPending}
+            disabled={!selectedOffering}
           >
-            <Play className="h-4 w-4 mr-2" />
-            {t('doctor.attendanceSessions.startSession')}
+            <Play className="h-4 w-4" /> {t('attendance5.sessions.startBtn')}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
-      {/* Active Sessions */}
-      {activeSessions.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            {t('doctor.attendanceSessions.activeSessions')} ({activeSessions.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeSessions.map((session) => (
-              <Card key={session.id} className="border-2 border-green-200 bg-green-50/30">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Radio className="h-5 w-5 text-green-600 animate-pulse" />
-                      <span>{session.courseOffering.course?.code}</span>
-                    </CardTitle>
-                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                      {t('doctor.attendanceSessions.active')}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{session.courseOffering.course?.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span>{session.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Radio className="h-4 w-4" />
-                    <span>RFID: {session.rfidReaderId}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {t('doctor.attendanceSessions.started')} {formatDate(session.startTime)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {session.attendedStudents} / {session.totalStudents} {t('doctor.attendanceSessions.studentsWord')}
-                    </span>
-                  </div>
-                  <div className="pt-3 border-t border-gray-200">
-                    <Button
-                      variant="danger"
-                      onClick={() => handleStopSession(session.id)}
-                      className="w-full"
-                      size="sm"
-                    >
-                      <Square className="h-4 w-4 mr-2" />
-                      {t('doctor.attendanceSessions.stopSession')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Active sessions */}
+      <SectionCard
+        title={t('attendance5.sessions.activeTitle')}
+        action={active.length > 0 ? <Badge tone="success" dot>{t('attendance5.sessions.liveCount', { count: active.length })}</Badge> : undefined}
+        noPadding
+      >
+        {!selectedOffering ? (
+          <div className="p-5">
+            <EmptyState variant="bare" icon={Radio} title={t('attendance5.sessions.pickCourseTitle')} description={t('attendance5.sessions.pickCourseDesc')} />
+          </div>
+        ) : sessionsQuery.isLoading ? (
+          <div className="flex justify-center p-10"><Spinner /></div>
+        ) : active.length === 0 ? (
+          <div className="p-5">
+            <EmptyState variant="bare" icon={Radio} title={t('attendance5.sessions.noActiveTitle')} description={t('attendance5.sessions.noActiveDesc')} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+            {active.map((s) => (
+              <button
+                key={s._id}
+                onClick={() => navigate(`/dashboard/attendance/sessions/${s._id}`)}
+                className="card is-hoverable text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+                    <Radio className="h-4 w-4 animate-pulse text-emerald-500" /> {t('attendance5.sessions.liveSession')}
+                  </span>
+                  <Badge tone={s.templateLoadStatus === 'qr_fallback' ? 'gold' : 'brand'}>
+                    {s.templateLoadStatus === 'qr_fallback' ? (
+                      <><QrCode className="h-3 w-3" /> {t('attendance5.sessions.qrFallback')}</>
+                    ) : (
+                      <><Fingerprint className="h-3 w-3" /> {t('attendance5.sessions.loadedCount', { count: s.templatesLoadedCount })}</>
+                    )}
+                  </Badge>
+                </div>
+                <div className="mt-3 space-y-1.5 text-sm text-gray-500 dark:text-slate-400">
+                  <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {locationLabel(s)}</p>
+                  <p className="flex items-center gap-2"><Clock className="h-4 w-4" /> {t('attendance5.sessions.endsAt', { date: formatDate(s.expiresAt) })}</p>
+                </div>
+                <div className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-600 dark:text-accent-300">
+                  {t('attendance5.sessions.openMonitor')} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                </div>
+              </button>
             ))}
           </div>
-        </div>
+        )}
+      </SectionCard>
+
+      {/* Past sessions */}
+      {selectedOffering && ended.length > 0 && (
+        <SectionCard title={t('attendance5.sessions.pastTitle')} noPadding>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('attendance5.sessions.colLocation')}</TableHead>
+                <TableHead>{t('attendance5.sessions.colStarted')}</TableHead>
+                <TableHead>{t('attendance5.sessions.colEnded')}</TableHead>
+                <TableHead>{t('attendance5.sessions.colMode')}</TableHead>
+                <TableHead>{''}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ended.length === 0 ? (
+                <TableEmpty colSpan={5}>
+                  <EmptyState variant="bare" title={t('attendance5.sessions.noPast')} />
+                </TableEmpty>
+              ) : (
+                ended.map((s) => (
+                  <TableRow key={s._id} onClick={() => navigate(`/dashboard/attendance/sessions/${s._id}`)}>
+                    <TableCell>{locationLabel(s)}</TableCell>
+                    <TableCell>{formatDate(s.createdAt ?? '')}</TableCell>
+                    <TableCell>{s.endedAt ? formatDate(s.endedAt) : '—'}</TableCell>
+                    <TableCell>
+                      <Badge tone="neutral" size="sm">{s.templateLoadStatus === 'qr_fallback' ? t('attendance5.common.qr') : t('attendance5.common.fingerprint')}</Badge>
+                    </TableCell>
+                    <TableCell className="text-primary-600 dark:text-accent-300">{t('attendance5.sessions.viewReport')}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </SectionCard>
       )}
 
-      {/* Ended Sessions */}
-      {endedSessions.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-gray-400" />
-            {t('doctor.attendanceSessions.endedSessions')} ({endedSessions.length})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {endedSessions.map((session) => (
-              <Card key={session.id} className="border border-gray-200">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <Radio className="h-5 w-5 text-gray-400" />
-                      <span>{session.courseOffering.course?.code}</span>
-                    </CardTitle>
-                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                      {t('doctor.attendanceSessions.ended')}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <BookOpen className="h-4 w-4" />
-                    <span>{session.courseOffering.course?.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span>{session.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {t('doctor.attendanceSessions.from')} {formatDate(session.startTime)}
-                    </span>
-                  </div>
-                  {session.endTime && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                      {t('doctor.attendanceSessions.to')} {formatDate(session.endTime)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {session.attendedStudents} / {session.totalStudents} {t('doctor.attendanceSessions.studentsWord')}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* No Sessions Message */}
-      {sessions.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Radio className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">
-              {t('doctor.attendanceSessions.noSessions')}
-            </p>
-            <p className="text-sm text-gray-500">
-              {t('doctor.attendanceSessions.noSessionsHint')}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Hall conflict modal */}
+      <Modal
+        isOpen={conflictOpen}
+        onClose={() => setConflictOpen(false)}
+        title={t('attendance5.sessions.conflictTitle')}
+        subtitle={t('attendance5.sessions.conflictSubtitle')}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setConflictOpen(false)}>{t('attendance5.common.cancel')}</Button>
+            <Button variant="danger" isLoading={createSession.isPending} onClick={() => handleStart(true)}>
+              {t('attendance5.sessions.forceSwitch')}
+            </Button>
+          </>
+        }
+      >
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">{t('attendance5.sessions.reasonForSwitch')}</label>
+        <textarea
+          className="field"
+          rows={3}
+          value={conflictReason}
+          onChange={(e) => setConflictReason(e.target.value)}
+          placeholder={t('attendance5.sessions.reasonSwitchPh')}
+        />
+      </Modal>
     </div>
   );
 }
-

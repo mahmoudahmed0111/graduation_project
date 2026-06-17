@@ -2,6 +2,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { StatCard, type StatTone } from '@/components/ui/StatCard';
 import { useState, useEffect } from 'react';
 import {
   GraduationCap,
@@ -11,8 +12,6 @@ import {
   Clock,
   Bell,
   FileText,
-  TrendingUp,
-  TrendingDown,
   CheckCircle2,
   AlertCircle,
   Building2,
@@ -141,49 +140,44 @@ export function StudentDashboard() {
   const gpaProgress = (STATS.gpa / 4.0) * 100;
   const creditsProgress = (STATS.creditsEarned / STATS.creditsRequired) * 100;
 
-  const statCards = [
+  const statCards: Array<{
+    label: string;
+    value: string | number;
+    delta: string;
+    icon: typeof Award;
+    tone: StatTone;
+    hint: string;
+  }> = [
     {
       label: t('student.studentDashboard.cumulativeGpa'),
       value: STATS.gpa.toFixed(2),
       delta: STATS.gpaDelta,
-      trend: 'up',
       icon: Award,
-      gradient: 'from-amber-400 to-amber-600',
-      bg: 'bg-amber-50',
-      iconColor: 'text-amber-600',
+      tone: 'gold',
       hint: t('student.studentDashboard.outOf400'),
     },
     {
       label: t('student.studentDashboard.creditsEarned'),
       value: STATS.creditsEarned,
       delta: STATS.creditsDelta,
-      trend: 'up',
       icon: BookOpen,
-      gradient: 'from-blue-500 to-blue-600',
-      bg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
+      tone: 'brand',
       hint: t('student.studentDashboard.ofRequired', { required: STATS.creditsRequired }),
     },
     {
       label: t('student.studentDashboard.attendanceLabel'),
       value: `${STATS.attendance}%`,
       delta: STATS.attendanceDelta,
-      trend: 'up',
       icon: CheckCircle2,
-      gradient: 'from-emerald-500 to-emerald-600',
-      bg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
+      tone: 'success',
       hint: t('student.studentDashboard.thisSemester'),
     },
     {
       label: t('student.studentDashboard.classRank'),
       value: `#${STATS.rank}`,
       delta: '+3',
-      trend: 'up',
       icon: Trophy,
-      gradient: 'from-purple-500 to-purple-600',
-      bg: 'bg-purple-50',
-      iconColor: 'text-purple-600',
+      tone: 'info',
       hint: t('student.studentDashboard.ofStudents', { total: STATS.rankTotal }),
     },
   ];
@@ -239,35 +233,20 @@ export function StudentDashboard() {
         </div>
       </div>
 
-      {/* Main Stat Cards */}
+      {/* Main Stat Cards — reusable StatCard primitive (brand-toned, staggered) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-          const TrendIcon = stat.trend === 'up' ? TrendingUp : TrendingDown;
-          const trendColor = stat.trend === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
-          return (
-            <div
-              key={stat.label}
-              className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className={`absolute -top-6 -right-6 h-24 w-24 rounded-full bg-gradient-to-br ${stat.gradient} opacity-10 group-hover:opacity-20 transition-opacity`} />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-2.5 rounded-xl ${stat.bg}`}>
-                    <Icon className={`h-5 w-5 ${stat.iconColor}`} />
-                  </div>
-                  <div className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${trendColor}`}>
-                    <TrendIcon className="h-3 w-3" />
-                    {stat.delta}
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                <p className="text-xs text-gray-500">{stat.hint}</p>
-              </div>
-            </div>
-          );
-        })}
+        {statCards.map((stat, i) => (
+          <StatCard
+            key={stat.label}
+            index={i}
+            label={stat.label}
+            value={stat.value}
+            delta={stat.delta}
+            hint={stat.hint}
+            icon={stat.icon}
+            tone={stat.tone}
+          />
+        ))}
       </div>
 
       {/* Progress + Achievements row */}

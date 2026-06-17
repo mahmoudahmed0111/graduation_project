@@ -502,6 +502,14 @@ const publicSite = {
       readArticle: 'Read article',
       noResults: 'No articles found.',
     },
+    legal: {
+      onThisPage: 'On this page',
+      print: 'Print / Save PDF',
+      backToTop: 'Back to top',
+      questionsTitle: 'Still have questions?',
+      questionsSubtitle: 'Our team is happy to clarify anything in this document.',
+      contactUs: 'Contact us',
+    },
     privacyPolicy: {
       sec1Title: '1. Information We Collect',
       sec1B1: 'We collect information you provide directly to us, such as when you create an account, apply for admission, register for events, or contact us. This may include your name, email, phone number, national ID, academic records, and payment information.',
@@ -1142,6 +1150,14 @@ const publicSite = {
       readMore: 'اقرأ المزيد',
       readArticle: 'قراءة المقال',
       noResults: 'لا توجد مقالات.',
+    },
+    legal: {
+      onThisPage: 'في هذه الصفحة',
+      print: 'طباعة / حفظ PDF',
+      backToTop: 'العودة إلى الأعلى',
+      questionsTitle: 'هل لا تزال لديك أسئلة؟',
+      questionsSubtitle: 'يسعد فريقنا بتوضيح أي شيء في هذا المستند.',
+      contactUs: 'تواصل معنا',
     },
     privacyPolicy: {
       sec1Title: '1. المعلومات التي نجمعها',

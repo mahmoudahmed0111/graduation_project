@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,16 @@ import { useToastStore } from '@/store/toastStore';
 import { ArrowLeft, Save, UserPlus } from 'lucide-react';
 
 const phoneRe = /^01[0125]\d{8}$/;
+
+/** A grid cell with a label + control. `full` makes it span the full row. */
+function Field({ label, children, full }: { label: string; children: ReactNode; full?: boolean }) {
+  return (
+    <div className={full ? 'sm:col-span-2' : undefined}>
+      <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">{label}</label>
+      {children}
+    </div>
+  );
+}
 
 const baseSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -177,106 +187,110 @@ export function CreateUserPage(props?: CreateUserPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link to={cancelTo}>
           <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-1 h-4 w-4" />
+            <ArrowLeft className="mr-1 h-4 w-4 rtl:rotate-180" />
             {t('admin.createUserPage.back')}
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.createUserPage.title')}</h1>
-        </div>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {t('admin.createUserPage.title')}
+        </h1>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-            <UserPlus className="h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
+            <UserPlus className="h-5 w-5 shrink-0 text-primary-600 dark:text-accent-300" />
             {t('admin.createUserPage.details')}
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
             {t('admin.createUserPage.tempPasswordHint')}
           </p>
-          <form onSubmit={handleSubmit((d) => void onSubmit(d))} className="space-y-4">
-            {isUA && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.collegeRequired')}</label>
-                <Select2
-                  value={collegeId ?? ''}
-                  onChange={(v) => {
-                    setValue('college_id', v);
-                    setValue('department_id', '');
-                  }}
-                  options={collegeOptions.map((o) => ({ value: o.value, label: o.label }))}
-                  error={errors.college_id?.message}
-                />
-              </div>
-            )}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.fullNameRequired')}</label>
-              <Input {...register('name')} error={errors.name?.message} />
-            </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit((d) => void onSubmit(d))}>
+            {/* Short fields laid out two-per-row (col-6); wide fields span full. */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.emailRequired')}</label>
+              {isUA && (
+                <Field label={t('admin.createUserPage.collegeRequired')}>
+                  <Select2
+                    value={collegeId ?? ''}
+                    onChange={(v) => {
+                      setValue('college_id', v);
+                      setValue('department_id', '');
+                    }}
+                    options={collegeOptions.map((o) => ({ value: o.value, label: o.label }))}
+                    error={errors.college_id?.message}
+                  />
+                </Field>
+              )}
+
+              <Field label={t('admin.createUserPage.fullNameRequired')}>
+                <Input {...register('name')} error={errors.name?.message} />
+              </Field>
+
+              <Field label={t('admin.createUserPage.emailRequired')}>
                 <Input type="email" {...register('email')} error={errors.email?.message} />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.phoneRequired')}</label>
+              </Field>
+
+              <Field label={t('admin.createUserPage.phoneRequired')}>
                 <Input placeholder="01xxxxxxxxx" {...register('phoneNumber')} error={errors.phoneNumber?.message} />
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('admin.createUserPage.nationalIdRequired')}
-              </label>
-              <Input {...register('nationalID')} error={errors.nationalID?.message} />
-            </div>
-            {!lockRole && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.roleRequired')}</label>
+              </Field>
+
+              <Field label={t('admin.createUserPage.nationalIdRequired')}>
+                <Input {...register('nationalID')} error={errors.nationalID?.message} />
+              </Field>
+
+              {!lockRole && (
+                <Field label={t('admin.createUserPage.roleRequired')}>
+                  <Select2
+                    value={watch('role')}
+                    onChange={(v) => setValue('role', v as FormData['role'])}
+                    options={roleOptions.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
+                    error={errors.role?.message}
+                    searchable={false}
+                  />
+                </Field>
+              )}
+
+              <Field label={t('admin.createUserPage.departmentOptional')}>
                 <Select2
-                  value={watch('role')}
-                  onChange={(v) => setValue('role', v as FormData['role'])}
-                  options={roleOptions.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
-                  error={errors.role?.message}
-                  searchable={false}
+                  value={watch('department_id') ?? ''}
+                  onChange={(v) => setValue('department_id', v)}
+                  options={departmentOptions}
+                  error={errors.department_id?.message}
                 />
-              </div>
-            )}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('admin.createUserPage.departmentOptional')}
-              </label>
-              <Select2
-                value={watch('department_id') ?? ''}
-                onChange={(v) => setValue('department_id', v)}
-                options={departmentOptions}
-                error={errors.department_id?.message}
-              />
+              </Field>
+
+              <Field label={t('admin.createUserPage.photoOptional')} full>
+                <input
+                  id="create-user-photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml,image/bmp"
+                  className="block w-full rounded-xl border border-gray-300 text-sm text-gray-600 file:mr-4 file:border-0 file:bg-primary-50 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-primary-700 dark:border-dark-border dark:text-gray-400 dark:file:bg-primary-950/40 dark:file:text-primary-300"
+                />
+              </Field>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.createUserPage.photoOptional')}</label>
-              <input
-                id="create-user-photo"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/svg+xml,image/bmp"
-                className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 dark:text-gray-400 dark:file:bg-primary-950/40 dark:file:text-primary-300"
-              />
+
+            {/* Footer action bar */}
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-gray-100 pt-5 dark:border-dark-border">
+              <Link to={cancelTo}>
+                <Button type="button" variant="outline">
+                  {t('admin.createUserPage.back')}
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={createUser.isPending || (isUA && collegeOptions.length === 0)}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {createUser.isPending ? t('admin.createUserPage.saving') : t('admin.createUserPage.create')}
+              </Button>
             </div>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={createUser.isPending || (isUA && collegeOptions.length === 0)}
-              className="w-full sm:w-auto"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {createUser.isPending ? t('admin.createUserPage.saving') : t('admin.createUserPage.create')}
-            </Button>
           </form>
         </CardContent>
       </Card>

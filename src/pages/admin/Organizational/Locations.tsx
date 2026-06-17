@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Input } from '@/components/ui/Input';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Button } from '@/components/ui/Button';
 import { Select2 } from '@/components/ui/Select2';
-import { MapPin, Search, Plus, Edit, Archive, RotateCcw, Wrench } from 'lucide-react';
+import { MapPin, Plus, Edit, Archive, RotateCcw, Wrench } from 'lucide-react';
 import { ILocation } from '@/types';
 import { useToastStore } from '@/store/toastStore';
 import { api, getApiErrorMessage } from '@/lib/api';
@@ -180,54 +180,32 @@ export function Locations() {
 
   return (
     <AdminPageShell titleStack={{ section: t('admin.organizationalLocations.section'), page: t('admin.organizationalLocations.page') }}>
-      <Card>
+      <Card bare>
         <CardHeader>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <div className="relative w-full min-w-0 sm:max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder={t('admin.organizationalLocations.searchPlaceholder')}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select2
-                value={typeFilter}
-                onChange={setTypeFilter}
-                options={TYPE_OPTS}
-                placeholder={t('admin.organizationalLocations.type')}
-                className="sm:w-44"
-              />
-              <Select2
-                value={statusFilter}
-                onChange={setStatusFilter}
-                options={STATUS_OPTS}
-                placeholder={t('admin.organizationalLocations.status')}
-                className="sm:w-44"
-              />
-              {canFilterArchive && (
-                <Select2
-                  value={archiveFilter}
-                  onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')}
-                  options={ARCHIVE_FILTER_OPTS}
-                  placeholder={t('admin.organizationalLocations.archiveFilter')}
-                  className="sm:w-52"
-                />
-              )}
-            </div>
-            {canMutate && (
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                <Link to="/dashboard/organizational/locations/create">
-                  <Button className="inline-flex items-center gap-2 rounded-xl">
-                    <Plus className="h-4 w-4" />
-                    {t('admin.organizationalLocations.addLocation')}
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder={t('admin.organizationalLocations.searchPlaceholder')}
+            actions={canMutate ? (
+              <Link to="/dashboard/organizational/locations/create">
+                <Button className="inline-flex items-center gap-2 rounded-xl">
+                  <Plus className="h-4 w-4" />
+                  {t('admin.organizationalLocations.addLocation')}
+                </Button>
+              </Link>
+            ) : undefined}
+            activeFilterCount={[typeFilter, statusFilter, canFilterArchive && archiveFilter !== 'all' ? archiveFilter : ''].filter(Boolean).length}
+            onClearFilters={() => { setTypeFilter(''); setStatusFilter(''); setArchiveFilter('all'); }}
+            filters={
+              <>
+                <Select2 label={t('admin.organizationalLocations.type')} value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTS} placeholder={t('admin.organizationalLocations.type')} searchable={false} />
+                <Select2 label={t('admin.organizationalLocations.status')} value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTS} placeholder={t('admin.organizationalLocations.status')} searchable={false} />
+                {canFilterArchive && (
+                  <Select2 label={t('admin.organizationalLocations.archiveFilter')} value={archiveFilter} onChange={(v) => setArchiveFilter(v as 'all' | 'true' | 'false')} options={ARCHIVE_FILTER_OPTS} placeholder={t('admin.organizationalLocations.archiveFilter')} searchable={false} />
+                )}
+              </>
+            }
+          />
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (

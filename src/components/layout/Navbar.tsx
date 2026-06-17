@@ -8,7 +8,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { Select } from '../ui/Select';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '@/lib/utils';
-import { INotification } from '@/types';
+import { useNotificationStore } from '@/store/notificationStore';
 import { formatTimeAgo } from '@/utils/formatters';
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -30,29 +30,10 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const notificationsDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Mock notifications - in real app, fetch from API
-  const [notifications] = useState<INotification[]>([
-    {
-      id: '1',
-      title: t('chrome.navbar.mockNotif1Title'),
-      message: t('chrome.navbar.mockNotif1Message'),
-      type: 'info',
-      read: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-      link: '/dashboard/assessments/my-assessments',
-    },
-    {
-      id: '2',
-      title: t('chrome.navbar.mockNotif2Title'),
-      message: t('chrome.navbar.mockNotif2Message'),
-      type: 'success',
-      read: false,
-      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
-      link: '/dashboard/enrollments',
-    },
-  ]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // Live notifications (Phase 6 — fed by the realtime socket layer).
+  const notifications = useNotificationStore((s) => s.items);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const markNotificationRead = useNotificationStore((s) => s.markRead);
 
   const canSwitchTenant = user?.role === 'superAdmin' || user?.role === 'admin';
 
@@ -206,24 +187,18 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                     </div>
                   ) : (
                     <div className="py-2">
-                      {notifications.slice(0, 2).map((notification) => (
+                      {notifications.slice(0, 5).map((notification) => (
                         <Link
                           key={notification.id}
-                          to={notification.link || '#'}
-                          onClick={() => setShowNotificationsDropdown(false)}
+                          to="/dashboard/notifications"
+                          onClick={() => { markNotificationRead(notification.id); setShowNotificationsDropdown(false); }}
                           className={cn(
                             'block px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors border-b border-gray-100 dark:border-slate-800 last:border-b-0',
                             !notification.read && 'bg-blue-50/50 dark:bg-primary-900/20'
                           )}
                         >
                           <div className="flex items-start gap-3">
-                            <div className={cn(
-                              'flex-shrink-0 w-2 h-2 rounded-full mt-2',
-                              notification.type === 'info' && 'bg-blue-500',
-                              notification.type === 'success' && 'bg-green-500',
-                              notification.type === 'warning' && 'bg-yellow-500',
-                              notification.type === 'error' && 'bg-red-500'
-                            )} />
+                            <div className="flex-shrink-0 w-2 h-2 rounded-full mt-2 bg-primary-500 dark:bg-accent-400" />
                             <div className="flex-1 min-w-0">
                               <p className={cn(
                                 'text-sm font-medium text-gray-900 dark:text-slate-100 mb-1',
@@ -232,7 +207,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                                 {notification.title}
                               </p>
                               <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-2 mb-1">
-                                {notification.message}
+                                {notification.content}
                               </p>
                               <p className="text-xs text-gray-400 dark:text-slate-500">
                                 {formatTimeAgo(notification.createdAt)}

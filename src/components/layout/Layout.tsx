@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
+import { PageTransition } from './PageTransition';
 import { cn } from '@/lib/utils';
 import { RequiresPasswordChangeGate } from '@/components/auth/RequiresPasswordChangeGate';
 import { AuthMeSync } from '@/components/auth/AuthMeSync';
+import { RealtimeProvider } from '@/components/realtime/RealtimeProvider';
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,7 +26,7 @@ export function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/80 dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/60 dark:from-dark-bg dark:to-dark-bg transition-colors duration-300">
       <Sidebar
         isOpen={sidebarOpen}
         isExpanded={sidebarExpanded}
@@ -43,9 +44,10 @@ export function Layout() {
       >
         <Navbar onToggleSidebar={handleToggleSidebar} />
         <AuthMeSync />
-        <main className="p-4 lg:p-8 max-w-[1600px] mx-auto">
+        <RealtimeProvider />
+        <main className="p-4 sm:p-6 lg:p-8 max-w-content mx-auto">
           <RequiresPasswordChangeGate>
-            <Outlet />
+            <PageTransition />
           </RequiresPasswordChangeGate>
         </main>
       </div>

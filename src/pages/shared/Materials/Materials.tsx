@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueries } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Download, ExternalLink, FileText, Search } from 'lucide-react';
+import { ArrowRight, BookOpen, Download, ExternalLink, FileText } from 'lucide-react';
 import { AdminPageShell } from '@/components/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Select2 } from '@/components/ui/Select2';
 import { useToastStore } from '@/store/toastStore';
 import { useAuthStore } from '@/store/authStore';
@@ -154,44 +154,41 @@ export function Materials() {
     >
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder={t('shared.materials.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="w-full sm:w-72">
-              <Select2
-                value={selectedCourse}
-                onChange={setSelectedCourse}
-                options={[
-                  { value: 'all', label: t('shared.materials.allCourses') },
-                  ...offerings.map((o) => ({ value: o.id, label: `${o.code} — ${o.title}` })),
-                ]}
-                placeholder={t('shared.materials.allCourses')}
-              />
-            </div>
-            <div className="w-full sm:w-56">
-              <Select2
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                options={[
-                  { value: 'all', label: t('shared.materials.allCategories') },
-                  { value: 'Lectures', label: t('shared.materials.catLectures') },
-                  { value: 'Sheets', label: t('shared.materials.catSheets') },
-                  { value: 'Readings', label: t('shared.materials.catReadings') },
-                  { value: 'Links', label: t('shared.materials.catLinks') },
-                ]}
-                placeholder={t('shared.materials.allCategories')}
-                searchable={false}
-              />
-            </div>
-          </div>
+          <FilterBar
+            search={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={t('shared.materials.searchPlaceholder')}
+            activeFilterCount={[selectedCourse !== 'all' ? selectedCourse : '', selectedCategory !== 'all' ? selectedCategory : ''].filter(Boolean).length}
+            onClearFilters={() => { setSelectedCourse('all'); setSelectedCategory('all'); }}
+            filters={
+              <>
+                <Select2
+                  label={t('shared.materials.allCourses')}
+                  value={selectedCourse}
+                  onChange={setSelectedCourse}
+                  options={[
+                    { value: 'all', label: t('shared.materials.allCourses') },
+                    ...offerings.map((o) => ({ value: o.id, label: `${o.code} — ${o.title}` })),
+                  ]}
+                  placeholder={t('shared.materials.allCourses')}
+                />
+                <Select2
+                  label={t('shared.materials.allCategories')}
+                  value={selectedCategory}
+                  onChange={setSelectedCategory}
+                  options={[
+                    { value: 'all', label: t('shared.materials.allCategories') },
+                    { value: 'Lectures', label: t('shared.materials.catLectures') },
+                    { value: 'Sheets', label: t('shared.materials.catSheets') },
+                    { value: 'Readings', label: t('shared.materials.catReadings') },
+                    { value: 'Links', label: t('shared.materials.catLinks') },
+                  ]}
+                  placeholder={t('shared.materials.allCategories')}
+                  searchable={false}
+                />
+              </>
+            }
+          />
         </CardContent>
       </Card>
 

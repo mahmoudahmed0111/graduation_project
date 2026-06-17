@@ -112,13 +112,21 @@ export function Select2({
         {searchable && (
           <div
             className={cn(
-              'border-b p-3',
+              'border-b p-2',
               'border-gray-100 bg-gray-50',
               'dark:border-dark-border dark:bg-dark-surface-2'
             )}
           >
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400 dark:text-gray-300" />
+            {/* Borderless search: icon + input in a flex row (RTL-safe, no
+                absolute positioning). A focus ring gives feedback without a border. */}
+            <div
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-3',
+                'bg-white ring-1 ring-transparent focus-within:ring-2 focus-within:ring-primary-500/60',
+                'dark:bg-dark-elev dark:focus-within:ring-accent-400/60'
+              )}
+            >
+              <Search className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-300" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -126,12 +134,11 @@ export function Select2({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t('chrome.select.searchPlaceholder')}
                 className={cn(
-                  'w-full rounded-lg border py-2 pl-10 pr-4 text-sm transition-colors',
-                  'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400',
-                  'focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500',
-                  'dark:border-dark-border dark:bg-dark-elev dark:text-gray-100 dark:placeholder:text-gray-500',
-                  'dark:focus:ring-accent-400/60'
+                  'w-full min-w-0 border-0 bg-transparent py-2 text-sm outline-none',
+                  'text-gray-900 placeholder:text-gray-400 focus:ring-0',
+                  'dark:text-gray-100 dark:placeholder:text-gray-500'
                 )}
+                style={{ boxShadow: 'none' }}
               />
             </div>
           </div>

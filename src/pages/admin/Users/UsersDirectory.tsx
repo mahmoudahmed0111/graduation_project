@@ -5,7 +5,8 @@ import { AdminPageShell } from '@/components/admin';
 import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
 import { IndeterminateCheckbox } from '@/components/admin/AdminIndexBulkBar';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
+import { FilterBar } from '@/components/ui/FilterBar';
 import { Input } from '@/components/ui/Input';
 import { Pagination } from '@/components/ui/Pagination';
 import { Select2 } from '@/components/ui/Select2';
@@ -19,7 +20,7 @@ import { phase2DepartmentDisplayName, phase2UserId, phase2UserIsActive } from '@
 import { apiRoleForSegment, listPathForSegment, type UserListSegment } from '@/lib/userListPaths';
 import { useAuthStore } from '@/store/authStore';
 import type { Phase2ApiUser } from '@/types/phase2-user';
-import { Eye, FileUp, Fingerprint, Plus, Search, Users } from 'lucide-react';
+import { Eye, FileUp, Fingerprint, Plus, Users } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: 'false', labelKey: 'admin.usersDirectory.statusActive' },
@@ -300,45 +301,41 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
     <AdminPageShell titleStack={{ section: t('admin.usersDirectory.userManagement'), page: pageTitle }}>
       <NationalIdLookupModal isOpen={lookupOpen} onClose={() => setLookupOpen(false)} />
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full min-w-0 sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder={t('admin.usersDirectory.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                className="inline-flex items-center gap-2 rounded-xl"
-                onClick={() => setLookupOpen(true)}
-              >
-                <Fingerprint className="h-4 w-4" />
-                {t('admin.usersDirectory.lookup')}
-              </Button>
-              <Link to="/dashboard/users/bulk-import">
-                <Button type="button" variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
-                  <FileUp className="h-4 w-4" />
-                  {t('admin.usersDirectory.bulkImport')}
-                </Button>
-              </Link>
-              <Link to={createPath}>
-                <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
-                  <Plus className="h-4 w-4" />
-                  {segment === 'students' ? t('admin.usersDirectory.addStudent') : t('admin.usersDirectory.createUser')}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </CardHeader>
+      <Card bare>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-dark-border dark:bg-dark-bg/50 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <FilterBar
+            search={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={t('admin.usersDirectory.searchPlaceholder')}
+            actions={
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="inline-flex items-center gap-2 rounded-xl"
+                  onClick={() => setLookupOpen(true)}
+                >
+                  <Fingerprint className="h-4 w-4" />
+                  {t('admin.usersDirectory.lookup')}
+                </Button>
+                <Link to="/dashboard/users/bulk-import">
+                  <Button type="button" variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
+                    <FileUp className="h-4 w-4" />
+                    {t('admin.usersDirectory.bulkImport')}
+                  </Button>
+                </Link>
+                <Link to={createPath}>
+                  <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
+                    <Plus className="h-4 w-4" />
+                    {segment === 'students' ? t('admin.usersDirectory.addStudent') : t('admin.usersDirectory.createUser')}
+                  </Button>
+                </Link>
+              </>
+            }
+            activeFilterCount={[isArchived !== 'false' ? isArchived : '', collegeId, departmentId, sort !== '-createdAt' ? sort : '', academicStatus, levelStr].filter(Boolean).length}
+            onClearFilters={() => patchParams({ isArchived: null, college_id: null, department_id: null, sort: null, academicStatus: null, level: null, page: null })}
+            filters={
+              <>
             {segment === 'admins' && isUA && (
               <Select2
                 label={t('admin.usersDirectory.adminType')}
@@ -405,7 +402,9 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                 />
               </div>
             )}
-          </div>
+              </>
+            }
+          />
 
           <UserBulkActionsPanel
             selectedIds={[...selected]}

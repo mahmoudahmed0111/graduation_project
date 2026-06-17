@@ -16,8 +16,9 @@ export default defineConfig({
     // Dev proxy: avoid CORS by forwarding /api to the backend API
     proxy: {
       '/api': {
-        target: 'http://4.232.14.242:3000',
+        target: 'https://smart-backend-fmapeqeueha2gkbv.austriaeast-01.azurewebsites.net',
         changeOrigin: true,
+        secure: true,
       },
     },
   },

@@ -26,7 +26,11 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  /* Tactile press feedback on every button — matches the CRM's whileTap. */
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
   }
 
   .btn-primary {
@@ -260,14 +264,14 @@
   }
 
   .input {
-    @apply w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    @apply w-full rounded-xl border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 px-3.5 py-2.5 text-sm transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
 
   /* Reusable field control for native <select>, <textarea>, and bespoke
      <input> elements that don't go through the <Input> component. Light
      mode unchanged; dark mode aligns to the Beni-Suef brand identity. */
   .field {
-    @apply w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors;
+    @apply w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors;
     @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
 
@@ -278,8 +282,40 @@
   }
 
   .card {
-    @apply rounded-lg bg-white shadow-sm border border-gray-200 p-6 relative text-gray-700;
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    @apply rounded-2xl bg-white border border-gray-200/80 p-6 relative text-gray-700;
+    box-shadow: theme('boxShadow.card');
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Soft surface utility — a card without the default padding, for custom
+     layouts (tables, list panels, hero banners). Mirrors the CRM .card-soft. */
+  .card-soft {
+    @apply rounded-2xl bg-white border border-gray-200/80;
+    box-shadow: theme('boxShadow.card');
+  }
+  .dark .card-soft {
+    background-color: #101e3a;
+    border-color: #243b6b;
+  }
+
+  /* ─── Navbar-matched surfaces ──────────────────────────────────────────
+     Per design: form containers on create/edit pages, and the collapsible
+     filter panels, share the Navbar's background colour
+     (white in light mode, slate-900 in dark mode). `.surface-navbar` is the
+     explicit utility; the `:has(form)` / `form .card` rules cover every
+     create/edit page automatically (both <Card><form> and <form><Card>). */
+  .surface-navbar { background-color: #ffffff; }
+  .dark .surface-navbar { background-color: #0f172a; }
+
+  .card:has(form),
+  form .card {
+    background-color: #ffffff;
+  }
+  .dark .card:has(form),
+  .dark form .card {
+    background-color: #0f172a;
   }
 
   /* Brand-aligned dark mode. We use raw hex values to avoid relying on
@@ -365,45 +401,7 @@
     background-color: #101e3a;
     border-color: #243b6b;
     color: #d1d5db;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: inherit;
-    background: linear-gradient(45deg,
-      theme('colors.primary.500'),
-      theme('colors.accent.500'),
-      theme('colors.primary.600'),
-      theme('colors.accent.500'),
-      theme('colors.primary.500')
-    );
-    background-size: 400% 400%;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: -1;
-    animation: borderFill 3s ease infinite;
-  }
-
-  .card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: inherit;
-    background: white;
-    z-index: -1;
-  }
-
-  .dark .card::after {
-    background-color: #101e3a;
+    box-shadow: 0 12px 30px -16px rgb(0 0 0 / 0.55), 0 2px 8px -4px rgb(0 0 0 / 0.4);
   }
 
   /* Force brand-aligned dark backgrounds on every Tailwind utility that uses
@@ -430,22 +428,19 @@
   .dark .dark\:divide-dark-border > :not([hidden]) ~ :not([hidden]) { border-color: #243b6b !important; }
   .dark .dark\:divide-brand-border > :not([hidden]) ~ :not([hidden]) { border-color: #243b6b !important; }
 
-  .card:hover {
-    @apply shadow-md;
-    border-color: transparent;
+  /* Premium hover: subtle lift + deeper shadow + brand-tinted border.
+     Replaces the CPU-heavy animated gradient border (which repainted every
+     card continuously) with a GPU-friendly transform + shadow transition. */
+  .card-hover:hover,
+  .card.is-hoverable:hover {
+    transform: translateY(-3px);
+    box-shadow: theme('boxShadow.card-hover');
+    border-color: rgb(0 85 204 / 0.25);
   }
-
-  .card:hover::before {
-    opacity: 1;
-  }
-
-  @keyframes borderFill {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
+  .dark .card-hover:hover,
+  .dark .card.is-hoverable:hover {
+    border-color: rgb(255 215 0 / 0.30);
+    box-shadow: 0 20px 44px -18px rgb(0 0 0 / 0.55);
   }
 
   /* Modern simple animations */
@@ -536,6 +531,90 @@
   .animate-slide-down {
     animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  /* ─── Route / page transition ──────────────────────────────────────────
+     Applied to the keyed page wrapper in Layout so every navigation plays a
+     fast, professional enter animation (fade + 12px rise). */
+  .page-enter {
+    animation: enterUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* ─── Staggered list/grid reveal ──────────────────────────────────────
+     Add `.stagger` to a container; direct children fade up in sequence. */
+  .stagger > * {
+    animation: enterUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.02s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.06s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.10s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.14s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.18s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.22s; }
+  .stagger > *:nth-child(7) { animation-delay: 0.26s; }
+  .stagger > *:nth-child(8) { animation-delay: 0.30s; }
+
+  @keyframes enterUp {
+    from { opacity: 0; transform: translate3d(0, 12px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  /* ─── Skeleton shimmer ────────────────────────────────────────────────
+     A single reusable loading surface. Light + dark variants share the same
+     animated sheen so loading states feel consistent everywhere. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: #e8edf4;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.65) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  .dark .skeleton {
+    background-color: #18294a;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.06) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Honor reduced-motion preferences: kill the looping/entrance animations
+     for users who opt out, while keeping layout intact. */
+  @media (prefers-reduced-motion: reduce) {
+    .page-enter,
+    .stagger > *,
+    .skeleton,
+    .animate-fade-in-up,
+    .animate-fade-in,
+    .animate-scale-in {
+      animation: none !important;
+    }
+  }
+}
+
+/* ─── Refined scrollbars (app-wide) ─────────────────────────────────────── */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .thin-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  .thin-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; border-radius: 9999px;
+  }
+  .dark .thin-scrollbar { scrollbar-color: #2f4e8c transparent; }
+  .dark .thin-scrollbar::-webkit-scrollbar-thumb { background-color: #2f4e8c; }
 }
 
 /* ─── RTL support ──────────────────────────────────────────────────────
