@@ -253,13 +253,13 @@ export function DoctorDashboard() {
         {kpiCards.map((k) => {
           const Icon = k.icon;
           return (
-            <div key={k.label} className="flex items-center gap-3 rounded-xl bg-white border border-gray-100 p-4 shadow-sm">
+            <div key={k.label} className="flex items-center gap-3 rounded-xl bg-white border border-gray-100 p-4 shadow-sm dark:bg-dark-surface dark:border-dark-border">
               <div className={`p-2.5 rounded-lg ${k.bg}`}>
                 <Icon className={`h-5 w-5 ${k.color}`} />
               </div>
               <div>
-                <p className="text-xs text-gray-500">{k.label}</p>
-                <p className="text-lg font-bold text-gray-900">{k.value}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{k.label}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">{k.value}</p>
               </div>
             </div>
           );
@@ -523,17 +523,17 @@ export function DoctorDashboard() {
             {ANNOUNCEMENTS.map((a) => {
               const priorityStyles =
                 a.priority === 'high'
-                  ? 'border-l-red-500 bg-red-50/50'
+                  ? 'border-l-red-500 bg-red-50/50 dark:bg-red-500/10'
                   : a.priority === 'medium'
-                  ? 'border-l-amber-500 bg-amber-50/50'
-                  : 'border-l-gray-300 bg-gray-50/50';
+                  ? 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-500/10'
+                  : 'border-l-gray-300 bg-gray-50/50 dark:border-l-dark-border dark:bg-dark-surface-2';
               return (
                 <div
                   key={a.id}
                   className={`border-l-4 ${priorityStyles} pl-3 py-2.5 pr-3 rounded-r-lg hover:shadow-sm transition-all`}
                 >
-                  <h4 className="font-medium text-sm text-gray-900 mb-1">{a.title}</h4>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <h4 className="font-medium text-sm text-gray-900 dark:text-white mb-1">{a.title}</h4>
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400">
                     <span>{a.author}</span>
                     <span>{a.time}</span>
                   </div>

@@ -4,6 +4,7 @@ import { BarChart } from '@/components/charts/BarChart';
 import { LineChart } from '@/components/charts/LineChart';
 import { PieChart } from '@/components/charts/PieChart';
 import { AreaChart } from '@/components/charts/AreaChart';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 
 /**
  * Analytics Dashboard Page
@@ -33,12 +34,10 @@ export function Analytics() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('shared.analytics.title')}</h1>
-        <p className="text-gray-600 mt-1">{t('shared.analytics.subtitle')}</p>
-      </div>
-
+    <AdminPageShell
+      title={t('shared.analytics.title')}
+      subtitle={t('shared.analytics.subtitle')}
+    >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Example Bar Chart */}
         <ChartCard title={t('shared.analytics.barTitle')} description={t('shared.analytics.replaceWithData')}>
@@ -86,6 +85,6 @@ export function Analytics() {
           />
         </ChartCard>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

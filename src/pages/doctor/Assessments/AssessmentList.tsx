@@ -5,6 +5,9 @@ import { Archive, Edit, FileQuestion, Plus, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useAssessments, useArchiveAssessment } from '@/hooks/queries/usePhase4Assessments';
 import { useToastStore } from '@/store/toastStore';
 import { useAuthStore } from '@/store/authStore';
@@ -35,32 +38,30 @@ export function AssessmentList() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.assessmentList.title')}</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.assessmentList.subtitle')}</p>
-        </div>
-        {isDoctor && (
+    <AdminPageShell
+      title={t('doctor.assessmentList.title')}
+      subtitle={t('doctor.assessmentList.subtitle')}
+      actions={
+        isDoctor ? (
           <Link to={`/dashboard/course-offerings/${offeringId}/assessments/create`}>
             <Button>
               <Plus className="h-4 w-4 mr-2" /> {t('doctor.assessmentList.newAssessment')}
             </Button>
           </Link>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       {list.isLoading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+        <div className="flex min-h-[280px] items-center justify-center">
+          <Spinner size="lg" label={t('common.loading')} />
         </div>
       ) : (list.data?.items.length ?? 0) === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileQuestion className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('doctor.assessmentList.noAssessments')}</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileQuestion}
+          title={t('doctor.assessmentList.noAssessments')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {(list.data?.items ?? []).map((a) => (
@@ -68,30 +69,30 @@ export function AssessmentList() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>{a.title}</span>
-                  <span className="text-sm font-normal text-gray-500">{t('doctor.assessmentList.points', { pts: a.totalPoints })}</span>
+                  <span className="text-sm font-normal text-gray-500 dark:text-slate-400">{t('doctor.assessmentList.points', { pts: a.totalPoints })}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {a.description && <p className="text-sm text-gray-600">{a.description}</p>}
-                <div className="text-sm text-gray-600 grid grid-cols-2 gap-2">
+                {a.description && <p className="text-sm text-gray-600 dark:text-slate-400">{a.description}</p>}
+                <div className="text-sm text-gray-600 dark:text-slate-400 grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-gray-500">{t('doctor.assessmentList.due')} </span>
+                    <span className="text-gray-500 dark:text-slate-500">{t('doctor.assessmentList.due')} </span>
                     {new Date(a.dueDate).toLocaleString()}
                   </div>
                   <div>
-                    <span className="text-gray-500">{t('doctor.assessmentList.timeLimit')} </span>
+                    <span className="text-gray-500 dark:text-slate-500">{t('doctor.assessmentList.timeLimit')} </span>
                     {a.timeLimitMinutes ? t('doctor.assessmentList.minutes', { min: a.timeLimitMinutes }) : t('doctor.assessmentList.untimed')}
                   </div>
                   <div>
-                    <span className="text-gray-500">{t('doctor.assessmentList.status')} </span>
+                    <span className="text-gray-500 dark:text-slate-500">{t('doctor.assessmentList.status')} </span>
                     {a.settings?.acceptingResponses === false ? (
-                      <span className="text-red-600 font-medium">{t('doctor.assessmentList.closed')}</span>
+                      <span className="text-red-600 dark:text-red-400 font-medium">{t('doctor.assessmentList.closed')}</span>
                     ) : (
-                      <span className="text-green-600 font-medium">{t('doctor.assessmentList.accepting')}</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">{t('doctor.assessmentList.accepting')}</span>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-dark-border">
                   <Button
                     variant="outline"
                     size="sm"
@@ -126,6 +127,8 @@ export function AssessmentList() {
           ))}
         </div>
       )}
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         isOpen={Boolean(confirmTarget)}
@@ -137,6 +140,6 @@ export function AssessmentList() {
         variant="warning"
         isLoading={archive.isPending}
       />
-    </div>
+    </AdminPageShell>
   );
 }

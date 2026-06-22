@@ -2,17 +2,19 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
-import { Input } from '@/components/ui/Input';
 import { Select2 } from '@/components/ui/Select2';
 import { Button } from '@/components/ui/Button';
 import { Pagination } from '@/components/ui/Pagination';
-import { 
-  Search, 
-  Users, 
-  BookOpen, 
-  Mail, 
+import { FilterBar } from '@/components/ui/FilterBar';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Spinner } from '@/components/ui/Spinner';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
+import {
+  Users,
+  BookOpen,
+  Mail,
   GraduationCap,
   Eye,
   Download,
@@ -55,7 +57,7 @@ export function TeacherRoster() {
         setLoading(true);
         // Fetch doctor's courses
         const coursesData = await api.getCourseOfferings({});
-        const doctorCourses = coursesData.filter(course => 
+        const doctorCourses = coursesData.filter(course =>
           course.doctors.some(doc => doc.id === user?.id)
         );
         setCourses(doctorCourses);
@@ -229,20 +231,27 @@ export function TeacherRoster() {
     fetchData();
   }, [user, showError]);
 
+  // Only consider students that have a valid course offering (null-safe).
+  const studentsWithOffering = students.filter((student) => Boolean(student.courseOffering));
+
   // Filter students
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = 
+  const filteredStudents = studentsWithOffering.filter(student => {
+    const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.studentId.includes(searchQuery) ||
       student.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCourse = !selectedCourse || 
-      student.courseOffering.id === selectedCourse;
+    const matchesCourse = !selectedCourse ||
+      student.courseOffering?.id === selectedCourse;
     return matchesSearch && matchesCourse;
   });
 
-  // Get unique courses for filter
+  // Get unique courses for filter (null-safe)
   const uniqueCourses = Array.from(
-    new Map(students.map(s => [s.courseOffering.id, s.courseOffering])).values()
+    new Map(
+      studentsWithOffering
+        .filter((s) => s.courseOffering?.id)
+        .map((s) => [s.courseOffering.id, s.courseOffering])
+    ).values()
   );
 
   // Pagination
@@ -253,86 +262,74 @@ export function TeacherRoster() {
   );
 
   const getGradeColor = (grade: number) => {
-    if (grade >= 90) return 'text-green-600 font-semibold';
-    if (grade >= 80) return 'text-blue-600 font-semibold';
-    if (grade >= 70) return 'text-yellow-600 font-semibold';
-    return 'text-red-600 font-semibold';
+    if (grade >= 90) return 'text-green-600 dark:text-green-400 font-semibold';
+    if (grade >= 80) return 'text-blue-600 dark:text-blue-400 font-semibold';
+    if (grade >= 70) return 'text-yellow-600 dark:text-yellow-400 font-semibold';
+    return 'text-red-600 dark:text-red-400 font-semibold';
   };
 
   const getAttendanceColor = (attendance: number) => {
-    if (attendance >= 90) return 'text-green-600';
-    if (attendance >= 75) return 'text-yellow-600';
-    return 'text-red-600';
+    if (attendance >= 90) return 'text-green-600 dark:text-green-400';
+    if (attendance >= 75) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {t('doctor.teacherRoster.loadingRoster')}
-          </p>
-        </div>
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {t('doctor.teacherRoster.title')}
-          </h1>
-          <p className="text-gray-600 mt-1">
-            {t('doctor.teacherRoster.subtitle')}
-          </p>
-        </div>
+    <AdminPageShell
+      title={t('doctor.teacherRoster.title')}
+      subtitle={t('doctor.teacherRoster.subtitle')}
+      actions={
         <Button variant="secondary" className="flex items-center gap-2 rounded-full px-4 py-2 shadow-sm">
           <Download className="h-4 w-4" />
           {t('doctor.teacherRoster.exportRoster')}
         </Button>
-      </div>
-
+      }
+    >
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm dark:border-dark-border dark:bg-dark-surface">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-slate-400">
                   {t('doctor.teacherRoster.totalStudents')}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{students.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{students.length}</p>
               </div>
               <Users className="h-8 w-8 text-primary-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm dark:border-dark-border dark:bg-dark-surface">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-slate-400">
                   {t('doctor.teacherRoster.activeCourses')}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{uniqueCourses.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{uniqueCourses.length}</p>
               </div>
               <BookOpen className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm dark:border-dark-border dark:bg-dark-surface">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-slate-400">
                   {t('doctor.teacherRoster.avgAttendance')}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {students.length > 0 
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                  {students.length > 0
                     ? Math.round(students.reduce((sum, s) => sum + (s.attendance || 0), 0) / students.length)
                     : 0}%
                 </p>
@@ -341,15 +338,15 @@ export function TeacherRoster() {
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 shadow-sm dark:border-dark-border dark:bg-dark-surface">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-slate-400">
                   {t('doctor.teacherRoster.avgGrade')}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {students.length > 0 
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                  {students.length > 0
                     ? Math.round(students.reduce((sum, s) => sum + (s.grade || 0), 0) / students.length)
                     : 0}%
                 </p>
@@ -361,22 +358,21 @@ export function TeacherRoster() {
       </div>
 
       {/* Filters and Search */}
-      <Card className="rounded-2xl border border-gray-100 shadow-sm">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-72">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder={t('doctor.teacherRoster.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10"
-                />
-              </div>
+      <Card bare>
+        <CardContent className="space-y-6">
+          <FilterBar
+            search={searchQuery}
+            onSearchChange={(value) => {
+              setSearchQuery(value);
+              setCurrentPage(1);
+            }}
+            searchPlaceholder={t('doctor.teacherRoster.searchPlaceholder')}
+            activeFilterCount={selectedCourse ? 1 : 0}
+            onClearFilters={() => {
+              setSelectedCourse('');
+              setCurrentPage(1);
+            }}
+            filters={
               <Select2
                 value={selectedCourse}
                 onChange={(value) => {
@@ -390,152 +386,144 @@ export function TeacherRoster() {
                   },
                   ...uniqueCourses.map((course) => ({
                     value: course.id,
-                    label: `${course.course.code} - ${course.course.title}`,
+                    label: `${course.course?.code} - ${course.course?.title}`,
                   })),
                 ]}
                 placeholder={t('doctor.teacherRoster.filterByCourse')}
-                className="w-full md:w-72"
               />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50/80">
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colStudentId')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colName')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colEmail')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colCourse')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colYearSem')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colAttendance')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colGrade')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colStatus')}
-                  </TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {t('doctor.teacherRoster.colActions')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedStudents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="!px-0 !py-16">
-                      <div className="flex flex-col items-center justify-center w-full min-h-[200px]">
-                        <Users className="h-16 w-16 text-gray-300 mb-4" />
-                        <p className="text-lg font-semibold text-gray-900 mb-1">
-                          {t('doctor.teacherRoster.noStudentsFound')}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {t('doctor.teacherRoster.adjustSearch')}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedStudents.map((student) => (
-                    <TableRow key={student.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{student.studentId}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-primary-600" />
-                          </div>
-                          <span className="font-medium">{student.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{student.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium">{student.courseOffering.course.code}</p>
-                            <p className="text-xs text-gray-500">{student.courseOffering.course.title}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">
-                          {t('doctor.teacherRoster.yearSemFormat', { year: student.year, sem: student.semester })}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${getAttendanceColor(student.attendance || 0)}`}>
-                          {student.attendance || 0}%
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {student.grade !== undefined ? (
-                          <span className={getGradeColor(student.grade)}>
-                            {student.grade}%
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                          student.status === 'enrolled' ? 'bg-green-100 text-green-700' :
-                          student.status === 'passed' ? 'bg-blue-100 text-blue-700' :
-                          student.status === 'failed' ? 'bg-red-100 text-red-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {student.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Link to={`/dashboard/students/${student.id}`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              title={t('doctor.teacherRoster.viewDetails')}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+            }
+          />
 
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-gray-200">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
+          {paginatedStudents.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title={t('doctor.teacherRoster.noStudentsFound')}
+              description={t('doctor.teacherRoster.adjustSearch')}
+            />
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50/80 dark:bg-dark-surface-2">
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colStudentId')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colName')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colEmail')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colCourse')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colYearSem')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colAttendance')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colGrade')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colStatus')}
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                        {t('doctor.teacherRoster.colActions')}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedStudents.map((student) => (
+                      <TableRow key={student.id} className="hover:bg-gray-50 dark:hover:bg-dark-surface-2">
+                        <TableCell className="font-medium">{student.studentId}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                              <User className="h-4 w-4 text-primary-600 dark:text-primary-300" />
+                            </div>
+                            <span className="font-medium">{student.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm">{student.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-gray-400" />
+                            <div>
+                              <p className="text-sm font-medium">{student.courseOffering?.course?.code}</p>
+                              <p className="text-xs text-gray-500 dark:text-slate-400">{student.courseOffering?.course?.title}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">
+                            {t('doctor.teacherRoster.yearSemFormat', { year: student.year, sem: student.semester })}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${getAttendanceColor(student.attendance || 0)}`}>
+                            {student.attendance || 0}%
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {student.grade !== undefined ? (
+                            <span className={getGradeColor(student.grade)}>
+                              {student.grade}%
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                            student.status === 'enrolled' ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400' :
+                            student.status === 'passed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400' :
+                            student.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400' :
+                            'bg-gray-100 text-gray-700 dark:bg-dark-surface-2 dark:text-slate-300'
+                          }`}>
+                            {student.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Link to={`/dashboard/students/${student.id}`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                title={t('doctor.teacherRoster.viewDetails')}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="pt-2">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
-    </div>
+    </AdminPageShell>
   );
 }

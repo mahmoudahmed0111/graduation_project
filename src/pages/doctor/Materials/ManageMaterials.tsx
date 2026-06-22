@@ -8,12 +8,15 @@ import {
   ExternalLink,
   Download,
   Plus,
-  Search,
   Pencil,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { categoryColors, categoryIcons } from '@/constants/ui';
 import { useToastStore } from '@/store/toastStore';
@@ -89,192 +92,172 @@ export function ManageMaterials() {
     }
   };
 
-  const offeringSelector = !params.offeringId && (
-    <Card>
-      <CardContent className="p-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.manageMaterials.courseOffering')}</label>
-        <select
-          value={pickerOfferingId}
-          onChange={(e) => setPickerOfferingId(e.target.value)}
-          disabled={offeringsLoading}
-          className="field"
-        >
-          <option value="">{offeringsLoading ? t('doctor.manageMaterials.loadingOfferings') : t('doctor.manageMaterials.selectOffering')}</option>
-          {offerings.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
-              {o.semester ? ` (${o.semester}${o.academicYear ? ' ' + o.academicYear : ''})` : ''}
-            </option>
-          ))}
-        </select>
-      </CardContent>
-    </Card>
-  );
+  const offeringPicker = !params.offeringId ? (
+    <div className="w-full sm:w-80">
+      <Select2
+        label={t('doctor.manageMaterials.courseOffering')}
+        value={pickerOfferingId}
+        onChange={setPickerOfferingId}
+        placeholder={offeringsLoading ? t('doctor.manageMaterials.loadingOfferings') : t('doctor.manageMaterials.selectOffering')}
+        options={offerings.map((o) => ({
+          value: o.id,
+          label:
+            (o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id) +
+            (o.semester ? ` (${o.semester}${o.academicYear ? ' ' + o.academicYear : ''})` : ''),
+        }))}
+      />
+    </div>
+  ) : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.manageMaterials.title')}</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.manageMaterials.subtitle')}</p>
-        </div>
-        {offeringId && (
+    <AdminPageShell
+      titleStack={{ section: t('nav.materials'), page: t('doctor.manageMaterials.title') }}
+      subtitle={t('doctor.manageMaterials.subtitle')}
+      actions={
+        offeringId ? (
           <Link to={`/dashboard/course-offerings/${offeringId}/materials/upload`}>
-            <Button className="flex items-center gap-2">
+            <Button className="inline-flex items-center gap-2 rounded-xl">
               <Plus className="h-4 w-4" />
               {t('doctor.manageMaterials.uploadMaterial')}
             </Button>
           </Link>
-        )}
-      </div>
+        ) : undefined
+      }
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
+          {offeringPicker}
 
-      {offeringSelector}
-
-      {!offeringId ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('doctor.manageMaterials.selectToView')}</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder={t('doctor.manageMaterials.searchPlaceholder')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as (typeof CATEGORY_OPTIONS)[number])}
-                  className="field"
-                >
-                  {CATEGORY_OPTIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c === 'all' ? t('doctor.manageMaterials.allCategories') : c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {list.isLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
-            </div>
-          ) : list.isError ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <p className="text-red-600">{t('doctor.manageMaterials.failedLoad')}</p>
-              </CardContent>
-            </Card>
-          ) : filtered.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No materials found.</p>
-                <Link to={`/dashboard/course-offerings/${offeringId}/materials/upload`}>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Upload first material
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+          {!offeringId ? (
+            <EmptyState icon={BookOpen} title={t('doctor.manageMaterials.selectToView')} />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((material) => {
-                const Icon = categoryIcons[material.category];
-                const editable = canModify(material);
-                return (
-                  <Card key={material._id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-2 rounded-lg ${categoryColors[material.category]}`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <span className={`text-xs font-medium px-2 py-1 rounded ${categoryColors[material.category]}`}>
-                            {material.category}
-                          </span>
-                        </div>
-                        {editable && (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() =>
-                                navigate(`/dashboard/course-offerings/${offeringId}/materials/${material._id}/edit`)
-                              }
-                              title={t('doctor.manageMaterials.edit')}
-                            >
-                              <Pencil className="h-4 w-4 text-gray-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => setConfirmTarget(material)}
-                              title={t('doctor.manageMaterials.delete')}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{material.title}</h3>
-                      {material.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{material.description}</p>
-                      )}
+            <>
+              <FilterBar
+                search={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder={t('doctor.manageMaterials.searchPlaceholder')}
+                activeFilterCount={category !== 'all' ? 1 : 0}
+                onClearFilters={() => setCategory('all')}
+                filters={
+                  <Select2
+                    label={t('doctor.manageMaterials.allCategories')}
+                    value={category}
+                    onChange={(v) => setCategory(v as (typeof CATEGORY_OPTIONS)[number])}
+                    options={CATEGORY_OPTIONS.map((c) => ({
+                      value: c,
+                      label: c === 'all' ? t('doctor.manageMaterials.allCategories') : c,
+                    }))}
+                    searchable={false}
+                  />
+                }
+              />
 
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          {material.isExternalLink ? (
-                            <>
-                              <ExternalLink className="h-4 w-4" />
-                              <span>{t('doctor.manageMaterials.externalLink')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <FileText className="h-4 w-4" />
-                              <span>{(material.fileType ?? 'file').toUpperCase()}</span>
-                            </>
+              {list.isLoading ? (
+                <div className="flex min-h-[280px] items-center justify-center">
+                  <Spinner size="lg" label={t('common.loading')} />
+                </div>
+              ) : list.isError ? (
+                <EmptyState icon={FileText} title={t('doctor.manageMaterials.failedLoad')} />
+              ) : filtered.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title={t('doctor.manageMaterials.noMaterials')}
+                  action={
+                    <Link to={`/dashboard/course-offerings/${offeringId}/materials/upload`}>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t('doctor.manageMaterials.uploadFirst')}
+                      </Button>
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filtered.map((material) => {
+                    const Icon = categoryIcons[material.category];
+                    const editable = canModify(material);
+                    return (
+                      <Card key={material._id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className={`p-2 rounded-lg ${categoryColors[material.category]}`}>
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <span className={`text-xs font-medium px-2 py-1 rounded ${categoryColors[material.category]}`}>
+                                {material.category}
+                              </span>
+                            </div>
+                            {editable && (
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() =>
+                                    navigate(`/dashboard/course-offerings/${offeringId}/materials/${material._id}/edit`)
+                                  }
+                                  title={t('doctor.manageMaterials.edit')}
+                                >
+                                  <Pencil className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => setConfirmTarget(material)}
+                                  title={t('doctor.manageMaterials.delete')}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{material.title}</h3>
+                          {material.description && (
+                            <p className="text-sm text-gray-600 dark:text-slate-400 mb-3 line-clamp-2">{material.description}</p>
                           )}
-                        </div>
-                        <a
-                          href={material.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
-                        >
-                          {material.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-                          {material.isExternalLink ? t('doctor.manageMaterials.open') : t('doctor.manageMaterials.download')}
-                        </a>
-                      </div>
 
-                      <div className="mt-2 text-xs text-gray-400">
-                        {uploaderName(material)} · {new Date(material.createdAt).toLocaleDateString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-dark-border">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-500">
+                              {material.isExternalLink ? (
+                                <>
+                                  <ExternalLink className="h-4 w-4" />
+                                  <span>{t('doctor.manageMaterials.externalLink')}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <FileText className="h-4 w-4" />
+                                  <span>{(material.fileType ?? 'file').toUpperCase()}</span>
+                                </>
+                              )}
+                            </div>
+                            <a
+                              href={material.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                            >
+                              {material.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+                              {material.isExternalLink ? t('doctor.manageMaterials.open') : t('doctor.manageMaterials.download')}
+                            </a>
+                          </div>
+
+                          <div className="mt-2 text-xs text-gray-400 dark:text-slate-500">
+                            {uploaderName(material)} · {new Date(material.createdAt).toLocaleDateString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         isOpen={Boolean(confirmTarget)}
@@ -286,6 +269,6 @@ export function ManageMaterials() {
         variant="danger"
         isLoading={remove.isPending}
       />
-    </div>
+    </AdminPageShell>
   );
 }

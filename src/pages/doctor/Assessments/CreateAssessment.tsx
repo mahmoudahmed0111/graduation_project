@@ -5,6 +5,8 @@ import { Plus, Save, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select2 } from '@/components/ui/Select2';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { useCreateAssessment } from '@/hooks/queries/usePhase4Assessments';
 import { useMyTeachingOfferings } from '@/hooks/queries/useMyOfferings';
@@ -188,12 +190,11 @@ export function CreateAssessment() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.createAssessment.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.createAssessment.subtitle')}</p>
-      </div>
-
+    <div className="max-w-5xl mx-auto">
+      <AdminPageShell
+        title={t('doctor.createAssessment.title')}
+        subtitle={t('doctor.createAssessment.subtitle')}
+      >
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
@@ -201,22 +202,16 @@ export function CreateAssessment() {
           </CardHeader>
           <CardContent className="space-y-4">
             {!params.offeringId && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.createAssessment.courseOfferingLabel')} *</label>
-                <select
-                  value={offeringId}
-                  onChange={(e) => setOfferingId(e.target.value)}
-                  disabled={offeringsLoading}
-                  className="field"
-                >
-                  <option value="">{offeringsLoading ? t('doctor.createAssessment.loading') : t('doctor.createAssessment.selectCourse')}</option>
-                  {offerings.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select2
+                label={`${t('doctor.createAssessment.courseOfferingLabel')} *`}
+                value={offeringId}
+                onChange={setOfferingId}
+                options={offerings.map((o) => ({
+                  value: o.id,
+                  label: o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id,
+                }))}
+                placeholder={offeringsLoading ? t('doctor.createAssessment.loading') : t('doctor.createAssessment.selectCourse')}
+              />
             )}
 
             <Input label={t('doctor.createAssessment.titleLabel')} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('doctor.createAssessment.titlePlaceholder')} />
@@ -297,20 +292,13 @@ export function CreateAssessment() {
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.createAssessment.typeLabel')}</label>
-                    <select
-                      value={q.questionType}
-                      onChange={(e) => onTypeChange(idx, e.target.value as Phase4QuestionType)}
-                      className="field"
-                    >
-                      {QUESTION_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select2
+                    label={t('doctor.createAssessment.typeLabel')}
+                    value={q.questionType}
+                    onChange={(value) => onTypeChange(idx, value as Phase4QuestionType)}
+                    options={QUESTION_TYPES.map((type) => ({ value: type, label: type }))}
+                    searchable={false}
+                  />
                   <label className="flex items-center gap-2 mt-7">
                     <input
                       type="checkbox"
@@ -453,6 +441,7 @@ export function CreateAssessment() {
           </Button>
         </div>
       </form>
+      </AdminPageShell>
     </div>
   );
 }

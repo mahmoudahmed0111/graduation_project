@@ -203,9 +203,30 @@ function App() {
             }
           />
           <Route path="courses/all" element={<AllCourses />} />
-          <Route path="courses/my-courses" element={<MyCourses />} />
-          <Route path="courses/enroll" element={<EnrollCourse />} />
-          <Route path="enrollments" element={<Enrollments />} />
+          <Route
+            path="courses/my-courses"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <MyCourses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="courses/enroll"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <EnrollCourse />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="enrollments"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Enrollments />
+              </ProtectedRoute>
+            }
+          />
           {/* Materials — aggregated cross-course view + legacy flat routes (Phase 4 wired) */}
           <Route path="materials" element={<Materials />} />
           <Route
@@ -246,8 +267,22 @@ function App() {
           <Route path="course-offerings/:offeringId/materials/:id" element={<MaterialDetail />} />
 
           {/* Assessments */}
-          <Route path="assessments/my-assessments" element={<MyAssessments />} />
-          <Route path="assessments/submissions" element={<MySubmissions />} />
+          <Route
+            path="assessments/my-assessments"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <MyAssessments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="assessments/submissions"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <MySubmissions />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="assessments/create"
             element={
@@ -343,7 +378,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="attendance" element={<Attendance />} />
+          <Route
+            path="attendance"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Attendance />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="attendance/sessions"
             element={

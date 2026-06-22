@@ -232,16 +232,8 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
   const doctorNavItems: NavItem[] = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { path: '/dashboard/roster', label: t('nav.roster'), icon: Users, roles: ['doctor', 'teacher', 'admin'] },
-    { 
-      path: '/dashboard/courses', 
-      label: t('nav.courses'), 
-      icon: BookOpen,
-      children: [
-        { path: '/dashboard/courses/my-courses', label: t('nav.myCourses'), icon: BookOpen },
-      ]
-    },
-    { 
-      path: '/dashboard/materials', 
+    {
+      path: '/dashboard/materials',
       label: t('nav.materials'), 
       icon: FileText,
       children: [
@@ -255,7 +247,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       label: t('nav.assessments'), 
       icon: ClipboardList,
       children: [
-        { path: '/dashboard/assessments/my-assessments', label: t('nav.myAssessments'), icon: ClipboardList },
         { path: '/dashboard/assessments/create', label: t('nav.createAssessment'), icon: ClipboardList, roles: ['doctor', 'teacher'] },
         { path: '/dashboard/assessments/grade', label: t('nav.gradeSubmissions'), icon: ClipboardList },
       ]
@@ -265,7 +256,6 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       label: t('nav.attendance'), 
       icon: Clock,
       children: [
-        { path: '/dashboard/attendance', label: t('nav.attendanceReports'), icon: Clock },
         { path: '/dashboard/attendance/sessions', label: t('nav.manageSessions'), icon: UserCheck },
       ]
     },

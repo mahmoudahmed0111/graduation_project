@@ -8,6 +8,8 @@ import { Upload, FileText, X, Link as LinkIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select2 } from '@/components/ui/Select2';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { useCreateMaterial } from '@/hooks/queries/usePhase4Materials';
 import { useMyTeachingOfferings } from '@/hooks/queries/useMyOfferings';
@@ -130,15 +132,12 @@ export function UploadMaterial() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.uploadMaterial.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          {t('doctor.uploadMaterial.subtitle', { offering: offeringLabel ?? t('doctor.uploadMaterial.aCourseOffering') })}
-        </p>
-      </div>
-
-      <Card>
+    <AdminPageShell
+      titleStack={{ section: t('nav.materials'), page: t('doctor.uploadMaterial.title') }}
+      subtitle={t('doctor.uploadMaterial.subtitle', { offering: offeringLabel ?? t('doctor.uploadMaterial.aCourseOffering') })}
+    >
+      <div className="max-w-3xl mx-auto">
+      <Card bare>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-primary-600" />
@@ -148,25 +147,18 @@ export function UploadMaterial() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {!params.offeringId && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t('doctor.uploadMaterial.courseOfferingLabel')}
-                </label>
-                <select
-                  value={offeringId}
-                  onChange={(e) => setOfferingId(e.target.value)}
-                  disabled={offeringsLoading}
-                  className="field"
-                >
-                  <option value="">{offeringsLoading ? t('doctor.uploadMaterial.loading') : t('doctor.uploadMaterial.selectCourse')}</option>
-                  {offerings.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
-                      {o.semester ? ` (${o.semester}${o.academicYear ? ' ' + o.academicYear : ''})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select2
+                label={t('doctor.uploadMaterial.courseOfferingLabel')}
+                value={offeringId}
+                onChange={setOfferingId}
+                placeholder={offeringsLoading ? t('doctor.uploadMaterial.loading') : t('doctor.uploadMaterial.selectCourse')}
+                options={offerings.map((o) => ({
+                  value: o.id,
+                  label:
+                    (o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id) +
+                    (o.semester ? ` (${o.semester}${o.academicYear ? ' ' + o.academicYear : ''})` : ''),
+                }))}
+              />
             )}
 
             <Input label={t('doctor.uploadMaterial.titleLabel')} placeholder={t('doctor.uploadMaterial.titlePlaceholder')} {...register('title')} error={errors.title?.message} />
@@ -207,24 +199,18 @@ export function UploadMaterial() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.uploadMaterial.categoryLabel')}</label>
-              <select
-                {...register('category')}
-                className="field"
-              >
-                {isExternalLink ? (
-                  <option value="Links">Links</option>
-                ) : (
-                  fileCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))
-                )}
-              </select>
-              {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>}
-            </div>
+            <Select2
+              label={t('doctor.uploadMaterial.categoryLabel')}
+              value={category}
+              onChange={(v) => setValue('category', v as FormValues['category'], { shouldValidate: true })}
+              options={
+                isExternalLink
+                  ? [{ value: 'Links', label: 'Links' }]
+                  : fileCategories.map((c) => ({ value: c, label: c }))
+              }
+              searchable={false}
+              error={errors.category?.message}
+            />
 
             {isExternalLink ? (
               <Input
@@ -284,6 +270,7 @@ export function UploadMaterial() {
           </form>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminPageShell>
   );
 }

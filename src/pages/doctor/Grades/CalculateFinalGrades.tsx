@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { logger } from '@/lib/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
@@ -200,34 +203,27 @@ export function CalculateFinalGrades() {
   };
 
   const getGradeColor = (grade: number) => {
-    if (grade >= 90) return 'text-green-600 font-semibold';
-    if (grade >= 80) return 'text-blue-600 font-semibold';
-    if (grade >= 70) return 'text-yellow-600 font-semibold';
-    return 'text-red-600 font-semibold';
+    if (grade >= 90) return 'text-green-600 dark:text-green-400 font-semibold';
+    if (grade >= 80) return 'text-blue-600 dark:text-blue-400 font-semibold';
+    if (grade >= 70) return 'text-yellow-600 dark:text-yellow-400 font-semibold';
+    return 'text-red-600 dark:text-red-400 font-semibold';
   };
 
   const getLetterColor = (letter: string) => {
-    if (letter.startsWith('A')) return 'bg-green-100 text-green-800';
-    if (letter.startsWith('B')) return 'bg-blue-100 text-blue-800';
-    if (letter.startsWith('C')) return 'bg-yellow-100 text-yellow-800';
-    if (letter.startsWith('D')) return 'bg-orange-100 text-orange-800';
-    return 'bg-red-100 text-red-800';
+    if (letter.startsWith('A')) return 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-400';
+    if (letter.startsWith('B')) return 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-400';
+    if (letter.startsWith('C')) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-400';
+    if (letter.startsWith('D')) return 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-400';
+    return 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400';
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {t('doctor.calculateFinalGrades.title')}
-          </h1>
-          <p className="text-gray-600 mt-1">
-            {t('doctor.calculateFinalGrades.subtitle')}
-          </p>
-        </div>
-        {students.length > 0 && (
-          <div className="flex gap-2">
+    <AdminPageShell
+      title={t('doctor.calculateFinalGrades.title')}
+      subtitle={t('doctor.calculateFinalGrades.subtitle')}
+      actions={
+        students.length > 0 ? (
+          <>
             <Button
               variant="secondary"
               onClick={() => {
@@ -245,10 +241,12 @@ export function CalculateFinalGrades() {
               <Save className="h-4 w-4 mr-2" />
               {t('doctor.calculateFinalGrades.saveGrades')}
             </Button>
-          </div>
-        )}
-      </div>
-
+          </>
+        ) : undefined
+      }
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       {/* Course Selection */}
       <Card>
         <CardHeader>
@@ -285,11 +283,11 @@ export function CalculateFinalGrades() {
 
       {/* Grading Policy Info */}
       {selectedCourse && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <h3 className="font-semibold text-blue-900">
+              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h3 className="font-semibold text-blue-900 dark:text-blue-300">
                 {t('doctor.calculateFinalGrades.gradingPolicy')}
               </h3>
             </div>
@@ -307,32 +305,32 @@ export function CalculateFinalGrades() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                   {policy.attendance && (
                     <div>
-                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.attendance')}</span>
-                      <span className="font-semibold ml-1">{policy.attendance}%</span>
+                      <span className="text-gray-600 dark:text-slate-400">{t('doctor.calculateFinalGrades.attendance')}</span>
+                      <span className="font-semibold ml-1 dark:text-white">{policy.attendance}%</span>
                     </div>
                   )}
                   {policy.midterm && (
                     <div>
-                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.midterm')}</span>
-                      <span className="font-semibold ml-1">{policy.midterm}%</span>
+                      <span className="text-gray-600 dark:text-slate-400">{t('doctor.calculateFinalGrades.midterm')}</span>
+                      <span className="font-semibold ml-1 dark:text-white">{policy.midterm}%</span>
                     </div>
                   )}
                   {policy.assignments && (
                     <div>
-                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.assignments')}</span>
-                      <span className="font-semibold ml-1">{policy.assignments}%</span>
+                      <span className="text-gray-600 dark:text-slate-400">{t('doctor.calculateFinalGrades.assignments')}</span>
+                      <span className="font-semibold ml-1 dark:text-white">{policy.assignments}%</span>
                     </div>
                   )}
                   {policy.project && (
                     <div>
-                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.project')}</span>
-                      <span className="font-semibold ml-1">{policy.project}%</span>
+                      <span className="text-gray-600 dark:text-slate-400">{t('doctor.calculateFinalGrades.project')}</span>
+                      <span className="font-semibold ml-1 dark:text-white">{policy.project}%</span>
                     </div>
                   )}
                   {policy.finalExam && (
                     <div>
-                      <span className="text-gray-600">{t('doctor.calculateFinalGrades.finalExam')}</span>
-                      <span className="font-semibold ml-1">{policy.finalExam}%</span>
+                      <span className="text-gray-600 dark:text-slate-400">{t('doctor.calculateFinalGrades.finalExam')}</span>
+                      <span className="font-semibold ml-1 dark:text-white">{policy.finalExam}%</span>
                     </div>
                   )}
                 </div>
@@ -344,25 +342,21 @@ export function CalculateFinalGrades() {
 
       {/* Students Grades Table */}
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex min-h-[280px] items-center justify-center">
+          <Spinner size="lg" label={t('common.loading')} />
         </div>
       ) : students.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">
-              {t('doctor.calculateFinalGrades.selectCourseToView')}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={GraduationCap}
+          title={t('doctor.calculateFinalGrades.selectCourseToView')}
+        />
       ) : (
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/80">
+                  <TableRow className="bg-gray-50/80 dark:bg-dark-surface-2">
                     <TableHead>{t('doctor.calculateFinalGrades.colStudent')}</TableHead>
                     <TableHead>{t('doctor.calculateFinalGrades.colAttendance')}</TableHead>
                     <TableHead>{t('doctor.calculateFinalGrades.colMidterm')}</TableHead>
@@ -375,11 +369,11 @@ export function CalculateFinalGrades() {
                 </TableHeader>
                 <TableBody>
                   {students.map((student) => (
-                    <TableRow key={student.studentId} className="hover:bg-gray-50">
+                    <TableRow key={student.studentId} className="hover:bg-gray-50 dark:hover:bg-dark-surface-2">
                       <TableCell>
                         <div>
                           <p className="font-medium">{student.studentName}</p>
-                          <p className="text-xs text-gray-500">{student.studentId}</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">{student.studentId}</p>
                         </div>
                       </TableCell>
                       <TableCell>{student.attendance}</TableCell>
@@ -405,6 +399,8 @@ export function CalculateFinalGrades() {
           </CardContent>
         </Card>
       )}
+        </CardContent>
+      </Card>
 
       {/* Save Confirmation Dialog */}
       <ConfirmDialog
@@ -417,7 +413,7 @@ export function CalculateFinalGrades() {
         cancelText={t('doctor.calculateFinalGrades.confirmCancel')}
         isLoading={calculating}
       />
-    </div>
+    </AdminPageShell>
   );
 }
 

@@ -8,6 +8,10 @@ import { FileText, Link as LinkIcon, Save, Upload, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { useMaterial, useUpdateMaterial } from '@/hooks/queries/usePhase4Materials';
 import { getApiErrorMessage } from '@/lib/http/client';
@@ -110,28 +114,29 @@ export function EditMaterial() {
 
   if (detail.isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
   if (detail.isError || !detail.data) {
     return (
-      <Card>
-        <CardContent className="p-12 text-center text-red-600">{t('doctor.editMaterial.notFound')}</CardContent>
+      <Card bare>
+        <CardContent>
+          <EmptyState icon={FileText} title={t('doctor.editMaterial.notFound')} />
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.editMaterial.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.editMaterial.subtitle')}</p>
-      </div>
-
-      <Card>
+    <AdminPageShell
+      titleStack={{ section: t('nav.materials'), page: t('doctor.editMaterial.title') }}
+      subtitle={t('doctor.editMaterial.subtitle')}
+    >
+      <div className="max-w-3xl mx-auto">
+      <Card bare>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Save className="h-5 w-5 text-primary-600" /> {t('doctor.editMaterial.materialDetails')}
@@ -174,23 +179,18 @@ export function EditMaterial() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.editMaterial.categoryLabel')}</label>
-              <select
-                {...register('category')}
-                className="field"
-              >
-                {isExternalLink ? (
-                  <option value="Links">Links</option>
-                ) : (
-                  fileCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+            <Select2
+              label={t('doctor.editMaterial.categoryLabel')}
+              value={category}
+              onChange={(v) => setValue('category', v as FormValues['category'], { shouldValidate: true })}
+              options={
+                isExternalLink
+                  ? [{ value: 'Links', label: 'Links' }]
+                  : fileCategories.map((c) => ({ value: c, label: c }))
+              }
+              searchable={false}
+              error={errors.category?.message}
+            />
 
             {isExternalLink ? (
               <Input label={t('doctor.editMaterial.urlLabel')} type="url" {...register('url')} error={errors.url?.message} />
@@ -245,6 +245,7 @@ export function EditMaterial() {
           </form>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AdminPageShell>
   );
 }

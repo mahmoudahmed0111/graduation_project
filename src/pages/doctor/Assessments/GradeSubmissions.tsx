@@ -5,6 +5,10 @@ import { CheckCircle2, ClipboardList, MessageSquare, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { useAssessment, useAssessments } from '@/hooks/queries/usePhase4Assessments';
 import {
@@ -93,64 +97,48 @@ export function GradeSubmissions() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('doctor.gradeSubmissions.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('doctor.gradeSubmissions.subtitle')}</p>
-      </div>
-
+    <AdminPageShell
+      titleStack={{ section: t('nav.assessments'), page: t('doctor.gradeSubmissions.title') }}
+      subtitle={t('doctor.gradeSubmissions.subtitle')}
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       {(!params.offeringId || !params.assessmentId) && (
-        <Card>
-          <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.gradeSubmissions.courseOffering')}</label>
-              <select
-                value={offeringId}
-                onChange={(e) => {
-                  setOfferingId(e.target.value);
-                  setAssessmentId('');
-                  setSelectedSubmissionId('');
-                  setSearchParams({ offeringId: e.target.value });
-                }}
-                disabled={offeringsLoading}
-                className="field"
-              >
-                <option value="">{offeringsLoading ? t('doctor.gradeSubmissions.loading') : t('doctor.gradeSubmissions.selectPlaceholder')}</option>
-                {offerings.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t('doctor.gradeSubmissions.assessmentLabel')}</label>
-              <select
-                value={assessmentId}
-                onChange={(e) => {
-                  setAssessmentId(e.target.value);
-                  setSelectedSubmissionId('');
-                  setSearchParams({ offeringId, assessmentId: e.target.value });
-                }}
-                disabled={!offeringId || assessmentsList.isLoading}
-                className="field"
-              >
-                <option value="">{assessmentsList.isLoading ? t('doctor.gradeSubmissions.loading') : t('doctor.gradeSubmissions.selectPlaceholder')}</option>
-                {(assessmentsList.data?.items ?? []).map((a) => (
-                  <option key={a._id} value={a._id}>
-                    {a.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select2
+            label={t('doctor.gradeSubmissions.courseOffering')}
+            value={offeringId}
+            onChange={(value) => {
+              setOfferingId(value);
+              setAssessmentId('');
+              setSelectedSubmissionId('');
+              setSearchParams({ offeringId: value });
+            }}
+            placeholder={offeringsLoading ? t('doctor.gradeSubmissions.loading') : t('doctor.gradeSubmissions.selectPlaceholder')}
+            options={offerings.map((o) => ({
+              value: o.id,
+              label: o.courseCode ? `${o.courseCode} — ${o.courseTitle ?? ''}` : o.id,
+            }))}
+          />
+          <Select2
+            label={t('doctor.gradeSubmissions.assessmentLabel')}
+            value={assessmentId}
+            onChange={(value) => {
+              setAssessmentId(value);
+              setSelectedSubmissionId('');
+              setSearchParams({ offeringId, assessmentId: value });
+            }}
+            placeholder={assessmentsList.isLoading ? t('doctor.gradeSubmissions.loading') : t('doctor.gradeSubmissions.selectPlaceholder')}
+            options={(assessmentsList.data?.items ?? []).map((a) => ({
+              value: a._id,
+              label: a.title,
+            }))}
+          />
+        </div>
       )}
 
       {!assessmentId ? (
-        <Card>
-          <CardContent className="p-12 text-center text-gray-500">{t('doctor.gradeSubmissions.pickAssessment')}</CardContent>
-        </Card>
+        <EmptyState icon={ClipboardList} title={t('doctor.gradeSubmissions.pickAssessment')} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-3">
@@ -195,8 +183,8 @@ export function GradeSubmissions() {
                 <CardContent className="p-12 text-center text-gray-500">{t('doctor.gradeSubmissions.pickSubmission')}</CardContent>
               </Card>
             ) : submissionDetail.isLoading ? (
-              <div className="flex items-center justify-center h-48">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+              <div className="flex min-h-[280px] items-center justify-center">
+                <Spinner size="lg" label={t('common.loading')} />
               </div>
             ) : !submissionDetail.data ? null : (
               <>
@@ -285,6 +273,8 @@ export function GradeSubmissions() {
           </div>
         </div>
       )}
-    </div>
+        </CardContent>
+      </Card>
+    </AdminPageShell>
   );
 }

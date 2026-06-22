@@ -41,6 +41,20 @@ function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
   return user as IUser | IStudent;
 }
 
+/** Extract the id strings from a populated/unpopulated ref array. */
+function refIdList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r) => {
+      if (r && typeof r === 'object') {
+        const o = r as Record<string, unknown>;
+        return String(o._id ?? o.id ?? '');
+      }
+      return String(r ?? '');
+    })
+    .filter(Boolean);
+}
+
 /** Map a populated `refs` array (`doctors_ids`/`tas_ids`) to `{ id, name }[]`. */
 function mapRefNameList(raw: unknown): Array<{ id: string; name: string }> {
   if (!Array.isArray(raw)) return [];
@@ -471,8 +485,38 @@ export const api = {
     });
   },
 
-  // Student-specific endpoints — `GET /enrollments/my` (replaces legacy `/my-courses`, `/transcript`)
+  // Role-aware "my courses":
+  //  • students → their enrollments (`GET /enrollments/my`)
+  //  • staff (doctor/teacher/ta) → the offerings they teach (no enrollments
+  //    exist for them, and `/enrollments/my` 403s), shaped like enrollments so
+  //    callers (e.g. CalculateFinalGrades) can reuse the same picker.
   getMyCourses: async (params?: { semester?: string }): Promise<IEnrollment[]> => {
+    const { useAuthStore } = await import('@/store/authStore');
+    const user = useAuthStore.getState().user;
+    const role = user?.role;
+
+    if (role === 'doctor' || role === 'teacher' || role === 'ta') {
+      const me = user?.id ?? '';
+      const res = await courseOfferingsService.getCourseOfferings({ limit: 200 });
+      return res.items
+        .filter((raw) => {
+          const o = raw as Record<string, unknown>;
+          return refIdList(o.doctors_ids).includes(me) || refIdList(o.tas_ids).includes(me);
+        })
+        .map((raw) => {
+          const record = raw as Record<string, unknown>;
+          const offering = mapOfferingRecordToICourseOffering(record);
+          return {
+            id: offering.id,
+            student_id: '',
+            courseOffering: offering,
+            semester: offering.semester,
+            status: 'enrolled',
+            enrolledAt: String(record.createdAt ?? record.updatedAt ?? ''),
+          } as IEnrollment;
+        });
+    }
+
     const rows = await fetchAllMyEnrollmentsMapped();
     if (params?.semester === 'current') {
       return rows.filter((e) => e.status === 'enrolled');

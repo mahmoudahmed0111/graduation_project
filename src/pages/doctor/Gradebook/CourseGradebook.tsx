@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
 import { useToastStore } from '@/store/toastStore';
 import { useAuthStore } from '@/store/authStore';
 import { useCourseOffering } from '@/hooks/queries/usePhase3CourseOfferings';
@@ -168,6 +169,8 @@ export function CourseGradebook() {
       subtitle={t('doctor.courseGradebook.subtitle')}
       badge={stateBadge}
     >
+      <Card bare>
+        <CardContent className="space-y-6">
 
       {!params.offeringId && (
         <Card>
@@ -203,8 +206,8 @@ export function CourseGradebook() {
           </CardContent>
         </Card>
       ) : gradebook.isLoading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+        <div className="flex min-h-[280px] items-center justify-center">
+          <Spinner size="lg" label={t('common.loading')} />
         </div>
       ) : (
         <Card>
@@ -308,6 +311,8 @@ export function CourseGradebook() {
           )}
         </div>
       )}
+        </CardContent>
+      </Card>
 
       <ConfirmDialog
         isOpen={confirmLock}
