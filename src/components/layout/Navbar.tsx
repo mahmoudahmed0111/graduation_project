@@ -163,8 +163,13 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {/* Notifications Dropdown */}
             {showNotificationsDropdown && (
               <div className={cn(
-                'absolute top-full mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50',
-                'animate-fade-in w-80 max-h-96 overflow-hidden flex flex-col right-0'
+                'bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50',
+                'animate-fade-in max-h-96 overflow-hidden flex flex-col',
+                // Mobile: pin below the navbar, full-width with side margins (avoids
+                // the fixed 320px panel overflowing the viewport, incl. in RTL).
+                'fixed inset-x-3 top-16',
+                // ≥ sm: classic anchored dropdown under the bell.
+                'sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
               )}>
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
