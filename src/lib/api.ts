@@ -5,7 +5,9 @@ import * as departmentsService from '@/services/departments.service';
 import * as settingsService from '@/services/settings.service';
 import * as locationsService from '@/services/locations.service';
 import * as enrollmentsService from '@/services/enrollments.service';
+import * as courseOfferingsService from '@/services/courseOfferings.service';
 import { mapPhase3EnrollmentToIEnrollment } from '@/lib/mapPhase3Enrollment';
+import { p3Id, p3CourseCode, p3CourseTitle } from '@/lib/phase3Ui';
 
 /** Re-export for callers that import from `@/lib/api`. */
 export { getApiErrorMessage } from '@/lib/http/client';
@@ -37,6 +39,61 @@ function normalizeUser(u: Record<string, unknown> | null): IUser | IStudent {
     ...(u.year != null && { year: u.year as number, semester: u.semester as number, creditsEarned: u.creditsEarned as number, gpa: u.gpa as number }),
   };
   return user as IUser | IStudent;
+}
+
+/** Map a populated `refs` array (`doctors_ids`/`tas_ids`) to `{ id, name }[]`. */
+function mapRefNameList(raw: unknown): Array<{ id: string; name: string }> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r) => {
+      if (r && typeof r === 'object') {
+        const o = r as Record<string, unknown>;
+        return { id: String(o._id ?? o.id ?? ''), name: String(o.name ?? '') };
+      }
+      return { id: String(r ?? ''), name: '' };
+    })
+    .filter((x) => x.name);
+}
+
+/**
+ * Maps a Phase 3 `CourseOffering` record (`GET /course-offerings`) into the
+ * legacy `ICourseOffering` shape the student UI (All Courses, Enroll) renders.
+ * The catalog is populated under `course_id`; instructors under `doctors_ids`.
+ */
+function mapOfferingRecordToICourseOffering(raw: Record<string, unknown>): ICourseOffering {
+  const course = (raw.course_id && typeof raw.course_id === 'object'
+    ? (raw.course_id as Record<string, unknown>)
+    : {}) as Record<string, unknown>;
+  const deptRef =
+    (course.department_id && typeof course.department_id === 'object'
+      ? course.department_id
+      : course.department && typeof course.department === 'object'
+        ? course.department
+        : {}) as Record<string, unknown>;
+  const schedule = Array.isArray(raw.schedule)
+    ? (raw.schedule as ICourseOffering['schedule'])
+    : [];
+  return {
+    id: p3Id(raw),
+    course: {
+      id: p3Id(course),
+      code: p3CourseCode(course),
+      title: p3CourseTitle(course),
+      creditHours: Number(course.creditHours ?? 0) || 0,
+      department: {
+        id: String(deptRef._id ?? deptRef.id ?? ''),
+        name: String(deptRef.name ?? '—'),
+      },
+    },
+    semester: String(raw.semester ?? ''),
+    doctors: mapRefNameList(raw.doctors_ids),
+    tas: mapRefNameList(raw.tas_ids),
+    schedule,
+    maxSeats: Number(raw.maxSeats ?? 0) || 0,
+    gradingPolicy: (raw.gradingPolicy && typeof raw.gradingPolicy === 'object'
+      ? (raw.gradingPolicy as ICourseOffering['gradingPolicy'])
+      : {}) as ICourseOffering['gradingPolicy'],
+  };
 }
 
 /** Phase 3 Module 8: `GET /enrollments/my` — paginate and map to legacy `IEnrollment`. */
@@ -444,8 +501,24 @@ export const api = {
 
   // Course Offerings endpoints
   getCourseOfferings: async (params?: { semester?: string; department?: string }): Promise<ICourseOffering[]> => {
-    const response = await axiosInstance.get<ICourseOffering[]>('/offerings', { params });
-    return response.data;
+    // Phase 3 resource is `/course-offerings` (the old `/offerings` path 404s).
+    // The backend has no `semester=current` magic value, so resolve the active
+    // semester/year from Settings before filtering (else the list comes back empty).
+    let query: { semester?: string; academicYear?: string } | undefined;
+    if (params?.semester === 'current') {
+      try {
+        const s = await settingsService.getSettings();
+        const sem = typeof s.currentSemester === 'string' ? s.currentSemester : undefined;
+        const yr = typeof s.currentAcademicYear === 'string' ? s.currentAcademicYear : undefined;
+        query = { ...(sem ? { semester: sem } : {}), ...(yr ? { academicYear: yr } : {}) };
+      } catch {
+        query = undefined; // fall back to unscoped list on settings failure
+      }
+    } else if (params?.semester) {
+      query = { semester: params.semester };
+    }
+    const res = await courseOfferingsService.getCourseOfferings(query);
+    return res.items.map((r) => mapOfferingRecordToICourseOffering(r as Record<string, unknown>));
   },
 
   // Enrollment actions — Phase 3: `POST /enrollments`, `PATCH /enrollments/:id/withdraw`

@@ -4,9 +4,12 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { IEnrollment } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { 
-  GraduationCap, 
-  Award, 
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
+import {
+  GraduationCap,
+  Award,
   BookOpen,
   TrendingUp,
   Calendar
@@ -191,8 +194,8 @@ export function Enrollments() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
@@ -200,21 +203,20 @@ export function Enrollments() {
   const totalCredits = groupedBySemester.reduce((sum, sem) => sum + sem.credits, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('nav.enrollments')}</h1>
-        <p className="text-gray-600 mt-1">{t('student.enrollments.subtitle')}</p>
-      </div>
-
+    <AdminPageShell
+      title={t('nav.enrollments')}
+      subtitle={t('student.enrollments.subtitle')}
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">{t('student.enrollments.cumulativeGpa')}</p>
-                <p className="text-3xl font-bold text-gray-900">{cgpa.toFixed(2)}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.enrollments.cumulativeGpa')}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{cgpa.toFixed(2)}</p>
               </div>
               <Award className="h-10 w-10 text-primary-600" />
             </div>
@@ -224,8 +226,8 @@ export function Enrollments() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">{t('student.enrollments.totalCredits')}</p>
-                <p className="text-3xl font-bold text-gray-900">{totalCredits}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.enrollments.totalCredits')}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalCredits}</p>
               </div>
               <GraduationCap className="h-10 w-10 text-primary-600" />
             </div>
@@ -235,8 +237,8 @@ export function Enrollments() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">{t('student.enrollments.semestersCompleted')}</p>
-                <p className="text-3xl font-bold text-gray-900">{groupedBySemester.length}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.enrollments.semestersCompleted')}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{groupedBySemester.length}</p>
               </div>
               <Calendar className="h-10 w-10 text-primary-600" />
             </div>
@@ -246,12 +248,10 @@ export function Enrollments() {
 
       {/* Transcript by Semester */}
       {transcript.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('student.enrollments.noTranscript')}</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={BookOpen}
+          title={t('student.enrollments.noTranscript')}
+        />
       ) : (
         <div className="space-y-6">
           {groupedBySemester.map((semesterData) => (
@@ -260,12 +260,12 @@ export function Enrollments() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-xl">{semesterData.semester}</CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 mt-1 dark:text-slate-400">
                       {t('student.enrollments.coursesCreditsLine', { courses: semesterData.enrollments.length, credits: semesterData.credits })}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">{t('student.enrollments.semesterGpa')}</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.enrollments.semesterGpa')}</p>
                     <p className="text-2xl font-bold text-primary-600">
                       {semesterData.gpa.toFixed(2)}
                     </p>
@@ -355,27 +355,29 @@ export function Enrollments() {
 
       {/* CGPA Summary */}
       {groupedBySemester.length > 0 && (
-        <Card className="bg-primary-50 border-primary-200">
+        <Card className="bg-primary-50 border-primary-200 dark:bg-primary-900/20 dark:border-primary-800/40">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <TrendingUp className="h-8 w-8 text-primary-600" />
                 <div>
-                  <p className="text-sm font-medium text-primary-900">{t('student.enrollments.cgpaTitle')}</p>
-                  <p className="text-xs text-primary-700 mt-1">
+                  <p className="text-sm font-medium text-primary-900 dark:text-primary-200">{t('student.enrollments.cgpaTitle')}</p>
+                  <p className="text-xs text-primary-700 mt-1 dark:text-primary-300">
                     {t('student.enrollments.cgpaBasedOn', { credits: totalCredits, semesters: groupedBySemester.length })}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-4xl font-bold text-primary-600">{cgpa.toFixed(2)}</p>
-                <p className="text-sm text-primary-700 mt-1">{t('student.enrollments.outOf400')}</p>
+                <p className="text-sm text-primary-700 mt-1 dark:text-primary-300">{t('student.enrollments.outOf400')}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
-    </div>
+        </CardContent>
+      </Card>
+    </AdminPageShell>
   );
 }
 

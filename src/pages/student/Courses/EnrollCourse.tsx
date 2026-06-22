@@ -7,10 +7,14 @@ import { ICourseOffering, IEnrollment, IStudent } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { 
-  BookOpen, 
-  Clock, 
-  MapPin, 
+import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
+import {
+  BookOpen,
+  Clock,
+  MapPin,
   Calendar,
   Search,
   User,
@@ -187,44 +191,41 @@ export function EnrollCourse() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+    <AdminPageShell
+      titleStack={{ section: t('nav.courses'), page: t('nav.enrollInCourse') }}
+      subtitle={t('student.enrollCourse.subtitle')}
+      actions={
         <Link to="/dashboard/courses/all">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('student.enrollCourse.back')}
           </Button>
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t('nav.enrollInCourse')}</h1>
-          <p className="text-gray-600 mt-1">{t('student.enrollCourse.subtitle')}</p>
-        </div>
-      </div>
-
+      }
+    >
       {/* Credit Limit Info */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/40">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Info className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-blue-900">{t('student.enrollCourse.creditHourLimit')}</p>
-                <p className="text-xs text-blue-700">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('student.enrollCourse.creditHourLimit')}</p>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
                   {t('student.enrollCourse.currentHours', { current: currentCredits, limit: creditLimit })}
                   {student?.academicStatus ? ` (${t('student.enrollCourse.status')}: ${student.academicStatus.replace('_', ' ')})` : ''}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-semibold text-blue-900">
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
                 {t('student.enrollCourse.hoursRemaining', { count: creditLimit - currentCredits })}
               </p>
             </div>
@@ -234,43 +235,40 @@ export function EnrollCourse() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Available Courses List */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2">
+          <Card bare>
+            <CardContent className="space-y-4">
           {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder={t('student.enrollCourse.searchCoursesPlaceholder')}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="field"
-                >
-                  <option value="">{t('student.enrollCourse.allDepartments')}</option>
-                  {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder={t('student.enrollCourse.searchCoursesPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="sm:w-56">
+              <Select2
+                value={selectedDepartment}
+                onChange={setSelectedDepartment}
+                options={[
+                  { value: '', label: t('student.enrollCourse.allDepartments') },
+                  ...departments.map((dept) => ({ value: dept, label: dept })),
+                ]}
+                placeholder={t('student.enrollCourse.allDepartments')}
+              />
+            </div>
+          </div>
 
           {/* Courses List */}
           {filteredOfferings.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">{t('student.enrollCourse.noCoursesFound')}</p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={AlertCircle}
+              title={t('student.enrollCourse.noCoursesFound')}
+            />
           ) : (
             <div className="space-y-4">
               {filteredOfferings.map((offering) => {
@@ -292,7 +290,7 @@ export function EnrollCourse() {
                             <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded">
                               {offering.course.code}
                             </span>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded dark:bg-dark-surface-2 dark:text-slate-400">
                               {t('student.enrollCourse.creditsCount', { count: offering.course.creditHours })}
                             </span>
                             {!canEnrollInThis && (
@@ -307,19 +305,19 @@ export function EnrollCourse() {
                             )}
                           </div>
                           <CardTitle className="text-lg">{offering.course.title}</CardTitle>
-                          <p className="text-sm text-gray-600">{offering.course.department.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-slate-400">{offering.course.department.name}</p>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       {offering.doctors.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2 dark:text-slate-400">
                           <User className="h-4 w-4" />
                           <span>{offering.doctors.map(d => d.name).join(', ')}</span>
                         </div>
                       )}
                       {offering.schedule.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
                           <Calendar className="h-4 w-4" />
                           <span>{offering.schedule[0]?.day} {offering.schedule[0]?.startTime}</span>
                           <MapPin className="h-4 w-4 ml-2" />
@@ -332,6 +330,8 @@ export function EnrollCourse() {
               })}
             </div>
           )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Course Details Sidebar */}
@@ -349,21 +349,21 @@ export function EnrollCourse() {
                     <XCircle className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-gray-700 font-medium">{selectedOffering.course.title}</p>
+                <p className="text-gray-700 font-medium dark:text-slate-300">{selectedOffering.course.title}</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Basic Info */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{t('student.enrollCourse.creditHours')}</span>
+                    <span className="text-gray-600 dark:text-slate-400">{t('student.enrollCourse.creditHours')}</span>
                     <span className="font-medium">{selectedOffering.course.creditHours}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{t('student.enrollCourse.department')}</span>
+                    <span className="text-gray-600 dark:text-slate-400">{t('student.enrollCourse.department')}</span>
                     <span className="font-medium">{selectedOffering.course.department.name}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{t('student.enrollCourse.semester')}</span>
+                    <span className="text-gray-600 dark:text-slate-400">{t('student.enrollCourse.semester')}</span>
                     <span className="font-medium">{selectedOffering.semester}</span>
                   </div>
                 </div>
@@ -371,10 +371,10 @@ export function EnrollCourse() {
                 {/* Instructors */}
                 {selectedOffering.doctors.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t('student.enrollCourse.instructors')}</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">{t('student.enrollCourse.instructors')}</p>
                     <div className="space-y-1">
                       {selectedOffering.doctors.map((doctor, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
                           <User className="h-4 w-4" />
                           <span>{doctor.name}</span>
                         </div>
@@ -386,10 +386,10 @@ export function EnrollCourse() {
                 {/* Schedule */}
                 {selectedOffering.schedule.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t('student.enrollCourse.schedule')}</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">{t('student.enrollCourse.schedule')}</p>
                     <div className="space-y-2">
                       {selectedOffering.schedule.map((session, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-sm text-gray-600">
+                        <div key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400">
                           <Calendar className="h-4 w-4 mt-0.5" />
                           <div className="flex-1">
                             <p className="capitalize font-medium">{session.day}</p>
@@ -411,7 +411,7 @@ export function EnrollCourse() {
                 {/* Prerequisites */}
                 {selectedOffering.course.prerequisites && selectedOffering.course.prerequisites.length > 0 && (
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t('student.enrollCourse.prerequisites')}</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">{t('student.enrollCourse.prerequisites')}</p>
                     <div className="space-y-1">
                       {selectedOffering.course.prerequisites.map((prereq, idx) => {
                         const isMet = myEnrollments.some(
@@ -424,7 +424,7 @@ export function EnrollCourse() {
                             ) : (
                               <XCircle className="h-4 w-4 text-red-600" />
                             )}
-                            <span className={isMet ? 'text-gray-700' : 'text-gray-500'}>
+                            <span className={isMet ? 'text-gray-700 dark:text-slate-300' : 'text-gray-500 dark:text-slate-500'}>
                               {prereq.code} - {prereq.title}
                             </span>
                           </div>
@@ -435,16 +435,16 @@ export function EnrollCourse() {
                 )}
 
                 {/* Enrollment Validation */}
-                <div className="pt-4 border-t border-gray-200 space-y-2">
+                <div className="pt-4 border-t border-gray-200 space-y-2 dark:border-dark-border">
                   {(() => {
                     const prereqCheck = checkPrerequisites(selectedOffering);
                     const canEnrollInThis = canEnroll(selectedOffering);
-                    
+
                     if (!prereqCheck.met) {
                       return (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-sm text-red-800 font-medium mb-1">{t('student.enrollCourse.prereqsNotMetTitle')}</p>
-                          <ul className="text-xs text-red-700 list-disc list-inside">
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800/40">
+                          <p className="text-sm text-red-800 font-medium mb-1 dark:text-red-300">{t('student.enrollCourse.prereqsNotMetTitle')}</p>
+                          <ul className="text-xs text-red-700 list-disc list-inside dark:text-red-400">
                             {prereqCheck.missing.map((missing, idx) => (
                               <li key={idx}>{missing}</li>
                             ))}
@@ -452,20 +452,20 @@ export function EnrollCourse() {
                         </div>
                       );
                     }
-                    
+
                     if (!canEnrollInThis) {
                       return (
-                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                          <p className="text-sm text-orange-800">
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800/40">
+                          <p className="text-sm text-orange-800 dark:text-orange-300">
                             {t('student.enrollCourse.creditLimitWouldExceed', { total: currentCredits + selectedOffering.course.creditHours, limit: creditLimit })}
                           </p>
                         </div>
                       );
                     }
-                    
+
                     return (
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm text-green-800 font-medium">
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800/40">
+                        <p className="text-sm text-green-800 font-medium dark:text-green-300">
                           {t('student.enrollCourse.eligibleToEnroll')}
                         </p>
                       </div>
@@ -489,13 +489,13 @@ export function EnrollCourse() {
             <Card>
               <CardContent className="p-8 text-center">
                 <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">{t('student.enrollCourse.selectCourseHint')}</p>
+                <p className="text-gray-600 dark:text-slate-400">{t('student.enrollCourse.selectCourseHint')}</p>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }
 

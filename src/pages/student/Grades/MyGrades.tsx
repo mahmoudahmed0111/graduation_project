@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useQueries } from '@tanstack/react-query';
 import { Award, GraduationCap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Spinner } from '@/components/ui/Spinner';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -74,23 +76,23 @@ export function MyGrades() {
 
   if (allLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('student.myGrades.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('student.myGrades.subtitle')}</p>
-      </div>
-
+    <AdminPageShell
+      title={t('student.myGrades.title')}
+      subtitle={t('student.myGrades.subtitle')}
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <div className="flex items-center gap-2 text-gray-500 text-sm dark:text-slate-400">
               <GraduationCap className="h-4 w-4" /> {t('student.myGrades.cumulativeGpa')}
             </div>
             <div className="text-3xl font-bold mt-2 text-primary-600">
@@ -102,7 +104,7 @@ export function MyGrades() {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <div className="flex items-center gap-2 text-gray-500 text-sm dark:text-slate-400">
               <Award className="h-4 w-4" /> {t('student.myGrades.earnedCredits')}
             </div>
             <div className="text-3xl font-bold mt-2">
@@ -114,7 +116,7 @@ export function MyGrades() {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 text-gray-500 text-sm">{t('student.myGrades.standing')}</div>
+            <div className="flex items-center gap-2 text-gray-500 text-sm dark:text-slate-400">{t('student.myGrades.standing')}</div>
             <div className="text-lg font-medium mt-2 capitalize">
               {summaryQuery.data?.items?.[0] && typeof summaryQuery.data.items[0].student_id === 'object'
                 ? summaryQuery.data.items[0].student_id.academicStatus ?? '—'
@@ -136,7 +138,7 @@ export function MyGrades() {
                     {offering.code} — {offering.title}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-gray-500">{t('student.myGrades.noGradeData')}</CardContent>
+                <CardContent className="text-sm text-gray-500 dark:text-slate-400">{t('student.myGrades.noGradeData')}</CardContent>
               </Card>
             );
           }
@@ -156,40 +158,42 @@ export function MyGrades() {
               <CardContent>
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div>
-                    <div className="text-gray-500">{t('student.myGrades.attendance')}</div>
+                    <div className="text-gray-500 dark:text-slate-400">{t('student.myGrades.attendance')}</div>
                     <div className="font-medium">{g.attendance ?? 0}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">{t('student.myGrades.midterm')}</div>
+                    <div className="text-gray-500 dark:text-slate-400">{t('student.myGrades.midterm')}</div>
                     <div className="font-medium">{g.midterm ?? 0}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">{t('student.myGrades.assignments')}</div>
+                    <div className="text-gray-500 dark:text-slate-400">{t('student.myGrades.assignments')}</div>
                     <div className="font-medium">{g.assignments ?? 0}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">{t('student.myGrades.project')}</div>
+                    <div className="text-gray-500 dark:text-slate-400">{t('student.myGrades.project')}</div>
                     <div className="font-medium">{g.project ?? 0}</div>
                   </div>
                   <div>
-                    <div className="text-gray-500">{t('student.myGrades.finalExam')}</div>
+                    <div className="text-gray-500 dark:text-slate-400">{t('student.myGrades.finalExam')}</div>
                     <div className="font-medium">{g.finalExam ?? 0}</div>
                   </div>
                   {showFinal && (
                     <div>
-                      <div className="text-gray-500">{t('student.myGrades.total')}</div>
+                      <div className="text-gray-500 dark:text-slate-400">{t('student.myGrades.total')}</div>
                       <div className="font-medium">{g.finalTotal ?? '—'}</div>
                     </div>
                   )}
                 </div>
                 {!showFinal && (
-                  <p className="text-xs text-gray-500 mt-3">{t('student.myGrades.finalNotPublished')}</p>
+                  <p className="text-xs text-gray-500 mt-3 dark:text-slate-400">{t('student.myGrades.finalNotPublished')}</p>
                 )}
               </CardContent>
             </Card>
           );
         })}
       </div>
-    </div>
+        </CardContent>
+      </Card>
+    </AdminPageShell>
   );
 }

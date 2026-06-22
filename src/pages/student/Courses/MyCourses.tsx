@@ -6,11 +6,15 @@ import { IEnrollment } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { 
-  BookOpen, 
-  Calendar, 
-  Clock, 
-  MapPin, 
+import { Select2 } from '@/components/ui/Select2';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
+import {
+  BookOpen,
+  Calendar,
+  Clock,
+  MapPin,
   User,
   GraduationCap,
   TrendingUp,
@@ -100,38 +104,30 @@ export function MyCourses() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{t('nav.myCourses')}</h1>
-          <p className="text-gray-600 mt-1">{t('student.myCourses.subtitle')}</p>
-        </div>
-        <div className="flex gap-2">
-          <select
-            value={selectedSemester}
-            onChange={(e) => setSelectedSemester(e.target.value)}
-            className="field"
-          >
-            <option value="current">{t('student.myCourses.currentSemester')}</option>
-            <option value="all">{t('student.myCourses.allSemesters')}</option>
-          </select>
-          <Link to="/dashboard/courses/all">
-            <Button variant="outline">
-              <BookOpen className="h-4 w-4 mr-2" />
-              {t('student.myCourses.browseCourses')}
-            </Button>
-          </Link>
-        </div>
-      </div>
-
+    <AdminPageShell
+      titleStack={{ section: t('nav.courses'), page: t('nav.myCourses') }}
+      subtitle={t('student.myCourses.subtitle')}
+      actions={
+        <Select2
+          value={selectedSemester}
+          onChange={setSelectedSemester}
+          options={[
+            { value: 'current', label: t('student.myCourses.currentSemester') },
+            { value: 'all', label: t('student.myCourses.allSemesters') },
+          ]}
+          searchable={false}
+        />
+      }
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       {/* Summary Stats */}
       {enrollments.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -139,8 +135,8 @@ export function MyCourses() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{t('student.myCourses.totalCourses')}</p>
-                  <p className="text-2xl font-bold text-gray-900">{enrollments.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.myCourses.totalCourses')}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{enrollments.length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-primary-600" />
               </div>
@@ -150,9 +146,9 @@ export function MyCourses() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{t('student.myCourses.creditHours')}</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {enrollments.reduce((sum, e) => 
+                  <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.myCourses.creditHours')}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {enrollments.reduce((sum, e) =>
                       sum + (e.courseOffering?.course?.creditHours || 0), 0
                     )}
                   </p>
@@ -165,8 +161,8 @@ export function MyCourses() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{t('student.myCourses.averageGrade')}</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-slate-400">{t('student.myCourses.averageGrade')}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {enrollments
                       .filter(e => e.grades?.finalLetter)
                       .length > 0
@@ -194,17 +190,17 @@ export function MyCourses() {
 
       {/* Courses List */}
       {enrollments.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">{t('student.myCourses.noEnrolledCourses')}</p>
+        <EmptyState
+          icon={BookOpen}
+          title={t('student.myCourses.noEnrolledCourses')}
+          action={
             <Link to="/dashboard/courses/all">
               <Button variant="primary">
                 {t('student.myCourses.browseAvailableCourses')}
               </Button>
             </Link>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {enrollments.map((enrollment) => {
@@ -220,14 +216,14 @@ export function MyCourses() {
                         <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded">
                           {course?.code}
                         </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded dark:bg-dark-surface-2 dark:text-slate-400">
                           {t('student.myCourses.creditsCount', { count: course?.creditHours })}
                         </span>
                         {getStatusBadge(enrollment.status)}
                       </div>
                       <CardTitle className="text-lg mb-1">{course?.title}</CardTitle>
-                      <p className="text-sm text-gray-600">{course?.department.name}</p>
-                      <p className="text-xs text-gray-500 mt-1">{t('student.myCourses.semester')}: {enrollment.semester}</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-400">{course?.department.name}</p>
+                      <p className="text-xs text-gray-500 mt-1 dark:text-slate-500">{t('student.myCourses.semester')}: {enrollment.semester}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -237,8 +233,8 @@ export function MyCourses() {
                     <div className="flex items-start gap-2">
                       <User className="h-4 w-4 text-gray-400 mt-0.5" />
                       <div className="flex-1">
-                        <p className="text-xs text-gray-500">{t('student.myCourses.instructors')}</p>
-                        <p className="text-sm text-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-slate-500">{t('student.myCourses.instructors')}</p>
+                        <p className="text-sm text-gray-700 dark:text-slate-300">
                           {offering.doctors.map(d => d.name).join(', ')}
                         </p>
                       </div>
@@ -249,7 +245,7 @@ export function MyCourses() {
                   {offering?.schedule && offering.schedule.length > 0 && (
                     <div className="space-y-1">
                       {offering.schedule.map((session, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
                           <Calendar className="h-4 w-4 text-gray-400" />
                           <span className="capitalize">{session.day}</span>
                           <Clock className="h-4 w-4 text-gray-400 ml-2" />
@@ -263,17 +259,17 @@ export function MyCourses() {
 
                   {/* Grades */}
                   {enrollment.grades && enrollment.grades.finalLetter && (
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="pt-3 border-t border-gray-200 dark:border-dark-border">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">{t('student.myCourses.finalGrade')}</span>
+                        <span className="text-sm text-gray-600 dark:text-slate-400">{t('student.myCourses.finalGrade')}</span>
                         <span className={`text-lg font-bold ${getGradeColor(enrollment.grades.finalLetter)}`}>
                           {enrollment.grades.finalLetter} ({enrollment.grades.finalTotal?.toFixed(1) || 'N/A'}%)
                         </span>
                       </div>
                       {enrollment.finalAttendancePercentage !== undefined && (
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-sm text-gray-600">{t('student.myCourses.attendance')}</span>
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className="text-sm text-gray-600 dark:text-slate-400">{t('student.myCourses.attendance')}</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                             {enrollment.finalAttendancePercentage.toFixed(1)}%
                           </span>
                         </div>
@@ -282,7 +278,7 @@ export function MyCourses() {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2 pt-3 border-t border-gray-200">
+                  <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-dark-border">
                     <Link to={`/dashboard/courses/${offering?.id}`} className="flex-1">
                       <Button variant="outline" className="w-full" size="sm">
                         {t('student.myCourses.viewDetails')}
@@ -307,6 +303,8 @@ export function MyCourses() {
           })}
         </div>
       )}
+        </CardContent>
+      </Card>
 
       {/* Drop Course Confirmation Dialog */}
       <ConfirmDialog
@@ -352,7 +350,7 @@ export function MyCourses() {
         variant="danger"
         isLoading={dropping}
       />
-    </div>
+    </AdminPageShell>
   );
 }
 

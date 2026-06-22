@@ -5,6 +5,11 @@ import { useQueries } from '@tanstack/react-query';
 import { Calendar, ClipboardList, Clock, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Select2 } from '@/components/ui/Select2';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { api } from '@/lib/api';
 import { listAssessments } from '@/services/assessments.service';
@@ -24,6 +29,7 @@ export function MyAssessments() {
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'past' | 'pending'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -77,66 +83,87 @@ export function MyAssessments() {
 
   const filtered = useMemo(() => {
     const now = Date.now();
+    const q = searchTerm.trim().toLowerCase();
     return flattened.filter(({ offering, assessment }) => {
       if (selectedCourse !== 'all' && offering.id !== selectedCourse) return false;
       if (filterStatus === 'upcoming' && new Date(assessment.dueDate).getTime() < now) return false;
       if (filterStatus === 'past' && new Date(assessment.dueDate).getTime() >= now) return false;
       if (filterStatus === 'pending' && assessment.mySubmission?.status === 'graded') return false;
+      if (
+        q &&
+        !(
+          assessment.title.toLowerCase().includes(q) ||
+          offering.code.toLowerCase().includes(q) ||
+          offering.title.toLowerCase().includes(q)
+        )
+      )
+        return false;
       return true;
     });
-  }, [flattened, selectedCourse, filterStatus]);
+  }, [flattened, selectedCourse, filterStatus, searchTerm]);
 
   if (allLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('nav.myAssessments') || t('student.myAssessments.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('student.myAssessments.subtitle')}</p>
-      </div>
+  const activeFilterCount = (selectedCourse !== 'all' ? 1 : 0) + (filterStatus !== 'all' ? 1 : 0);
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="field"
-            >
-              <option value="all">{t('student.myAssessments.allCourses')}</option>
-              {offerings.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.code} — {o.title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-              className="field"
-            >
-              <option value="all">{t('student.myAssessments.all')}</option>
-              <option value="upcoming">{t('student.myAssessments.upcoming')}</option>
-              <option value="past">{t('student.myAssessments.pastDue')}</option>
-              <option value="pending">{t('student.myAssessments.pendingResult')}</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+  return (
+    <AdminPageShell
+      titleStack={{
+        section: t('nav.assessments'),
+        page: t('nav.myAssessments'),
+      }}
+      subtitle={t('student.myAssessments.subtitle')}
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
+          <FilterBar
+            search={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder={t('common.search')}
+            activeFilterCount={activeFilterCount}
+            onClearFilters={() => {
+              setSelectedCourse('all');
+              setFilterStatus('all');
+            }}
+            filters={
+              <>
+                <Select2
+                  label={t('student.myAssessments.allCourses')}
+                  value={selectedCourse}
+                  onChange={setSelectedCourse}
+                  options={[
+                    { value: 'all', label: t('student.myAssessments.allCourses') },
+                    ...offerings.map((o) => ({ value: o.id, label: `${o.code} — ${o.title}` })),
+                  ]}
+                  placeholder={t('student.myAssessments.allCourses')}
+                />
+                <Select2
+                  label={t('student.myAssessments.all')}
+                  value={filterStatus}
+                  onChange={(value) => setFilterStatus(value as typeof filterStatus)}
+                  options={[
+                    { value: 'all', label: t('student.myAssessments.all') },
+                    { value: 'upcoming', label: t('student.myAssessments.upcoming') },
+                    { value: 'past', label: t('student.myAssessments.pastDue') },
+                    { value: 'pending', label: t('student.myAssessments.pendingResult') },
+                  ]}
+                  searchable={false}
+                />
+              </>
+            }
+          />
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('student.myAssessments.noAssessments')}</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={ClipboardList}
+          title={t('student.myAssessments.noAssessments')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map(({ offering, assessment }) => {
@@ -157,19 +184,19 @@ export function MyAssessments() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>{assessment.title}</span>
-                    <span className="text-sm font-normal text-gray-500">{t('student.myAssessments.ptsCount', { count: assessment.totalPoints })}</span>
+                    <span className="text-sm font-normal text-gray-500 dark:text-slate-400">{t('student.myAssessments.ptsCount', { count: assessment.totalPoints })}</span>
                   </CardTitle>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1 dark:text-slate-500">
                     {offering.code} — {offering.title}
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400">
                     <Calendar className="h-4 w-4" />
                     <span>{t('student.myAssessments.due', { date: new Date(assessment.dueDate).toLocaleString() })}</span>
                   </div>
                   {assessment.timeLimitMinutes && (
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400">
                       <Clock className="h-4 w-4" />
                       <span>{t('student.myAssessments.minLimit', { count: assessment.timeLimitMinutes })}</span>
                     </div>
@@ -188,7 +215,7 @@ export function MyAssessments() {
                           : t('student.myAssessments.statusNotStarted')}
                       </span>
                       {my?.status === 'graded' && my.totalScore != null && (
-                        <span className="ml-2 text-gray-600">{my.totalScore}/{assessment.totalPoints}</span>
+                        <span className="ml-2 text-gray-600 dark:text-slate-400">{my.totalScore}/{assessment.totalPoints}</span>
                       )}
                     </span>
                   </div>
@@ -204,6 +231,8 @@ export function MyAssessments() {
           })}
         </div>
       )}
-    </div>
+        </CardContent>
+      </Card>
+    </AdminPageShell>
   );
 }

@@ -5,6 +5,9 @@ import { useQueries } from '@tanstack/react-query';
 import { CheckCircle2, Clock, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import { useToastStore } from '@/store/toastStore';
 import { api } from '@/lib/api';
 import { listAssessments } from '@/services/assessments.service';
@@ -77,26 +80,24 @@ export function MySubmissions() {
 
   if (allLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      <div className="flex min-h-[280px] items-center justify-center">
+        <Spinner size="lg" label={t('common.loading')} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('student.mySubmissions.title')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('student.mySubmissions.subtitle')}</p>
-      </div>
-
+    <AdminPageShell
+      titleStack={{ section: t('nav.assessments'), page: t('student.mySubmissions.title') }}
+      subtitle={t('student.mySubmissions.subtitle')}
+    >
+      <Card bare>
+        <CardContent className="space-y-6">
       {submissions.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t('student.mySubmissions.noSubmissions')}</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title={t('student.mySubmissions.noSubmissions')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {submissions.map(({ offering, assessment }) => {
@@ -120,7 +121,7 @@ export function MySubmissions() {
                       <span className="text-sm text-gray-500 font-normal">{t('student.mySubmissions.inProgress')}</span>
                     )}
                   </CardTitle>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-1 dark:text-slate-500">
                     {offering.code} — {offering.title}
                   </p>
                 </CardHeader>
@@ -128,11 +129,11 @@ export function MySubmissions() {
                   {my.totalScore != null && (
                     <div className="text-2xl font-bold text-primary-600">
                       {my.totalScore}
-                      <span className="text-base text-gray-500"> / {assessment.totalPoints}</span>
+                      <span className="text-base text-gray-500 dark:text-slate-400"> / {assessment.totalPoints}</span>
                     </div>
                   )}
                   {my.submittedAt && (
-                    <p className="text-sm text-gray-500">{t('student.mySubmissions.submittedAt', { date: new Date(my.submittedAt).toLocaleString() })}</p>
+                    <p className="text-sm text-gray-500 dark:text-slate-400">{t('student.mySubmissions.submittedAt', { date: new Date(my.submittedAt).toLocaleString() })}</p>
                   )}
                   <Link to={`/dashboard/submissions/${my._id}`}>
                     <Button variant="outline" className="w-full">
@@ -145,6 +146,8 @@ export function MySubmissions() {
           })}
         </div>
       )}
-    </div>
+        </CardContent>
+      </Card>
+    </AdminPageShell>
   );
 }
