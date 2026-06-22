@@ -1,477 +1,407 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/store/authStore';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { 
-  Send,
-  Bot,
-  User,
-  Loader2,
-  Sparkles,
-  Paperclip,
-  File,
-  X
-} from 'lucide-react';
+import { Bot, Sparkles, Menu, Database, Lock, PanelLeftClose, FileText } from 'lucide-react';
+import { Badge, IconButton } from '@/components/ui';
 import { useToastStore } from '@/store/toastStore';
-import { formatFileSize } from '@/utils/formatters';
-import { logger } from '@/lib/logger';
-
-interface Attachment {
-  id: string;
-  file: File;
-  preview?: string;
-  type: 'image' | 'file';
-}
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  attachments?: Attachment[];
-}
+import { getApiErrorMessage } from '@/lib/http/client';
+import { cn } from '@/lib/utils';
+import * as chatService from '@/services/chat.service';
+import {
+  useChatUsage,
+  useConversations,
+  useCreateConversation,
+  useDeleteConversation,
+  useRenameConversation,
+} from '@/hooks/queries';
+import { ConversationSidebar } from './ConversationSidebar';
+import { ChatMessageList, type ChatViewMessage } from './ChatMessageList';
+import { ChatComposer } from './ChatComposer';
+import { UsageMeter } from './UsageMeter';
+import { useChatStream } from './useChatStream';
+import { useConversationMessages } from './useConversationMessages';
+import type { RagUploadResult } from '@/types/phase7-chat';
 
 export function Chatbot() {
   const { t } = useTranslation();
-  useAuthStore();
   const { error: showError } = useToastStore();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: t('shared.chatbot.welcomeMessage'),
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [activeId, setActiveId] = useState<string | undefined>(undefined);
+  const [input, setInput] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Session-scoped record of documents uploaded per conversation. The backend
+  // doesn't persist file names in history, so we surface them locally to make
+  // it unmistakable which documents are attached to the active conversation.
+  const [attachedDocs, setAttachedDocs] = useState<Record<string, string[]>>({});
+
+  const conversationsQuery = useConversations();
+  const usageQuery = useChatUsage();
+  const createConv = useCreateConversation();
+  const renameConv = useRenameConversation();
+  const deleteConv = useDeleteConversation();
+
+  const conversations = conversationsQuery.data?.items ?? [];
+
+  const {
+    conversation,
+    messages,
+    loading: messagesLoading,
+    loadingOlder,
+    canLoadOlder,
+    reloadNewest,
+    loadOlder,
+  } = useConversationMessages(activeId);
+
+  const stream = useChatStream({
+    conversationId: activeId,
+    onAutoCreate: async () => {
+      const conv = await createConv.mutateAsync();
+      setActiveId(conv._id);
+      return conv._id;
+    },
+    onAfterDone: () => {
+      void reloadNewest();
+      void usageQuery.refetch();
+    },
+    onAfterFirstMessage: () => {
+      void conversationsQuery.refetch();
+    },
+  });
+
+  // Reset in-flight stream state whenever the active conversation changes.
   useEffect(() => {
-    scrollToBottom();
+    stream.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
+
+  // Hand optimistic state back to the stream hook once the server catches up.
+  useEffect(() => {
+    stream.reconcile(messages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    files.forEach(file => {
-      const attachment: Attachment = {
-        id: Date.now().toString() + Math.random(),
-        file,
-        type: file.type.startsWith('image/') ? 'image' : 'file',
-      };
-
-      // Create preview for images
-      if (attachment.type === 'image') {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          attachment.preview = e.target?.result as string;
-          setAttachments(prev => [...prev, attachment]);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setAttachments(prev => [...prev, attachment]);
-      }
-    });
-
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleRemoveAttachment = (id: string) => {
-    setAttachments(prev => prev.filter(att => att.id !== id));
-  };
-
-  const handleSend = async () => {
-    if ((!input.trim() && attachments.length === 0) || isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input.trim() || (attachments.length > 0 ? t('shared.chatbot.attachmentLabel') : ''),
-      timestamp: new Date(),
-      attachments: [...attachments],
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+  const handleSelect = (id: string) => {
+    setActiveId(id);
     setInput('');
-    setAttachments([]);
-    setIsLoading(true);
+    setSidebarOpen(false);
+  };
 
+  const handleNew = async () => {
     try {
-      // Simulate API call to chatbot
-      const response = await simulateChatbotResponse(userMessage.content);
-      
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      };
+      const conv = await createConv.mutateAsync();
+      setActiveId(conv._id);
+      setInput('');
+      setSidebarOpen(false);
+    } catch (err) {
+      showError(getApiErrorMessage(err));
+    }
+  };
 
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      logger.error('Failed to get chatbot response', {
-        context: 'Chatbot',
-        error,
+  const handleRename = async (id: string, title: string) => {
+    try {
+      await renameConv.mutateAsync({ id, title });
+      if (id === activeId) void reloadNewest();
+    } catch (err) {
+      showError(getApiErrorMessage(err));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteConv.mutateAsync(id);
+      if (id === activeId) {
+        setActiveId(undefined);
+      }
+    } catch (err) {
+      showError(getApiErrorMessage(err));
+    }
+  };
+
+  const handleSend = () => {
+    const content = input;
+    setInput('');
+    void stream.send(content);
+  };
+
+  const handleUpload = async (file: File): Promise<RagUploadResult | undefined> => {
+    let id = activeId;
+    setUploading(true);
+    try {
+      if (!id) {
+        const conv = await createConv.mutateAsync();
+        id = conv._id;
+        setActiveId(id);
+      }
+      const result = await chatService.uploadRagFile(id, file);
+      const convId = id;
+      setAttachedDocs((prev) => {
+        const existing = prev[convId] ?? [];
+        if (existing.includes(result.fileName)) return prev;
+        return { ...prev, [convId]: [...existing, result.fileName] };
       });
-      showError(t('shared.chatbot.failedResponse'));
-
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: t('shared.chatbot.errorReply'),
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      void reloadNewest();
+      void conversationsQuery.refetch();
+      return result;
+    } catch (err) {
+      showError(getApiErrorMessage(err));
+      return undefined;
     } finally {
-      setIsLoading(false);
-      inputRef.current?.focus();
+      setUploading(false);
     }
   };
 
-  const simulateChatbotResponse = async (question: string): Promise<string> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+  // Build the merged view: server history + optimistic user + streaming bubble.
+  const viewMessages = useMemo<ChatViewMessage[]>(() => {
+    const base: ChatViewMessage[] = messages.map((m) => ({
+      key: m._id,
+      role: m.role,
+      content: m.content,
+      status: m.status,
+      createdAt: m.createdAt,
+      toolsInvoked: m.toolsInvoked,
+    }));
 
-    const lowerQuestion = question.toLowerCase();
-
-    // Personal queries (would fetch from database in real implementation)
-    if (lowerQuestion.includes('grade') || lowerQuestion.includes('score')) {
-      if (lowerQuestion.includes('cs101') || lowerQuestion.includes('introduction to programming')) {
-        return t('shared.chatbot.replyGradeCs101');
-      }
-      if (lowerQuestion.includes('cs201') || lowerQuestion.includes('data structures')) {
-        return t('shared.chatbot.replyGradeCs201');
-      }
-      return t('shared.chatbot.replyGradeGeneric');
+    if (stream.pendingUser) {
+      base.push({
+        key: stream.pendingUser.id,
+        role: 'user',
+        content: stream.pendingUser.content,
+        status: stream.pendingUser.status,
+        createdAt: stream.pendingUser.createdAt,
+      });
     }
 
-    if (lowerQuestion.includes('attendance') || lowerQuestion.includes('present')) {
-      return t('shared.chatbot.replyAttendance');
+    if (stream.streamingAssistant) {
+      base.push({
+        key: 'streaming-assistant',
+        role: 'assistant',
+        content: stream.streamingAssistant.content,
+        status: 'processing',
+        streaming: true,
+        activeTools: stream.activeTools.length ? stream.activeTools : undefined,
+      });
     }
 
-    if (lowerQuestion.includes('gpa') || lowerQuestion.includes('cgpa') || lowerQuestion.includes('grade point')) {
-      return t('shared.chatbot.replyGpa');
-    }
+    return base;
+  }, [messages, stream.pendingUser, stream.streamingAssistant, stream.activeTools]);
 
-    if (lowerQuestion.includes('schedule') || lowerQuestion.includes('class time') || lowerQuestion.includes('when is')) {
-      return t('shared.chatbot.replySchedule');
-    }
+  const sealed = conversation?.isSealed ?? false;
+  const hasRagContext = conversation?.hasRagContext ?? false;
+  const currentDocs = activeId ? attachedDocs[activeId] ?? [] : [];
 
-    if (lowerQuestion.includes('course') && (lowerQuestion.includes('enroll') || lowerQuestion.includes('register'))) {
-      return t('shared.chatbot.replyEnroll');
-    }
+  const suggestions = [
+    { label: t('shared.chatbot.checkGrades'), query: t('shared.chatbot.suggestGradeQuery') },
+    { label: t('shared.chatbot.attendance'), query: t('shared.chatbot.suggestAttendanceQuery') },
+    { label: t('shared.chatbot.schedule'), query: t('shared.chatbot.suggestScheduleQuery') },
+    { label: t('shared.chatbot.gpa'), query: t('shared.chatbot.suggestGpaQuery') },
+  ];
 
-    if (lowerQuestion.includes('assignment') || lowerQuestion.includes('homework') || lowerQuestion.includes('due')) {
-      return t('shared.chatbot.replyAssignments');
-    }
-
-    // General queries
-    if (lowerQuestion.includes('library') || lowerQuestion.includes('book')) {
-      return t('shared.chatbot.replyLibrary');
-    }
-
-    if (lowerQuestion.includes('policy') || lowerQuestion.includes('rule') || lowerQuestion.includes('regulation')) {
-      return t('shared.chatbot.replyPolicy');
-    }
-
-    if (lowerQuestion.includes('hello') || lowerQuestion.includes('hi') || lowerQuestion.includes('hey')) {
-      return t('shared.chatbot.replyHello');
-    }
-
-    // Default response
-    return t('shared.chatbot.replyDefault', { question });
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const emptySlot = (
+    <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
+      <div className="relative mb-5">
+        <span className="absolute inset-0 -m-3 rounded-full bg-primary-500/10 blur-xl" />
+        <span className="relative grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-50 to-accent-50 text-primary-600 ring-1 ring-primary-100 dark:from-primary-900/40 dark:to-accent-500/10 dark:text-accent-300 dark:ring-dark-border">
+          <Bot className="h-8 w-8" />
+        </span>
+      </div>
+      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+        {t('shared.chatbot.assistantName')}
+      </h2>
+      <p className="mt-1 max-w-sm text-sm text-gray-500 dark:text-slate-400">
+        {t('shared.chatbot.subtitle')}
+      </p>
+      <div className="mt-6 grid w-full max-w-lg grid-cols-1 gap-2.5 sm:grid-cols-2">
+        {suggestions.map((s) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => void stream.send(s.query)}
+            className="flex items-start gap-2 rounded-xl border border-gray-200 p-3 text-start text-sm transition-colors hover:border-primary-300 hover:bg-primary-50/50 dark:border-dark-border dark:hover:border-primary-500/40 dark:hover:bg-primary-900/20"
+          >
+            <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-500" />
+            <span>
+              <span className="block font-medium text-gray-900 dark:text-slate-100">{s.label}</span>
+              <span className="block text-xs text-gray-500 dark:text-slate-400">{s.query}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
+    <div className="page-enter flex h-[calc(100vh-7rem)] min-h-[560px] flex-col gap-4">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('nav.chatbot')}</h1>
-        <p className="text-gray-600 mt-1">{t('shared.chatbot.subtitle')}</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <IconButton
+            aria-label={t('shared.chatbot.toggleSidebar')}
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </IconButton>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+              {t('nav.chatbot')}
+            </h1>
+            <p className="hidden text-sm text-gray-600 dark:text-slate-400 sm:block">
+              {t('shared.chatbot.subtitle')}
+            </p>
+          </div>
+        </div>
+        <div className="hidden w-64 sm:block">
+          <UsageMeter usage={usageQuery.data} isLoading={usageQuery.isLoading} compact />
+        </div>
       </div>
 
-      {/* Chat Container */}
-      <Card className="flex-1 flex flex-col min-h-[600px]">
-        <CardHeader className="border-b border-gray-200 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <Bot className="h-6 w-6 text-primary-600" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{t('shared.chatbot.assistantName')}</CardTitle>
-              <p className="text-sm text-gray-600">{t('shared.chatbot.alwaysHere')}</p>
+      {/* Workbench */}
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card dark:border-dark-border dark:bg-dark-surface">
+        {/* Sidebar (desktop) */}
+        <aside className="hidden w-72 flex-shrink-0 border-e border-gray-200 dark:border-dark-border lg:flex lg:flex-col">
+          <ConversationSidebar
+            conversations={conversations}
+            isLoading={conversationsQuery.isLoading}
+            activeId={activeId}
+            creating={createConv.isPending}
+            onSelect={handleSelect}
+            onNew={handleNew}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            deleting={deleteConv.isPending}
+          />
+        </aside>
+
+        {/* Sidebar (mobile drawer) */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <div
+              className="absolute inset-0 bg-black/40 animate-backdrop-in"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="absolute inset-y-0 start-0 w-80 max-w-[85%] animate-enter bg-white shadow-elevated dark:bg-dark-surface">
+              <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-dark-border">
+                <span className="text-sm font-semibold">{t('shared.chatbot.conversations')}</span>
+                <IconButton aria-label={t('shared.chatbot.closeSidebar')} onClick={() => setSidebarOpen(false)}>
+                  <PanelLeftClose className="h-5 w-5" />
+                </IconButton>
+              </div>
+              <div className="h-[calc(100%-3rem)]">
+                <ConversationSidebar
+                  conversations={conversations}
+                  isLoading={conversationsQuery.isLoading}
+                  activeId={activeId}
+                  creating={createConv.isPending}
+                  onSelect={handleSelect}
+                  onNew={handleNew}
+                  onRename={handleRename}
+                  onDelete={handleDelete}
+                  deleting={deleteConv.isPending}
+                />
+              </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-0">
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {message.role === 'assistant' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <Bot className="h-5 w-5 text-primary-600" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-lg p-4 ${
-                    message.role === 'user'
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  {message.content && (
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {message.content}
-                    </p>
-                  )}
-                  
-                  {/* Attachments */}
-                  {message.attachments && message.attachments.length > 0 && (
-                    <div className={`mt-3 space-y-2 ${message.role === 'user' ? '' : ''}`}>
-                      {message.attachments.map((attachment) => (
-                        <div
-                          key={attachment.id}
-                          className={`rounded-lg overflow-hidden ${
-                            message.role === 'user'
-                              ? 'bg-primary-500/20 border border-primary-400/30'
-                              : 'bg-white border border-gray-200'
-                          }`}
-                        >
-                          {attachment.type === 'image' && attachment.preview ? (
-                            <div className="relative">
-                              <img
-                                src={attachment.preview}
-                                alt={attachment.file.name}
-                                className="max-w-full max-h-64 object-contain"
-                              />
-                              <div className={`p-2 ${message.role === 'user' ? 'text-primary-100' : 'text-gray-700'}`}>
-                                <p className="text-xs font-medium truncate">{attachment.file.name}</p>
-                                <p className="text-xs opacity-75">{formatFileSize(attachment.file.size)}</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className={`p-3 flex items-center gap-3 ${message.role === 'user' ? 'text-primary-100' : 'text-gray-700'}`}>
-                              <div className={`p-2 rounded-lg ${message.role === 'user' ? 'bg-primary-500/30' : 'bg-gray-100'}`}>
-                                <File className="h-5 w-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">{attachment.file.name}</p>
-                                <p className="text-xs opacity-75">{formatFileSize(attachment.file.size)}</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <p
-                    className={`text-xs mt-2 ${
-                      message.role === 'user'
-                        ? 'text-primary-100'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-                {message.role === 'user' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="h-5 w-5 text-gray-600" />
-                  </div>
-                )}
+        )}
+
+        {/* Conversation pane */}
+        <section className="flex min-w-0 flex-1 flex-col">
+          {/* Pane header */}
+          <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-dark-border">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/40">
+                <Bot className="h-5 w-5 text-primary-600 dark:text-primary-300" />
               </div>
-            ))}
-            
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-primary-600" />
-                </div>
-                <div className="bg-gray-100 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
-                    <span className="text-sm text-gray-600">{t('shared.chatbot.thinking')}</span>
-                  </div>
-                </div>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-gray-900 dark:text-white">
+                  {conversation?.title ?? t('shared.chatbot.assistantName')}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  {t('shared.chatbot.alwaysHere')}
+                </p>
               </div>
-            )}
-            <div ref={messagesEndRef} />
+            </div>
+            <div className="flex flex-shrink-0 items-center gap-1.5">
+              {hasRagContext && (
+                <Badge tone="gold" size="sm">
+                  <Database className="h-3 w-3" />
+                  {t('shared.chatbot.knowledgeBaseAttached')}
+                </Badge>
+              )}
+              {sealed && (
+                <Badge tone="neutral" size="sm">
+                  <Lock className="h-3 w-3" />
+                  {t('shared.chatbot.sealed')}
+                </Badge>
+              )}
+            </div>
           </div>
 
-          {/* Attachments Preview */}
-          {attachments.length > 0 && (
-            <div className="border-t border-gray-200 p-4 bg-gray-50">
-              <div className="flex flex-wrap gap-2">
-                {attachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="relative group bg-white border border-gray-200 rounded-lg overflow-hidden"
+          {/* Attached documents bar — makes RAG context tangible */}
+          {(currentDocs.length > 0 || hasRagContext) && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-accent-200/60 bg-accent-50/60 px-4 py-2 dark:border-accent-500/20 dark:bg-accent-500/5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-700 dark:text-accent-300">
+                <Database className="h-3.5 w-3.5" />
+                {t('shared.chatbot.docsInConversation')}
+              </span>
+              {currentDocs.length > 0 ? (
+                currentDocs.map((name) => (
+                  <span
+                    key={name}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] text-gray-700 ring-1 ring-accent-200 dark:bg-dark-surface dark:text-slate-200 dark:ring-accent-500/30"
                   >
-                    {attachment.type === 'image' && attachment.preview ? (
-                      <div className="relative">
-                        <img
-                          src={attachment.preview}
-                          alt={attachment.file.name}
-                          className="w-20 h-20 object-cover"
-                        />
-                        <button
-                          onClick={() => handleRemoveAttachment(attachment.id)}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-3 flex items-center gap-2 min-w-[120px]">
-                        <div className="p-2 bg-gray-100 rounded">
-                          <File className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{attachment.file.name}</p>
-                          <p className="text-xs text-gray-500">{formatFileSize(attachment.file.size)}</p>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveAttachment(attachment.id)}
-                          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    <FileText className="h-3 w-3 text-accent-600" />
+                    {name}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                  {t('shared.chatbot.docsInConversationGeneric')}
+                </span>
+              )}
             </div>
           )}
 
-          {/* Input Area */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex gap-2">
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              
-              {/* Attach button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="px-3"
-                title={t('shared.chatbot.attachTitle')}
-              >
-                <Paperclip className="h-5 w-5 text-gray-600" />
-              </Button>
-              
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder={t('shared.chatbot.inputPlaceholder')}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button
-                variant="primary"
-                onClick={handleSend}
-                disabled={(!input.trim() && attachments.length === 0) || isLoading}
-                className="px-6"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="h-5 w-5 mr-2" />
-                    {t('shared.chatbot.send')}
-                  </>
-                )}
-              </Button>
+          {/* Messages */}
+          {messagesLoading && messages.length === 0 ? (
+            <div className="flex-1 space-y-4 overflow-y-auto p-6">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={cn('flex', i % 2 === 0 ? 'justify-start' : 'justify-end')}
+                >
+                  <div className="skeleton h-16 w-2/3 rounded-2xl" />
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {t('shared.chatbot.helperHint')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          ) : (
+            <ChatMessageList
+              messages={viewMessages}
+              canLoadOlder={canLoadOlder}
+              loadingOlder={loadingOlder}
+              onLoadOlder={loadOlder}
+              streamError={stream.streamError}
+              onRetry={() => void stream.retryStream()}
+              onDismissError={stream.dismissError}
+              showLongRunning={stream.showLongRunning}
+              onCancel={stream.cancel}
+              isStreaming={stream.isBusy}
+              emptySlot={emptySlot}
+            />
+          )}
 
-      {/* Quick Suggestions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <button
-          onClick={() => setInput(t('shared.chatbot.suggestGradeQuery'))}
-          className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-          disabled={isLoading}
-        >
-          <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">{t('shared.chatbot.checkGrades')}</p>
-          <p className="text-xs text-gray-600">{t('shared.chatbot.viewCourseGrades')}</p>
-        </button>
-        <button
-          onClick={() => setInput(t('shared.chatbot.suggestAttendanceQuery'))}
-          className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-          disabled={isLoading}
-        >
-          <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">{t('shared.chatbot.attendance')}</p>
-          <p className="text-xs text-gray-600">{t('shared.chatbot.checkAttendance')}</p>
-        </button>
-        <button
-          onClick={() => setInput(t('shared.chatbot.suggestScheduleQuery'))}
-          className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-          disabled={isLoading}
-        >
-          <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">{t('shared.chatbot.schedule')}</p>
-          <p className="text-xs text-gray-600">{t('shared.chatbot.viewClassTimes')}</p>
-        </button>
-        <button
-          onClick={() => setInput(t('shared.chatbot.suggestGpaQuery'))}
-          className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-          disabled={isLoading}
-        >
-          <Sparkles className="h-4 w-4 text-primary-600 mb-1" />
-          <p className="font-medium text-gray-900">{t('shared.chatbot.gpa')}</p>
-          <p className="text-xs text-gray-600">{t('shared.chatbot.academicStanding')}</p>
-        </button>
+          {/* Composer */}
+          <ChatComposer
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+            busy={stream.isBusy}
+            sealed={sealed}
+            hasRagContext={hasRagContext}
+            onUpload={handleUpload}
+            uploading={uploading}
+          />
+        </section>
       </div>
     </div>
   );
 }
-

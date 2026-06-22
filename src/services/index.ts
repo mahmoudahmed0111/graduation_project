@@ -10,3 +10,4 @@ export * as usersService from './users.service';
 export * as courseCatalogService from './courseCatalog.service';
 export * as courseOfferingsService from './courseOfferings.service';
 export * as enrollmentsService from './enrollments.service';
+export * as chatService from './chat.service';
