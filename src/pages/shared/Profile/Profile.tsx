@@ -36,9 +36,19 @@ export function Profile() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [otp, setOtp] = useState('');
+  const [otpStep, setOtpStep] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
+  const resetPasswordForm = () => {
+    setIsChangingPassword(false);
+    setOtpStep(false);
+    setOtp('');
+    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  };
+
+  // Step 1: validate + request the OTP (backend emails a confirmation code).
   const handleChangePassword = async () => {
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       showError(t('shared.profile.errAllFields'));
@@ -66,13 +76,8 @@ export function Profile() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
-      setIsChangingPassword(false);
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      success(t('shared.profile.passwordChanged'));
+      setOtpStep(true);
+      success(t('shared.profile.otpSent'));
     } catch (err: unknown) {
       logger.error('Failed to change password', {
         context: 'Profile',
@@ -85,13 +90,28 @@ export function Profile() {
     }
   };
 
+  // Step 2: confirm the OTP → backend applies the new password.
+  const handleConfirmPasswordChange = async () => {
+    if (!otp.trim()) {
+      showError(t('shared.profile.errOtpRequired'));
+      return;
+    }
+    setLoading(true);
+    try {
+      await authApi.confirmPasswordChange(otp.trim());
+      resetPasswordForm();
+      success(t('shared.profile.passwordChanged'));
+    } catch (err: unknown) {
+      logger.error('Failed to confirm password change', { context: 'Profile', error: err });
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showError(msg || t('shared.profile.failedChange'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCancelPassword = () => {
-    setIsChangingPassword(false);
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
+    resetPasswordForm();
   };
 
   const getAcademicStatusLabel = (status?: string) => {
@@ -294,6 +314,40 @@ export function Profile() {
             </CardHeader>
             <CardContent>
               {isChangingPassword ? (
+                otpStep ? (
+                <div className="space-y-4">
+                  <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800">
+                    {t('shared.profile.otpSent')}
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('shared.profile.otpLabel')}
+                    </label>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <Button variant="outline" onClick={handleCancelPassword} disabled={loading} className="flex-1">
+                      {t('shared.profile.cancel')}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleConfirmPasswordChange}
+                      isLoading={loading}
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      {t('shared.profile.confirmChange')}
+                    </Button>
+                  </div>
+                </div>
+                ) : (
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -399,6 +453,7 @@ export function Profile() {
                     </Button>
                   </div>
                 </div>
+                )
               ) : (
                 <div>
                   <p className="text-sm text-gray-600">

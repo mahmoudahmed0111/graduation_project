@@ -22,7 +22,9 @@ declare module 'axios' {
 }
 
 const isAuthRequest = (url: string) =>
-  /\/auth\/(login|login\/verify|refresh|logout|forgotPassword|resetPassword|verify-password)/.test(url || '');
+  /\/auth\/(login|login\/verify|refresh|logout|forgotPassword|resetPassword|verify-password|updatePassword|update-password|change-password)/.test(
+    url || ''
+  );
 
 function globalErrorToast(status: number, message?: string) {
   const toast = useToastStore.getState();

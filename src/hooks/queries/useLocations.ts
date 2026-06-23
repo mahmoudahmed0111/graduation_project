@@ -12,10 +12,10 @@ export function useLocations(params?: GetLocationsParams) {
   });
 }
 
-export function useLocation(id: string | undefined) {
+export function useLocation(id: string | undefined, query?: { isArchived?: 'true' }) {
   return useQuery({
-    queryKey: [...key, 'detail', id],
-    queryFn: () => locationsService.getLocation(id!),
+    queryKey: [...key, 'detail', id, query ?? {}],
+    queryFn: () => locationsService.getLocation(id!, query),
     enabled: Boolean(id),
   });
 }

@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { apiClient } from '@/lib/http/client';
 import { buildQuery, type ListQueryParams } from '@/lib/http/buildQuery';
 import { normalizeListResponse, normalizeSingleResponse } from '@/lib/http/normalize';
@@ -8,22 +9,38 @@ import type { Phase1ListResult } from '@/lib/http/types';
  * Base path: `/api/v1/locations`
  */
 export interface GetLocationsParams extends ListQueryParams {
+  /** Postman `GET /locations` — `?college=<id>` filters by college. */
+  college?: string;
   type?: string;
   status?: string;
   /** UA/CA only per API security notes; omit for DR/TA. */
   isArchived?: 'true' | 'false' | 'all';
 }
 
-/** `GET /api/v1/locations` — scoped by role; query: type, status, isArchived (admins), page, limit, sort. */
+/** `GET /api/v1/locations` — scoped by role; query: college, type, status, isArchived (admins), page, limit, sort. */
 export async function getLocations(params?: GetLocationsParams): Promise<Phase1ListResult<Record<string, unknown>>> {
   const response = await apiClient.get('/locations', { params: buildQuery(params as Record<string, unknown>) });
   return normalizeListResponse<Record<string, unknown>>(response, 'locations');
 }
 
-/** `GET /api/v1/locations/:id` */
-export async function getLocation(id: string): Promise<Record<string, unknown>> {
-  const response = await apiClient.get(`/locations/${encodeURIComponent(id)}`);
+/** `GET /api/v1/locations/:id` — optional `?isArchived=true` to fetch an archived location (Postman). */
+export async function getLocation(id: string, query?: { isArchived?: 'true' }): Promise<Record<string, unknown>> {
+  const response = await apiClient.get(`/locations/${encodeURIComponent(id)}`, {
+    params: buildQuery(query as Record<string, unknown>),
+  });
   return normalizeSingleResponse<Record<string, unknown>>(response, 'location');
+}
+
+/** Detail: retry with `?isArchived=true` on 404 (archived location) — mirrors departments. */
+export async function getLocationResolvingArchived(id: string): Promise<Record<string, unknown>> {
+  try {
+    return await getLocation(id);
+  } catch (e) {
+    if (isAxiosError(e) && e.response?.status === 404) {
+      return await getLocation(id, { isArchived: 'true' });
+    }
+    throw e;
+  }
 }
 
 /** `POST /api/v1/locations` — UA sends `college_id`; CA’s college is assigned server-side. */

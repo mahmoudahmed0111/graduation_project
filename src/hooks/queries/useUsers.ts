@@ -15,7 +15,7 @@ function usersListStableFingerprint(p: UserListQueryParams): string {
   return [
     p.limit ?? '',
     p.sort ?? '',
-    p.isArchived ?? '',
+    p.includeDeleted ?? '',
     p.role ?? '',
     p.department_id ?? '',
     p.college_id ?? '',

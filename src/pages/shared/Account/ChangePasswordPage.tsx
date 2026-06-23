@@ -18,8 +18,11 @@ export function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpStep, setOtpStep] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Step 1: validate + request the OTP (backend emails a confirmation code).
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -41,6 +44,25 @@ export function ChangePasswordPage() {
     setLoading(true);
     try {
       await authApi.changePassword({ currentPassword, newPassword });
+      setOtpStep(true);
+      success(t('shared.accountChangePassword.otpSent'));
+    } catch (err) {
+      toastError(getApiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: confirm the OTP → backend applies the new password.
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim()) {
+      toastError(t('shared.accountChangePassword.errOtpRequired'));
+      return;
+    }
+    setLoading(true);
+    try {
+      await authApi.confirmPasswordChange(otp.trim());
       if (user) {
         setUser({ ...user, requiresPasswordChange: false });
       }
@@ -68,32 +90,64 @@ export function ChangePasswordPage() {
               {t('shared.accountChangePassword.adminRequiresChange')}
             </p>
           )}
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-            <Input
-              label={t('shared.accountChangePassword.currentPassword')}
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-            <Input
-              label={t('shared.accountChangePassword.newPassword')}
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-            <Input
-              label={t('shared.accountChangePassword.confirmNewPassword')}
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-            <Button type="submit" variant="primary" className="w-full" disabled={loading}>
-              {loading ? t('shared.accountChangePassword.saving') : t('shared.accountChangePassword.updatePassword')}
-            </Button>
-          </form>
+          {otpStep ? (
+            <form onSubmit={(e) => void handleConfirm(e)} className="space-y-4">
+              <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 dark:border-primary-500/30 dark:bg-primary-900/20 dark:text-primary-200">
+                {t('shared.accountChangePassword.otpSent')}
+              </p>
+              <Input
+                label={t('shared.accountChangePassword.otpLabel')}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                autoFocus
+              />
+              <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+                {loading ? t('shared.accountChangePassword.verifying') : t('shared.accountChangePassword.confirmChange')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                disabled={loading}
+                onClick={() => {
+                  setOtpStep(false);
+                  setOtp('');
+                }}
+              >
+                {t('shared.accountChangePassword.back')}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+              <Input
+                label={t('shared.accountChangePassword.currentPassword')}
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              <Input
+                label={t('shared.accountChangePassword.newPassword')}
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+              <Input
+                label={t('shared.accountChangePassword.confirmNewPassword')}
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+              <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+                {loading ? t('shared.accountChangePassword.saving') : t('shared.accountChangePassword.updatePassword')}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -59,9 +59,21 @@ export function FinalExamEntry() {
 
   const handleSave = async () => {
     if (!offeringId) return;
-    const payload: FinalExamRow[] = Object.entries(drafts)
-      .filter(([, d]) => d.dirty && d.value !== '')
-      .map(([sid, d]) => ({ studentId: sid, finalExam: Number(d.value) }));
+    const dirtyEntries = Object.entries(drafts).filter(([, d]) => d.dirty && d.value !== '');
+    // Enforce the documented bound (phase4: 0 ≤ finalExam ≤ gradingPolicy.finalExam)
+    // — the input's HTML min/max are hints only and don't block typed/pasted values.
+    const hasInvalid = dirtyEntries.some(([, d]) => {
+      const n = Number(d.value);
+      return !Number.isFinite(n) || n < 0 || n > finalCap;
+    });
+    if (hasInvalid) {
+      showError(t('admin.finalExamEntry.outOfRange', { cap: finalCap }));
+      return;
+    }
+    const payload: FinalExamRow[] = dirtyEntries.map(([sid, d]) => ({
+      studentId: sid,
+      finalExam: Number(d.value),
+    }));
     if (payload.length === 0) {
       info(t('admin.finalExamEntry.nothingToSave'));
       return;

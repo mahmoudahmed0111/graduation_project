@@ -35,6 +35,19 @@ export function useCourseOfferingRoster(
   });
 }
 
+/** `GET /course-offerings/:id/students/:studentId` — a single enrolled student's record. */
+export function useCourseOfferingStudentEnrollment(
+  offeringId: string | undefined,
+  studentId: string | undefined
+) {
+  return useQuery({
+    queryKey: [...key, 'roster', offeringId, 'student', studentId],
+    queryFn: () =>
+      courseOfferingsService.getCourseOfferingStudentEnrollment(offeringId!, studentId!),
+    enabled: Boolean(offeringId) && Boolean(studentId),
+  });
+}
+
 export function useCreateCourseOffering() {
   const qc = useQueryClient();
   return useMutation({

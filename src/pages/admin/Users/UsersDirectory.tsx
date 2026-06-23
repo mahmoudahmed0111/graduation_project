@@ -24,8 +24,7 @@ import { Eye, FileUp, Fingerprint, Plus, Users } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: 'false', labelKey: 'admin.usersDirectory.statusActive' },
-  { value: 'true', labelKey: 'admin.usersDirectory.statusDeactivated' },
-  { value: 'all', labelKey: 'admin.usersDirectory.statusAll' },
+  { value: 'true', labelKey: 'admin.usersDirectory.statusIncludeDeleted' },
 ];
 
 const SORT_OPTIONS = [
@@ -66,9 +65,9 @@ function userMatchesLocalSearch(u: Phase2ApiUser, q: string): boolean {
   return false;
 }
 
-function parseIsArchived(raw: string | null): 'true' | 'false' | 'all' {
-  if (raw === 'true' || raw === 'false' || raw === 'all') return raw;
-  return 'all';
+/** Postman `GET /users` is active-only by default; `?includeDeleted=true` adds deactivated users. */
+function parseIncludeDeleted(raw: string | null): boolean {
+  return raw === 'true';
 }
 
 export interface UsersDirectoryProps {
@@ -95,7 +94,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
   const sort = searchParams.get('sort') || '-createdAt';
-  const isArchived = parseIsArchived(searchParams.get('isArchived'));
+  const includeDeleted = parseIncludeDeleted(searchParams.get('includeDeleted'));
   const collegeId = isUA ? searchParams.get('college_id') ?? '' : '';
   const departmentId = searchParams.get('department_id') ?? '';
   const academicStatus = searchParams.get('academicStatus') ?? '';
@@ -187,7 +186,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
       page: 1,
       limit: USERS_LIST_FETCH_LIMIT,
       sort,
-      isArchived,
+      includeDeleted: includeDeleted || undefined,
       role: apiRole,
       department_id: departmentId || undefined,
       college_id: isUA ? collegeId || undefined : undefined,
@@ -196,7 +195,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
     }),
     [
       sort,
-      isArchived,
+      includeDeleted,
       apiRole,
       departmentId,
       collegeId,
@@ -210,7 +209,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   useEffect(() => {
     setSelected(new Set());
-  }, [page, segment, apiRole, departmentId, collegeId, isArchived, academicStatus, levelStr, searchTerm]);
+  }, [page, segment, apiRole, departmentId, collegeId, includeDeleted, academicStatus, levelStr, searchTerm]);
 
   const query = useUsers(listParams);
 
@@ -332,8 +331,8 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                 </Link>
               </>
             }
-            activeFilterCount={[isArchived !== 'false' ? isArchived : '', collegeId, departmentId, sort !== '-createdAt' ? sort : '', academicStatus, levelStr].filter(Boolean).length}
-            onClearFilters={() => patchParams({ isArchived: null, college_id: null, department_id: null, sort: null, academicStatus: null, level: null, page: null })}
+            activeFilterCount={[includeDeleted ? 'deleted' : '', collegeId, departmentId, sort !== '-createdAt' ? sort : '', academicStatus, levelStr].filter(Boolean).length}
+            onClearFilters={() => patchParams({ includeDeleted: null, college_id: null, department_id: null, sort: null, academicStatus: null, level: null, page: null })}
             filters={
               <>
             {segment === 'admins' && isUA && (
@@ -354,10 +353,9 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             <Select2
               label={t('admin.usersDirectory.accountStatus')}
               options={STATUS_FILTERS.map((o) => ({ value: o.value, label: t(o.labelKey) }))}
-              value={isArchived}
+              value={includeDeleted ? 'true' : 'false'}
               onChange={(v) => {
-                const next = v as 'true' | 'false' | 'all';
-                patchParams({ isArchived: next === 'all' ? null : next, page: null });
+                patchParams({ includeDeleted: v === 'true' ? 'true' : null, page: null });
               }}
               searchable={false}
             />

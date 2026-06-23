@@ -671,11 +671,31 @@ export const authApi = {
     return normalizeUser(response.data);
   },
 
+  /**
+   * Password change — STEP 1 of 2. `POST /auth/updatePassword` validates the
+   * current password and emails an OTP; it does NOT apply the change yet.
+   * Finalize with `confirmPasswordChange(otp)` (Step 2).
+   */
   changePassword: async (data: {
     currentPassword: string;
     newPassword: string;
   }): Promise<void> => {
-    await axiosInstance.post('/auth/change-password', data);
+    await axiosInstance.post('/auth/updatePassword', {
+      currentPassword: data.currentPassword,
+      // Doc is inconsistent (field table says `newPassword`; example body uses
+      // `password`/`passwordConfirm`) — send all so the backend gets it either way.
+      password: data.newPassword,
+      passwordConfirm: data.newPassword,
+      newPassword: data.newPassword,
+    });
+  },
+
+  /**
+   * Password change — STEP 2 of 2. `POST /auth/updatePassword/confirm` submits the
+   * OTP from Step 1 to actually apply the new password.
+   */
+  confirmPasswordChange: async (otp: string): Promise<void> => {
+    await axiosInstance.post('/auth/updatePassword/confirm', { otp });
   },
 
   /** Verify password for lock screen unlock. Throws on incorrect password. */

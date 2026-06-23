@@ -15,6 +15,7 @@ import { useToastStore } from '@/store/toastStore';
 import {
   useCourseOfferings,
   useCourseOfferingRoster,
+  useCourseOfferingStudentEnrollment,
   useArchiveCourseOffering,
 } from '@/hooks/queries/usePhase3CourseOfferings';
 import { getApiErrorMessage } from '@/lib/http/client';
@@ -239,10 +240,20 @@ export function CourseOfferings() {
   );
 }
 
+/** Extract a student id from a roster row's `student_id` (populated object or raw id). */
+function rosterStudentId(st: unknown): string {
+  if (st && typeof st === 'object') {
+    const o = st as Record<string, unknown>;
+    return String(o._id ?? o.id ?? '');
+  }
+  return String(st ?? '');
+}
+
 function RosterModal({ offeringId, onClose }: { offeringId: string; onClose: () => void }) {
   const { t } = useTranslation();
   const { data, isLoading } = useCourseOfferingRoster(offeringId, { limit: 100 });
   const rows = data?.items ?? [];
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
   return (
     <Modal isOpen title={t('admin.courseOfferings.roster')} onClose={onClose} size="xl">
@@ -262,8 +273,13 @@ function RosterModal({ offeringId, onClose }: { offeringId: string; onClose: () 
               const rec = e as Record<string, unknown>;
               const st = rec.student_id;
               const snap = rec.snapshot as Record<string, unknown> | undefined;
+              const studentId = rosterStudentId(st);
               return (
-                <TableRow key={p3Id(rec)}>
+                <TableRow
+                  key={p3Id(rec)}
+                  onClick={() => studentId && setSelectedStudentId(studentId)}
+                  className={studentId ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-surface-2' : ''}
+                >
                   <TableCell>{p3RefName(st)}</TableCell>
                   <TableCell>{String(rec.status ?? '')}</TableCell>
                   <TableCell>{snap ? String(snap.courseCode ?? '') : '—'}</TableCell>
@@ -273,7 +289,68 @@ function RosterModal({ offeringId, onClose }: { offeringId: string; onClose: () 
           </TableBody>
         </Table>
       )}
+
+      {selectedStudentId && (
+        <RosterStudentDetail
+          offeringId={offeringId}
+          studentId={selectedStudentId}
+          onClose={() => setSelectedStudentId(null)}
+        />
+      )}
     </Modal>
+  );
+}
+
+/** Drill-down: fetches `GET /course-offerings/:id/students/:studentId` for the picked row. */
+function RosterStudentDetail({
+  offeringId,
+  studentId,
+  onClose,
+}: {
+  offeringId: string;
+  studentId: string;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const { data, isLoading, isError, error } = useCourseOfferingStudentEnrollment(offeringId, studentId);
+  const enr = (data ?? {}) as Record<string, unknown>;
+  const snap = enr.snapshot as Record<string, unknown> | undefined;
+
+  return (
+    <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-border dark:bg-dark-surface-2">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          {t('admin.courseOfferings.studentDetailTitle')}
+        </h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-xs text-gray-500 underline underline-offset-2 hover:text-gray-700 dark:text-slate-400"
+        >
+          {t('admin.courseOfferings.close')}
+        </button>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-gray-500">{t('admin.courseOfferings.loadingRoster')}</p>
+      ) : isError ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{getApiErrorMessage(error)}</p>
+      ) : (
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-3">
+          <Detail label={t('admin.courseOfferings.student')} value={p3RefName(enr.student_id)} />
+          <Detail label={t('admin.courseOfferings.status')} value={String(enr.status ?? '—')} />
+          <Detail label={t('admin.courseOfferings.code')} value={snap ? String(snap.courseCode ?? '—') : '—'} />
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[11px] uppercase tracking-wide text-gray-400 dark:text-slate-500">{label}</dt>
+      <dd className="font-medium text-gray-900 dark:text-slate-100">{value}</dd>
+    </div>
   );
 }
 

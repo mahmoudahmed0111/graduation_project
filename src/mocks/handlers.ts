@@ -296,28 +296,37 @@ export const handlers = [
     return HttpResponse.json(updatedUser);
   }),
 
-  http.post(`${API_BASE_URL}/auth/change-password`, async ({ request }) => {
+  // Step 1: validate current password + "send" OTP (does not apply the change).
+  http.post(`${API_BASE_URL}/auth/updatePassword`, async ({ request }) => {
     const body = await request.json() as {
       currentPassword: string;
-      newPassword: string;
+      password: string;
+      passwordConfirm: string;
     };
 
-    // In a real app, you'd verify the current password
-    // For mock, we'll just accept any current password
-    if (!body.currentPassword || !body.newPassword) {
+    if (!body.currentPassword || !body.password) {
       return HttpResponse.json(
         { message: 'Current password and new password are required' },
         { status: 400 }
       );
     }
 
-    if (body.newPassword.length < 8) {
+    if (body.password.length < 8) {
       return HttpResponse.json(
         { message: 'New password must be at least 8 characters long' },
         { status: 400 }
       );
     }
 
+    return HttpResponse.json({ message: 'Confirmation code sent.' });
+  }),
+
+  // Step 2: confirm the OTP to apply the new password.
+  http.post(`${API_BASE_URL}/auth/updatePassword/confirm`, async ({ request }) => {
+    const body = await request.json() as { otp: string };
+    if (!body.otp) {
+      return HttpResponse.json({ message: 'Confirmation code is required' }, { status: 400 });
+    }
     return HttpResponse.json({ message: 'Password changed successfully' });
   }),
 

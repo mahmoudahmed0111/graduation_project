@@ -21,6 +21,8 @@ export interface UserListQueryParams extends ListQueryParams {
   college_id?: string;
   academicStatus?: string;
   level?: number;
+  /** Postman contract: `?includeDeleted=true` returns deactivated users too (active-only by default). */
+  includeDeleted?: boolean;
 }
 
 /** Phase 3 `GET /course-catalog` */
