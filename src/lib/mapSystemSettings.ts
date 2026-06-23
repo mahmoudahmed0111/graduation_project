@@ -1,4 +1,30 @@
-import type { ISystemSettings } from '@/types';
+import type { ChatTokenBudgets, ISystemSettings } from '@/types';
+
+/** Phase 7 defaults mirror the budget table + context limits in `phase7_api_doc.md`. */
+const DEFAULT_CHAT_TOKEN_BUDGETS: ChatTokenBudgets = {
+  student: 50000,
+  ta: 100000,
+  doctor: 100000,
+  collegeAdmin: 200000,
+  universityAdmin: 0,
+};
+
+/** Coerce an unknown into a finite number, falling back when absent/invalid. */
+function toNumber(raw: unknown, fallback: number): number {
+  const n = typeof raw === 'string' ? Number(raw) : (raw as number);
+  return Number.isFinite(n) ? Number(n) : fallback;
+}
+
+function mapChatTokenBudgets(raw: unknown): ChatTokenBudgets {
+  const b = (raw as Partial<Record<keyof ChatTokenBudgets, unknown>> | undefined) ?? {};
+  return {
+    student: toNumber(b.student, DEFAULT_CHAT_TOKEN_BUDGETS.student),
+    ta: toNumber(b.ta, DEFAULT_CHAT_TOKEN_BUDGETS.ta),
+    doctor: toNumber(b.doctor, DEFAULT_CHAT_TOKEN_BUDGETS.doctor),
+    collegeAdmin: toNumber(b.collegeAdmin, DEFAULT_CHAT_TOKEN_BUDGETS.collegeAdmin),
+    universityAdmin: toNumber(b.universityAdmin, DEFAULT_CHAT_TOKEN_BUDGETS.universityAdmin),
+  };
+}
 
 export type SettingsSemesterUi = ISystemSettings['currentSemester'];
 
@@ -41,6 +67,10 @@ export function mapSettingsFromApi(s: Record<string, unknown>): ISystemSettings 
       probation: defaultCredit?.probation ?? 12,
       honors: defaultCredit?.honors ?? 21,
     },
+    chatHistoryLimit: toNumber(s.chatHistoryLimit, 20),
+    chatMaxContextTokens: toNumber(s.chatMaxContextTokens, 8000),
+    chatMaxSummarizationCycles: toNumber(s.chatMaxSummarizationCycles, 3),
+    chatTokenBudgets: mapChatTokenBudgets(s.chatTokenBudgets),
   };
 }
 
@@ -64,4 +94,8 @@ export const FALLBACK_SYSTEM_SETTINGS: ISystemSettings = {
     probation: 12,
     honors: 21,
   },
+  chatHistoryLimit: 20,
+  chatMaxContextTokens: 8000,
+  chatMaxSummarizationCycles: 3,
+  chatTokenBudgets: { ...DEFAULT_CHAT_TOKEN_BUDGETS },
 };

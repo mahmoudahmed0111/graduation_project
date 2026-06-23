@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot, Sparkles, Menu, Database, Lock, PanelLeftClose, FileText } from 'lucide-react';
+import { Sparkles, Menu, Database, Lock, PanelLeftClose, FileText } from 'lucide-react';
 import { Badge, IconButton } from '@/components/ui';
 import { useToastStore } from '@/store/toastStore';
 import { getApiErrorMessage } from '@/lib/http/client';
-import { cn } from '@/lib/utils';
 import * as chatService from '@/services/chat.service';
 import {
   useChatUsage,
@@ -198,25 +197,19 @@ export function Chatbot() {
 
   const emptySlot = (
     <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
-      <div className="relative mb-5">
-        <span className="absolute inset-0 -m-3 rounded-full bg-primary-500/10 blur-xl" />
-        <span className="relative grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-50 to-accent-50 text-primary-600 ring-1 ring-primary-100 dark:from-primary-900/40 dark:to-accent-500/10 dark:text-accent-300 dark:ring-dark-border">
-          <Bot className="h-8 w-8" />
-        </span>
-      </div>
-      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-        {t('shared.chatbot.assistantName')}
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        {t('shared.chatbot.greeting')}
       </h2>
-      <p className="mt-1 max-w-sm text-sm text-gray-500 dark:text-slate-400">
-        {t('shared.chatbot.subtitle')}
+      <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-slate-400">
+        {t('shared.chatbot.greetingHint')}
       </p>
-      <div className="mt-6 grid w-full max-w-lg grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <div className="mt-7 grid w-full max-w-xl grid-cols-1 gap-2.5 sm:grid-cols-2">
         {suggestions.map((s) => (
           <button
             key={s.label}
             type="button"
             onClick={() => void stream.send(s.query)}
-            className="flex items-start gap-2 rounded-xl border border-gray-200 p-3 text-start text-sm transition-colors hover:border-primary-300 hover:bg-primary-50/50 dark:border-dark-border dark:hover:border-primary-500/40 dark:hover:bg-primary-900/20"
+            className="flex items-start gap-2.5 rounded-2xl border border-gray-200 p-3.5 text-start text-sm transition-all hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-card dark:border-dark-border dark:hover:border-primary-500/40"
           >
             <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-500" />
             <span>
@@ -230,178 +223,155 @@ export function Chatbot() {
   );
 
   return (
-    <div className="page-enter flex h-[calc(100vh-7rem)] min-h-[560px] flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <IconButton
-            aria-label={t('shared.chatbot.toggleSidebar')}
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="lg:hidden"
-          >
-            <Menu className="h-5 w-5" />
-          </IconButton>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-              {t('nav.chatbot')}
-            </h1>
-            <p className="hidden text-sm text-gray-600 dark:text-slate-400 sm:block">
-              {t('shared.chatbot.subtitle')}
-            </p>
+    <div className="page-enter flex h-[calc(100vh-7rem)] min-h-[560px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card dark:border-dark-border dark:bg-dark-surface">
+      {/* Sidebar (desktop) */}
+      <aside className="hidden w-72 flex-shrink-0 flex-col border-e border-gray-200 bg-gray-50/60 dark:border-dark-border dark:bg-dark-bg/40 lg:flex">
+        <ConversationSidebar
+          conversations={conversations}
+          isLoading={conversationsQuery.isLoading}
+          activeId={activeId}
+          creating={createConv.isPending}
+          onSelect={handleSelect}
+          onNew={handleNew}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          deleting={deleteConv.isPending}
+        />
+      </aside>
+
+      {/* Sidebar (mobile drawer) */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40 animate-backdrop-in"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="absolute inset-y-0 start-0 w-80 max-w-[85%] animate-enter bg-white shadow-elevated dark:bg-dark-surface">
+            <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-dark-border">
+              <span className="text-sm font-semibold">{t('shared.chatbot.conversations')}</span>
+              <IconButton aria-label={t('shared.chatbot.closeSidebar')} onClick={() => setSidebarOpen(false)}>
+                <PanelLeftClose className="h-5 w-5" />
+              </IconButton>
+            </div>
+            <div className="h-[calc(100%-3rem)]">
+              <ConversationSidebar
+                conversations={conversations}
+                isLoading={conversationsQuery.isLoading}
+                activeId={activeId}
+                creating={createConv.isPending}
+                onSelect={handleSelect}
+                onNew={handleNew}
+                onRename={handleRename}
+                onDelete={handleDelete}
+                deleting={deleteConv.isPending}
+              />
+            </div>
           </div>
         </div>
-        <div className="hidden w-64 sm:block">
-          <UsageMeter usage={usageQuery.data} isLoading={usageQuery.isLoading} compact />
-        </div>
-      </div>
+      )}
 
-      {/* Workbench */}
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card dark:border-dark-border dark:bg-dark-surface">
-        {/* Sidebar (desktop) */}
-        <aside className="hidden w-72 flex-shrink-0 border-e border-gray-200 dark:border-dark-border lg:flex lg:flex-col">
-          <ConversationSidebar
-            conversations={conversations}
-            isLoading={conversationsQuery.isLoading}
-            activeId={activeId}
-            creating={createConv.isPending}
-            onSelect={handleSelect}
-            onNew={handleNew}
-            onRename={handleRename}
-            onDelete={handleDelete}
-            deleting={deleteConv.isPending}
-          />
-        </aside>
-
-        {/* Sidebar (mobile drawer) */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 lg:hidden">
-            <div
-              className="absolute inset-0 bg-black/40 animate-backdrop-in"
-              onClick={() => setSidebarOpen(false)}
-            />
-            <div className="absolute inset-y-0 start-0 w-80 max-w-[85%] animate-enter bg-white shadow-elevated dark:bg-dark-surface">
-              <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-dark-border">
-                <span className="text-sm font-semibold">{t('shared.chatbot.conversations')}</span>
-                <IconButton aria-label={t('shared.chatbot.closeSidebar')} onClick={() => setSidebarOpen(false)}>
-                  <PanelLeftClose className="h-5 w-5" />
-                </IconButton>
-              </div>
-              <div className="h-[calc(100%-3rem)]">
-                <ConversationSidebar
-                  conversations={conversations}
-                  isLoading={conversationsQuery.isLoading}
-                  activeId={activeId}
-                  creating={createConv.isPending}
-                  onSelect={handleSelect}
-                  onNew={handleNew}
-                  onRename={handleRename}
-                  onDelete={handleDelete}
-                  deleting={deleteConv.isPending}
-                />
-              </div>
+      {/* Conversation pane */}
+      <section className="flex min-w-0 flex-1 flex-col">
+        {/* Minimal top bar */}
+        <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2.5 dark:border-dark-border sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <IconButton
+              aria-label={t('shared.chatbot.toggleSidebar')}
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="lg:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </IconButton>
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-gray-900 dark:text-white">
+                {conversation?.title ?? t('shared.chatbot.assistantName')}
+              </p>
+              <p className="hidden text-xs text-gray-500 dark:text-slate-400 sm:block">
+                {t('shared.chatbot.alwaysHere')}
+              </p>
             </div>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-1.5">
+            {hasRagContext && (
+              <Badge tone="gold" size="sm">
+                <Database className="h-3 w-3" />
+                {t('shared.chatbot.knowledgeBaseAttached')}
+              </Badge>
+            )}
+            {sealed && (
+              <Badge tone="neutral" size="sm">
+                <Lock className="h-3 w-3" />
+                {t('shared.chatbot.sealed')}
+              </Badge>
+            )}
+            <div className="hidden w-56 md:block">
+              <UsageMeter usage={usageQuery.data} isLoading={usageQuery.isLoading} compact />
+            </div>
+          </div>
+        </div>
+
+        {/* Attached documents bar — makes RAG context tangible */}
+        {(currentDocs.length > 0 || hasRagContext) && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-accent-200/60 bg-accent-50/60 px-4 py-2 dark:border-accent-500/20 dark:bg-accent-500/5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-700 dark:text-accent-300">
+              <Database className="h-3.5 w-3.5" />
+              {t('shared.chatbot.docsInConversation')}
+            </span>
+            {currentDocs.length > 0 ? (
+              currentDocs.map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] text-gray-700 ring-1 ring-accent-200 dark:bg-dark-surface dark:text-slate-200 dark:ring-accent-500/30"
+                >
+                  <FileText className="h-3 w-3 text-accent-600" />
+                  {name}
+                </span>
+              ))
+            ) : (
+              <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                {t('shared.chatbot.docsInConversationGeneric')}
+              </span>
+            )}
           </div>
         )}
 
-        {/* Conversation pane */}
-        <section className="flex min-w-0 flex-1 flex-col">
-          {/* Pane header */}
-          <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-dark-border">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/40">
-                <Bot className="h-5 w-5 text-primary-600 dark:text-primary-300" />
+        {/* Messages */}
+        {messagesLoading && messages.length === 0 ? (
+          <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className={i % 2 === 0 ? 'flex justify-start' : 'flex justify-end'}>
+                <div className="skeleton h-16 w-2/3 rounded-2xl" />
               </div>
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-gray-900 dark:text-white">
-                  {conversation?.title ?? t('shared.chatbot.assistantName')}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  {t('shared.chatbot.alwaysHere')}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-shrink-0 items-center gap-1.5">
-              {hasRagContext && (
-                <Badge tone="gold" size="sm">
-                  <Database className="h-3 w-3" />
-                  {t('shared.chatbot.knowledgeBaseAttached')}
-                </Badge>
-              )}
-              {sealed && (
-                <Badge tone="neutral" size="sm">
-                  <Lock className="h-3 w-3" />
-                  {t('shared.chatbot.sealed')}
-                </Badge>
-              )}
-            </div>
+            ))}
           </div>
-
-          {/* Attached documents bar — makes RAG context tangible */}
-          {(currentDocs.length > 0 || hasRagContext) && (
-            <div className="flex flex-wrap items-center gap-2 border-b border-accent-200/60 bg-accent-50/60 px-4 py-2 dark:border-accent-500/20 dark:bg-accent-500/5">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-700 dark:text-accent-300">
-                <Database className="h-3.5 w-3.5" />
-                {t('shared.chatbot.docsInConversation')}
-              </span>
-              {currentDocs.length > 0 ? (
-                currentDocs.map((name) => (
-                  <span
-                    key={name}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] text-gray-700 ring-1 ring-accent-200 dark:bg-dark-surface dark:text-slate-200 dark:ring-accent-500/30"
-                  >
-                    <FileText className="h-3 w-3 text-accent-600" />
-                    {name}
-                  </span>
-                ))
-              ) : (
-                <span className="text-[11px] text-gray-500 dark:text-slate-400">
-                  {t('shared.chatbot.docsInConversationGeneric')}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Messages */}
-          {messagesLoading && messages.length === 0 ? (
-            <div className="flex-1 space-y-4 overflow-y-auto p-6">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className={cn('flex', i % 2 === 0 ? 'justify-start' : 'justify-end')}
-                >
-                  <div className="skeleton h-16 w-2/3 rounded-2xl" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <ChatMessageList
-              messages={viewMessages}
-              canLoadOlder={canLoadOlder}
-              loadingOlder={loadingOlder}
-              onLoadOlder={loadOlder}
-              streamError={stream.streamError}
-              onRetry={() => void stream.retryStream()}
-              onDismissError={stream.dismissError}
-              showLongRunning={stream.showLongRunning}
-              onCancel={stream.cancel}
-              isStreaming={stream.isBusy}
-              emptySlot={emptySlot}
-            />
-          )}
-
-          {/* Composer */}
-          <ChatComposer
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            busy={stream.isBusy}
-            sealed={sealed}
-            hasRagContext={hasRagContext}
-            onUpload={handleUpload}
-            uploading={uploading}
+        ) : (
+          <ChatMessageList
+            messages={viewMessages}
+            canLoadOlder={canLoadOlder}
+            loadingOlder={loadingOlder}
+            onLoadOlder={loadOlder}
+            streamError={stream.streamError}
+            onRetry={() => void stream.retryStream()}
+            onDismissError={stream.dismissError}
+            showLongRunning={stream.showLongRunning}
+            onCancel={stream.cancel}
+            isStreaming={stream.isBusy}
+            emptySlot={emptySlot}
           />
-        </section>
-      </div>
+        )}
+
+        {/* Composer */}
+        <ChatComposer
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          busy={stream.isBusy}
+          sealed={sealed}
+          hasRagContext={hasRagContext}
+          onUpload={handleUpload}
+          uploading={uploading}
+        />
+      </section>
     </div>
   );
 }

@@ -480,6 +480,29 @@ export interface IDepartment {
 }
 
 // System Settings (Phase 1: GET/PATCH /api/v1/settings)
+
+/**
+ * Phase 7 — monthly AI token budgets per system role (see phase7_api_doc.md).
+ * Keys mirror the backend `UserRole` enum used by the chat budget table.
+ * A value of `0` means **unlimited** (the documented default for university admins).
+ */
+export interface ChatTokenBudgets {
+  student: number;
+  ta: number;
+  doctor: number;
+  collegeAdmin: number;
+  universityAdmin: number;
+}
+
+/** Ordered list of budget roles (single source of truth for UI/mapper). */
+export const CHAT_TOKEN_BUDGET_ROLES = [
+  'student',
+  'ta',
+  'doctor',
+  'collegeAdmin',
+  'universityAdmin',
+] as const satisfies ReadonlyArray<keyof ChatTokenBudgets>;
+
 export interface ISystemSettings {
   id: string;
   currentAcademicYear: string;
@@ -502,6 +525,14 @@ export interface ISystemSettings {
     probation: number;
     honors: number;
   };
+  /** Phase 7 — AI Chat engine. Max prior messages kept in conversation context. */
+  chatHistoryLimit: number;
+  /** Phase 7 — token threshold before context compression/summarization kicks in. */
+  chatMaxContextTokens: number;
+  /** Phase 7 — max recursive summarization passes before a conversation is sealed. */
+  chatMaxSummarizationCycles: number;
+  /** Phase 7 — monthly token budget per role (0 = unlimited). */
+  chatTokenBudgets: ChatTokenBudgets;
 }
 
 // Auth Types – aligned with backend (Node) auth API

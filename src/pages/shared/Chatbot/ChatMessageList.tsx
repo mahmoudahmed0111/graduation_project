@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Loader2,
@@ -8,6 +8,9 @@ import {
   ChevronUp,
   Wrench,
   Sparkles,
+  Bot,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -48,6 +51,43 @@ function formatTime(iso?: string): string {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Copy-to-clipboard affordance shown on completed assistant turns (ChatGPT-style). */
+function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — silently ignore */
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title={copied ? t('shared.chatbot.copied') : t('shared.chatbot.copy')}
+      aria-label={copied ? t('shared.chatbot.copied') : t('shared.chatbot.copy')}
+      className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-surface-2 dark:hover:text-slate-200"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
+/** Brand avatar for assistant turns. */
+function AssistantAvatar() {
+  return (
+    <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-sm dark:from-primary-500 dark:to-accent-500">
+      <Bot className="h-4 w-4" />
+    </span>
+  );
+}
+
 export function ChatMessageList({
   messages,
   canLoadOlder,
@@ -78,92 +118,111 @@ export function ChatMessageList({
 
   const hasContent = messages.length > 0;
 
-  return (
-    <div className="flex-1 overflow-y-auto thin-scrollbar p-4 sm:p-6">
-      {canLoadOlder && (
-        <div className="mb-4 flex justify-center">
-          <Button variant="ghost" size="sm" onClick={onLoadOlder} isLoading={loadingOlder} className="gap-1.5">
-            <ChevronUp className="h-4 w-4" />
-            {t('shared.chatbot.loadOlder')}
-          </Button>
-        </div>
-      )}
+  if (!hasContent && !isStreaming) {
+    return <div className="flex-1 overflow-y-auto thin-scrollbar">{emptySlot}</div>;
+  }
 
-      {!hasContent && !isStreaming ? (
-        emptySlot
-      ) : (
-        <div className="space-y-4">
+  return (
+    <div className="flex-1 overflow-y-auto thin-scrollbar">
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+        {canLoadOlder && (
+          <div className="mb-6 flex justify-center">
+            <Button variant="ghost" size="sm" onClick={onLoadOlder} isLoading={loadingOlder} className="gap-1.5">
+              <ChevronUp className="h-4 w-4" />
+              {t('shared.chatbot.loadOlder')}
+            </Button>
+          </div>
+        )}
+
+        <div className="space-y-6">
           {messages.map((message) => {
             const isUser = message.role === 'user';
             const isFailed = message.status === 'failed';
+
+            if (isUser) {
+              return (
+                <div key={message.key} className="flex justify-end">
+                  <div className="flex max-w-[85%] flex-col items-end gap-1">
+                    <div
+                      className={cn(
+                        'rounded-3xl rounded-ee-md px-4 py-2.5 text-sm leading-relaxed',
+                        isFailed
+                          ? 'border border-red-200 bg-red-50 text-gray-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-slate-100'
+                          : 'bg-gray-100 text-gray-900 dark:bg-dark-surface-2 dark:text-slate-100'
+                      )}
+                    >
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-1 text-[11px] text-gray-400 dark:text-slate-500">
+                      {message.status === 'pending' && !message.streaming && (
+                        <span className="inline-flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          {t('shared.chatbot.sending')}
+                        </span>
+                      )}
+                      {isFailed && (
+                        <span className="inline-flex items-center gap-1 text-red-500">
+                          <AlertTriangle className="h-3 w-3" />
+                          {t('shared.chatbot.messageFailed')}
+                        </span>
+                      )}
+                      {message.createdAt && <span>{formatTime(message.createdAt)}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // Assistant turn — avatar + full-width content, no bubble (ChatGPT style).
+            const tools = message.activeTools ?? message.toolsInvoked ?? [];
             return (
-              <div
-                key={message.key}
-                className={cn('flex', isUser ? 'justify-end' : 'justify-start')}
-              >
-                <div
-                  className={cn(
-                    'max-w-[85%] rounded-2xl px-4 py-3',
-                    isUser
-                      ? 'bg-primary-600 text-white'
-                      : isFailed
-                        ? 'border border-red-200 bg-red-50 text-gray-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-slate-100'
-                        : 'bg-gray-100 text-gray-900 dark:bg-dark-surface-2 dark:text-slate-100'
-                  )}
-                >
-                  {/* Tool-call chips (live + recorded) */}
-                  {!isUser && (message.activeTools?.length || message.toolsInvoked?.length) ? (
+              <div key={message.key} className="flex gap-3 sm:gap-4">
+                <AssistantAvatar />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {t('shared.chatbot.assistantName')}
+                    </span>
+                    {message.createdAt && (
+                      <span className="text-[11px] text-gray-400 dark:text-slate-500">
+                        {formatTime(message.createdAt)}
+                      </span>
+                    )}
+                  </div>
+
+                  {tools.length > 0 && (
                     <div className="mb-2 flex flex-wrap gap-1.5">
-                      {(message.activeTools ?? message.toolsInvoked ?? []).map((tool, i) => (
+                      {tools.map((tool, i) => (
                         <Badge key={`${tool.toolName}-${i}`} tone="brand" size="sm" variant="subtle">
                           <Wrench className="h-3 w-3" />
                           {tool.label || tool.toolName}
                         </Badge>
                       ))}
                     </div>
-                  ) : null}
+                  )}
 
-                  {/* Body */}
-                  {isUser ? (
-                    message.content && (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
-                    )
-                  ) : message.content ? (
-                    <MessageContent content={message.content} />
-                  ) : message.streaming ? (
-                    <span className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t('shared.chatbot.thinking')}
-                    </span>
-                  ) : null}
+                  <div className="text-gray-800 dark:text-slate-100">
+                    {message.content ? (
+                      <div className="flex flex-col">
+                        <MessageContent content={message.content} />
+                        {message.streaming && (
+                          <span className="ms-0.5 mt-0.5 inline-block h-4 w-1.5 animate-pulse rounded-full bg-primary-400 align-middle" />
+                        )}
+                      </div>
+                    ) : message.streaming ? (
+                      <span className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t('shared.chatbot.thinking')}
+                      </span>
+                    ) : null}
+                  </div>
 
-                  {/* Failed indicator + retry */}
-                  {isFailed && (
-                    <div className="mt-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-300">
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      {t('shared.chatbot.messageFailed')}
+                  {/* Hover actions on settled assistant turns */}
+                  {!message.streaming && message.content && (
+                    <div className="mt-1.5">
+                      <CopyButton text={message.content} />
                     </div>
                   )}
-
-                  {/* Streaming caret */}
-                  {message.streaming && message.content && (
-                    <span className="ms-0.5 inline-block h-4 w-1.5 animate-pulse rounded-full bg-primary-400 align-middle" />
-                  )}
-
-                  <div
-                    className={cn(
-                      'mt-1.5 flex items-center gap-2 text-[11px]',
-                      isUser ? 'text-primary-100' : 'text-gray-400 dark:text-slate-500'
-                    )}
-                  >
-                    {message.status === 'pending' && !message.streaming && (
-                      <span className="inline-flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        {t('shared.chatbot.sending')}
-                      </span>
-                    )}
-                    {message.createdAt && <span>{formatTime(message.createdAt)}</span>}
-                  </div>
                 </div>
               </div>
             );
@@ -215,9 +274,9 @@ export function ChatMessageList({
             </div>
           )}
         </div>
-      )}
 
-      <div ref={bottomRef} />
+        <div ref={bottomRef} />
+      </div>
     </div>
   );
 }
