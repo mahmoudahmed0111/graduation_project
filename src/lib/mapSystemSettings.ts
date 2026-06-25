@@ -29,8 +29,10 @@ function mapChatTokenBudgets(raw: unknown): ChatTokenBudgets {
 export type SettingsSemesterUi = ISystemSettings['currentSemester'];
 
 /**
- * Backend `currentSemester` enum uses `First` / `Second` (see course-offering docs);
- * `phase1_api_docs.md` examples use `fall` / `spring`. Accept both on read.
+ * The `/settings` contract documents `currentSemester` as `fall` / `spring`
+ * (see `phase1_api_docs.md` — both the GET response and PATCH body). Some other
+ * modules' enums use `First` / `Second`, so we stay lenient on read and accept
+ * either form.
  */
 export function semesterApiToUi(raw: unknown): SettingsSemesterUi {
   const v = String(raw ?? '').trim().toLowerCase();
@@ -39,9 +41,9 @@ export function semesterApiToUi(raw: unknown): SettingsSemesterUi {
   return 'fall';
 }
 
-/** Values accepted by the API validator (Pascal case). */
-export function semesterUiToApi(sem: SettingsSemesterUi): 'First' | 'Second' {
-  return sem === 'spring' ? 'Second' : 'First';
+/** Value sent to `PATCH /settings` — the documented lowercase enum. */
+export function semesterUiToApi(sem: SettingsSemesterUi): 'fall' | 'spring' {
+  return sem === 'spring' ? 'spring' : 'fall';
 }
 
 export function mapSettingsFromApi(s: Record<string, unknown>): ISystemSettings {

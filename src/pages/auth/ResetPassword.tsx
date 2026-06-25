@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -26,7 +26,11 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export function ResetPassword() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token } = useParams<{ token: string }>();
+  const params = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  // The reset link may carry the token as a path param (`/reset-password/:token`,
+  // `/resetPassword/:token`) or as a query string (`?token=`). Accept all forms.
+  const token = params.token ?? searchParams.get('token') ?? undefined;
   const { success, error: showError } = useToastStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

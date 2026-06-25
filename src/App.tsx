@@ -151,6 +151,11 @@ function App() {
           path="/reset-password/:token"
           element={<ResetPassword />}
         />
+        {/* Aliases so the backend's email link works whatever shape it uses:
+            camelCase path (matches the API path) or a `?token=` query string. */}
+        <Route path="/resetPassword/:token" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/resetPassword" element={<ResetPassword />} />
         <Route
           path="/coming-soon"
           element={<ComingSoon />}
