@@ -636,14 +636,17 @@ export const authApi = {
     return { message: response.data.message ?? 'Token sent to email!' };
   },
 
-  resetPassword: async (token: string, data: { password: string; passwordConfirm: string }): Promise<AuthResponse> => {
-    const response = await axiosInstance.patch<{ status: string; token: string; data: { user: Record<string, unknown> } }>(
-      `/auth/resetPassword/${encodeURIComponent(token)}`,
-      data
-    );
-    const authToken = response.data.token;
-    const user = normalizeUser(response.data.data?.user ?? null);
-    return { user, accessToken: authToken };
+  /**
+   * Completes the forgot-password flow — `PATCH /auth/resetPassword/:token`.
+   * Auth: none (token is in the URL path). Body: `{ password, passwordConfirm }`.
+   * Per the API contract this returns 200 with NO response body — the user is
+   * NOT auto-logged-in and must sign in with the new password afterwards.
+   */
+  resetPassword: async (
+    token: string,
+    data: { password: string; passwordConfirm: string }
+  ): Promise<void> => {
+    await axiosInstance.patch(`/auth/resetPassword/${encodeURIComponent(token)}`, data);
   },
 
   logout: async (): Promise<void> => {

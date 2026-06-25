@@ -1,7 +1,5 @@
 import type { UserRole } from '@/types';
 
-export type Phase2BulkAction = 'deactivate' | 'activate' | 'move-department' | 'graduate';
-
 export interface Phase2NestedRef {
   _id: string;
   name?: string;
@@ -31,28 +29,3 @@ export interface Phase2ApiUser {
   credentialEmailSent?: boolean;
 }
 
-export interface BulkImportUsersResult {
-  created: number;
-  failed: number;
-  logId?: string;
-}
-
-export interface BulkActionsDeactivateResult {
-  action: string;
-  requested: number;
-  modified: number;
-  matched: number;
-  notModified: number;
-  notFound: number;
-}
-
-export interface BulkActionsGraduateResult {
-  action: string;
-  requested: number;
-  modified: number;
-  alreadyGraduated: number;
-  skippedNonStudents: number;
-  notFound: number;
-}
-
-export type BulkActionsResult = BulkActionsDeactivateResult | BulkActionsGraduateResult;

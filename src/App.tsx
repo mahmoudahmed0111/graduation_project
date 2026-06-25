@@ -81,7 +81,6 @@ import {
   UsersDirectory,
   UserDetailsPage,
   CreateUserPage,
-  BulkImportUsersPage,
   LegacyUsersDirectoryRedirect,
   UserFromLegacyDirectoryRedirect,
   RedirectToUsersStudents,
@@ -439,7 +438,6 @@ function App() {
           {/* User management — Phase 2 `GET /users` per role; filters in URL query string */}
           <Route path="users/directory" element={<LegacyUsersDirectoryRedirect />} />
           <Route path="users/directory/create" element={<Navigate to="/dashboard/users/create" replace />} />
-          <Route path="users/directory/bulk-import" element={<Navigate to="/dashboard/users/bulk-import" replace />} />
           <Route
             path="users/directory/:id"
             element={
@@ -453,14 +451,6 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
                 <CreateUserPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="users/bulk-import"
-            element={
-              <ProtectedRoute allowedRoles={['universityAdmin', 'collegeAdmin']}>
-                <BulkImportUsersPage />
               </ProtectedRoute>
             }
           />

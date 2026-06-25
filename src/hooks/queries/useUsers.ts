@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as usersService from '@/services/users.service';
 import type { UserListQueryParams } from '@/services/users.service';
-import type { Phase2BulkAction } from '@/types/phase2-user';
 import type { UserRole } from '@/types';
 
 const root = ['phase2', 'users'] as const;
@@ -79,17 +78,6 @@ export function useCreateUser() {
   });
 }
 
-export function useBulkImportUsers() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ file, college_id }: { file: File; college_id?: string }) =>
-      usersService.bulkImportUsers(file, college_id),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: root });
-    },
-  });
-}
-
 export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({
@@ -99,33 +87,6 @@ export function useUpdateUser() {
       void qc.invalidateQueries({ queryKey: root });
       void qc.invalidateQueries({ queryKey: [...root, 'detail', vars.id] });
     },
-  });
-}
-
-export function useBulkActions() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: { action: Phase2BulkAction; userIds: string[]; payload?: { departmentId?: string } }) =>
-      usersService.bulkActions(body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: root });
-    },
-  });
-}
-
-export function useAllocateUsers() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: usersService.allocateUsers,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: root });
-    },
-  });
-}
-
-export function useResendCredentials() {
-  return useMutation({
-    mutationFn: usersService.resendCredentials,
   });
 }
 

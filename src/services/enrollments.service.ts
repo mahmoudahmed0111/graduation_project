@@ -34,18 +34,19 @@ export async function getEnrollment(id: string): Promise<EnrollmentRecord> {
 
 /**
  * Student self-enroll — `POST /enrollments`.
- * Postman's field table documents `courseOffering` (the example body's
- * `courseOffering_id` is a stale artifact); we send the doc-table field name.
+ * Body field is `courseOffering_id` (Postman example body + phase3 doc §POST
+ * /enrollments; the field-name table is stale). Sending `courseOffering`
+ * yields a 400 "Course Offering ID is intrinsically required".
  */
 export async function createStudentEnrollment(courseOffering_id: string): Promise<EnrollmentRecord> {
-  const response = await apiClient.post('/enrollments', { courseOffering: courseOffering_id });
+  const response = await apiClient.post('/enrollments', { courseOffering_id });
   return normalizeSingleResponse<EnrollmentRecord>(response, 'enrollment');
 }
 
 /**
  * Admin force — `POST /enrollments/force`.
- * Postman contract uses `student` / `courseOffering` (not `_id`-suffixed); the
- * caller-facing signature keeps `_id` names and we map to the wire fields here.
+ * Body uses `student_id` / `courseOffering_id` (phase3 doc §POST
+ * /enrollments/force).
  */
 export async function forceEnrollment(data: {
   student_id: string;
@@ -55,8 +56,8 @@ export async function forceEnrollment(data: {
   reason?: string;
 }): Promise<EnrollmentRecord> {
   const response = await apiClient.post('/enrollments/force', {
-    student: data.student_id,
-    courseOffering: data.courseOffering_id,
+    student_id: data.student_id,
+    courseOffering_id: data.courseOffering_id,
     ...(data.overrideCapacity !== undefined && { overrideCapacity: data.overrideCapacity }),
     ...(data.overrideCreditLimit !== undefined && { overrideCreditLimit: data.overrideCreditLimit }),
     ...(data.reason !== undefined && { reason: data.reason }),

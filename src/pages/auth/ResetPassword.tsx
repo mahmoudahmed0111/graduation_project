@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
-import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/lib/api';
 
 const resetPasswordSchema = z
@@ -29,7 +28,6 @@ export function ResetPassword() {
   const navigate = useNavigate();
   const { token } = useParams<{ token: string }>();
   const { success, error: showError } = useToastStore();
-  const { setUser, setAccessToken, setAuthenticated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -48,15 +46,12 @@ export function ResetPassword() {
     }
     setIsLoading(true);
     try {
-      const res = await authApi.resetPassword(token, {
+      await authApi.resetPassword(token, {
         password: data.password,
         passwordConfirm: data.passwordConfirm,
       });
-      setUser(res.user);
-      setAccessToken(res.accessToken);
-      setAuthenticated(true);
-      success(t('auth.passwordResetSuccess') || 'Password reset successfully. You are now logged in.');
-      navigate('/dashboard');
+      success(t('auth.passwordResetSuccess') || 'Password reset successfully. Please sign in with your new password.');
+      navigate('/login');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
       const message = axiosError?.response?.data?.message || t('authPages.resetPassword.invalidOrExpired');

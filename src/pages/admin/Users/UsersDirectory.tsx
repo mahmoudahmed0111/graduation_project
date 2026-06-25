@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AdminPageShell } from '@/components/admin';
 import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
-import { IndeterminateCheckbox } from '@/components/admin/AdminIndexBulkBar';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { FilterBar } from '@/components/ui/FilterBar';
@@ -12,7 +11,6 @@ import { Pagination } from '@/components/ui/Pagination';
 import { Select2 } from '@/components/ui/Select2';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { NationalIdLookupModal } from '@/components/users/NationalIdLookupModal';
-import { UserBulkActionsPanel } from '@/components/users/UserBulkActionsPanel';
 import { useColleges } from '@/hooks/queries/useColleges';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import { useUsers } from '@/hooks/queries/useUsers';
@@ -20,7 +18,7 @@ import { phase2DepartmentDisplayName, phase2UserId, phase2UserIsActive } from '@
 import { apiRoleForSegment, listPathForSegment, type UserListSegment } from '@/lib/userListPaths';
 import { useAuthStore } from '@/store/authStore';
 import type { Phase2ApiUser } from '@/types/phase2-user';
-import { Eye, FileUp, Fingerprint, Plus, Users } from 'lucide-react';
+import { Eye, Fingerprint, Plus, Users } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: 'false', labelKey: 'admin.usersDirectory.statusActive' },
@@ -105,7 +103,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
   const [lookupOpen, setLookupOpen] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const patchParams = useCallback(
     (updates: Record<string, string | null | undefined>) => {
@@ -207,10 +204,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
     ]
   );
 
-  useEffect(() => {
-    setSelected(new Set());
-  }, [page, segment, apiRole, departmentId, collegeId, includeDeleted, academicStatus, levelStr, searchTerm]);
-
   const query = useUsers(listParams);
 
   const items = query.data?.items ?? [];
@@ -234,36 +227,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
     const start = (p - 1) * CLIENT_PAGE_SIZE;
     return filteredItems.slice(start, start + CLIENT_PAGE_SIZE);
   }, [filteredItems, page, totalFilteredPages]);
-
-  const selectedUsers = useMemo(() => {
-    const map = new Map(items.map((u) => [phase2UserId(u), u]));
-    return selected.size ? ([...selected].map((id) => map.get(id)).filter(Boolean) as Phase2ApiUser[]) : [];
-  }, [items, selected]);
-
-  const allOnPageSelected =
-    paginatedItems.length > 0 && paginatedItems.every((u) => selected.has(phase2UserId(u)));
-  const someOnPageSelected = paginatedItems.some((u) => selected.has(phase2UserId(u)));
-
-  const toggleAllPage = useCallback(() => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allOnPageSelected) {
-        paginatedItems.forEach((u) => next.delete(phase2UserId(u)));
-      } else {
-        paginatedItems.forEach((u) => next.add(phase2UserId(u)));
-      }
-      return next;
-    });
-  }, [allOnPageSelected, paginatedItems]);
-
-  const toggleOne = useCallback((id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
   const createPath = `${listBase}/create`;
 
@@ -317,12 +280,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                   <Fingerprint className="h-4 w-4" />
                   {t('admin.usersDirectory.lookup')}
                 </Button>
-                <Link to="/dashboard/users/bulk-import">
-                  <Button type="button" variant="secondary" className="inline-flex items-center gap-2 rounded-xl">
-                    <FileUp className="h-4 w-4" />
-                    {t('admin.usersDirectory.bulkImport')}
-                  </Button>
-                </Link>
                 <Link to={createPath}>
                   <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">
                     <Plus className="h-4 w-4" />
@@ -404,15 +361,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
             }
           />
 
-          <UserBulkActionsPanel
-            selectedIds={[...selected]}
-            selectedUsers={selectedUsers}
-            departmentOptions={departmentOptions.filter((o) => o.value)}
-            currentUserId={authUser?.id}
-            isCollegeAdmin={isCA}
-            onClear={() => setSelected(new Set())}
-          />
-
           {items.length === 0 ? (
             <div className="py-12 text-center">
               <Users className="mx-auto mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
@@ -440,14 +388,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                 <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">
-                      <IndeterminateCheckbox
-                        checked={allOnPageSelected}
-                        indeterminate={!allOnPageSelected && someOnPageSelected}
-                        onChange={toggleAllPage}
-                        aria-label={t('admin.usersDirectory.selectAllOnPage')}
-                      />
-                    </TableHead>
                     <TableHead>{t('admin.usersDirectory.name')}</TableHead>
                     <TableHead>{t('admin.usersDirectory.email')}</TableHead>
                     <TableHead>{t('admin.usersDirectory.role')}</TableHead>
@@ -462,21 +402,6 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                     const active = phase2UserIsActive(u);
                     return (
                       <TableRow key={id}>
-                        <TableCell>
-                          <div
-                            onClick={(e: MouseEvent) => e.stopPropagation()}
-                            onKeyDown={(e: KeyboardEvent) => e.stopPropagation()}
-                            role="presentation"
-                          >
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-gray-300 text-primary-600"
-                              checked={selected.has(id)}
-                              onChange={() => toggleOne(id)}
-                              aria-label={t('admin.usersDirectory.selectUser', { name: u.name })}
-                            />
-                          </div>
-                        </TableCell>
                         <TableCell className="font-medium text-gray-900 dark:text-gray-100">{u.name}</TableCell>
                         <TableCell className="text-gray-600 dark:text-gray-400">{u.email}</TableCell>
                         <TableCell>

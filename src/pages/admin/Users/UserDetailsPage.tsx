@@ -12,7 +12,6 @@ import { Select2 } from '@/components/ui/Select2';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import {
   useAssignRFID,
-  useBulkActions,
   useDeactivateUser,
   useForceLogoutUser,
   useGraduateUser,
@@ -84,7 +83,6 @@ export function UserDetailsPage() {
   const updateUser = useUpdateUser();
   const deactivate = useDeactivateUser();
   const restore = useRestoreUser();
-  const bulkActions = useBulkActions();
   const unlock = useUnlockUser();
   const forceLogout = useForceLogoutUser();
   const resetPwd = useResetPassword();
@@ -343,27 +341,12 @@ export function UserDetailsPage() {
                       {t('admin.userDetailsPage.deactivate')}
                     </Button>
                   )}
-                  {!active && isUA && (
+                  {!active && (isUA || isCA) && (
                     <Button
                       type="button"
                       variant="primary"
                       onClick={() => id && void run(t('admin.userDetailsPage.activateAccount'), () => restore.mutateAsync(id))}
                       disabled={restore.isPending}
-                    >
-                      {t('admin.userDetailsPage.activateAccount')}
-                    </Button>
-                  )}
-                  {!active && isCA && (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={() =>
-                        id &&
-                        void run(t('admin.userDetailsPage.activateAccount'), () =>
-                          bulkActions.mutateAsync({ action: 'activate', userIds: [id] })
-                        )
-                      }
-                      disabled={bulkActions.isPending}
                     >
                       {t('admin.userDetailsPage.activateAccount')}
                     </Button>
