@@ -130,11 +130,11 @@ export function Profile() {
   const getAcademicStatusColor = (status?: string) => {
     switch (status) {
       case 'good_standing':
-        return 'text-green-600 bg-green-50';
+        return 'text-green-600 bg-green-50 dark:text-emerald-300 dark:bg-emerald-500/15';
       case 'probation':
-        return 'text-orange-600 bg-orange-50';
+        return 'text-orange-600 bg-orange-50 dark:text-orange-300 dark:bg-orange-500/15';
       case 'honors':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-blue-600 bg-blue-50 dark:text-blue-300 dark:bg-blue-500/15';
       default:
         return 'text-gray-600 bg-gray-50 dark:text-slate-300 dark:bg-white/10';
     }
@@ -143,7 +143,7 @@ export function Profile() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-600">{t('shared.profile.loading')}</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('shared.profile.loading')}</p>
       </div>
     );
   }
@@ -152,8 +152,8 @@ export function Profile() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">{t('nav.profile')}</h1>
-        <p className="text-gray-600 mt-1">{t('shared.profile.subtitle')}</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('nav.profile')}</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('shared.profile.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -177,7 +177,7 @@ export function Profile() {
                 />
                 <div>
                   <p className="font-semibold text-lg">{user.name}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {user.role === 'student' ? t('shared.profile.student') : user.role}
                   </p>
                 </div>
@@ -185,28 +185,28 @@ export function Profile() {
 
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {t('shared.profile.fullName')}
                 </label>
-                <p className="text-gray-900 py-2">{user.name}</p>
+                <p className="text-gray-900 dark:text-white py-2">{user.name}</p>
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {t('shared.profile.emailAddress')}
                 </label>
-                <p className="text-gray-900 py-2">{user.email}</p>
+                <p className="text-gray-900 dark:text-white py-2">{user.email}</p>
               </div>
 
               {/* National ID */}
               {user.nationalId && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     {t('shared.profile.nationalId')}
                   </label>
-                  <p className="text-gray-900 py-2">{user.nationalId}</p>
-                  <p className="text-xs text-gray-500 mt-1">{t('shared.profile.cannotChange')}</p>
+                  <p className="text-gray-900 dark:text-white py-2">{user.nationalId}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('shared.profile.cannotChange')}</p>
                 </div>
               )}
 
@@ -225,28 +225,28 @@ export function Profile() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.year')}
                     </label>
-                    <p className="text-gray-900 py-2">{t('shared.profile.yearValue', { year: student.year })}</p>
+                    <p className="text-gray-900 dark:text-white py-2">{t('shared.profile.yearValue', { year: student.year })}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.semester')}
                     </label>
-                    <p className="text-gray-900 py-2">{t('shared.profile.semesterValue', { semester: student.semester })}</p>
+                    <p className="text-gray-900 dark:text-white py-2">{t('shared.profile.semesterValue', { semester: student.semester })}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.creditsEarned')}
                     </label>
-                    <p className="text-gray-900 py-2">{t('shared.profile.creditsValue', { credits: student.creditsEarned })}</p>
+                    <p className="text-gray-900 dark:text-white py-2">{t('shared.profile.creditsValue', { credits: student.creditsEarned })}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.gpa')}
                     </label>
-                    <p className="text-gray-900 py-2 font-semibold">
+                    <p className="text-gray-900 dark:text-white py-2 font-semibold">
                       {student.gpa > 0 ? student.gpa.toFixed(2) : t('shared.profile.notAvailable')}
                     </p>
                   </div>
@@ -255,19 +255,19 @@ export function Profile() {
                 {student.department && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {t('shared.profile.department')}
                       </label>
-                      <p className="text-gray-900 py-2">
+                      <p className="text-gray-900 dark:text-white py-2">
                         {student.department.name} ({student.department.code})
                       </p>
                     </div>
                     {student.department.college && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           {t('shared.profile.college')}
                         </label>
-                        <p className="text-gray-900 py-2">
+                        <p className="text-gray-900 dark:text-white py-2">
                           {student.department.college.name} ({student.department.college.code})
                         </p>
                       </div>
@@ -277,7 +277,7 @@ export function Profile() {
 
                 {student.academicStatus && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.academicStatus')}
                     </label>
                     <span
@@ -316,11 +316,11 @@ export function Profile() {
               {isChangingPassword ? (
                 otpStep ? (
                 <div className="space-y-4">
-                  <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800">
+                  <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200">
                     {t('shared.profile.otpSent')}
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.otpLabel')}
                     </label>
                     <Input
@@ -350,7 +350,7 @@ export function Profile() {
                 ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.currentPassword')}
                     </label>
                     <div className="relative">
@@ -364,7 +364,7 @@ export function Profile() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       >
                         {showCurrentPassword ? (
@@ -377,7 +377,7 @@ export function Profile() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.newPassword')}
                     </label>
                     <div className="relative">
@@ -391,7 +391,7 @@ export function Profile() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                       >
                         {showNewPassword ? (
@@ -401,13 +401,13 @@ export function Profile() {
                         )}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {t('shared.profile.minCharsHint')}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {t('shared.profile.confirmNewPassword')}
                     </label>
                     <div className="relative">
@@ -421,7 +421,7 @@ export function Profile() {
                       />
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? (
@@ -456,7 +456,7 @@ export function Profile() {
                 )
               ) : (
                 <div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {t('shared.profile.securityNote')}
                   </p>
                 </div>
@@ -474,22 +474,22 @@ export function Profile() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {t('shared.profile.userId')}
                 </label>
-                <p className="text-gray-900 text-sm font-mono">{user.id}</p>
+                <p className="text-gray-900 dark:text-white text-sm font-mono">{user.id}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {t('shared.profile.universityId')}
                 </label>
-                <p className="text-gray-900 text-sm font-mono">{user.universityId}</p>
+                <p className="text-gray-900 dark:text-white text-sm font-mono">{user.universityId}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {t('shared.profile.role')}
                 </label>
-                <p className="text-gray-900 text-sm capitalize">{user.role}</p>
+                <p className="text-gray-900 dark:text-white text-sm capitalize">{user.role}</p>
               </div>
             </CardContent>
           </Card>

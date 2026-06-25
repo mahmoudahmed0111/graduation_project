@@ -54,7 +54,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
   const { t } = useTranslation();
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [hoveredItemPosition, setHoveredItemPosition] = useState<{ top: number; left: number } | null>(null);
+  const [hoveredItemPosition, setHoveredItemPosition] = useState<{ top: number; left?: number; right?: number } | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -87,10 +87,14 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
         const element = itemRefs.current.get(path);
         if (element) {
           const rect = element.getBoundingClientRect();
-          setHoveredItemPosition({
-            top: rect.top,
-            left: rect.right + 4,
-          });
+          // In RTL the sidebar sits on the right edge, so the flyout must open to
+          // the LEFT of the item (anchor its right edge to the item's left edge).
+          const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+          setHoveredItemPosition(
+            isRtl
+              ? { top: rect.top, right: window.innerWidth - rect.left + 4 }
+              : { top: rect.top, left: rect.right + 4 }
+          );
         }
         setHoveredItem(path);
       }, 100); // Reduced delay for faster response
@@ -392,7 +396,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
               active ? 'text-primary-700' : 'text-slate-500 group-hover:text-primary-600'
             )} />
             {isExpanded && (
-              <span className="flex-1 text-left transition-opacity duration-300 ease-in-out text-sm whitespace-nowrap">
+              <span className="flex-1 text-start transition-opacity duration-300 ease-in-out text-sm whitespace-nowrap">
                 {item.label}
               </span>
             )}
@@ -419,10 +423,11 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
       {!isExpanded && hoveredNavItem && hoveredNavItem.children && hoveredItemPosition && typeof document !== 'undefined' && createPortal(
         <div 
           className="fixed pointer-events-auto"
-          style={{ 
+          style={{
             zIndex: 99999,
             top: `${hoveredItemPosition.top}px`,
-            left: `${hoveredItemPosition.left}px`,
+            ...(hoveredItemPosition.left != null ? { left: `${hoveredItemPosition.left}px` } : {}),
+            ...(hoveredItemPosition.right != null ? { right: `${hoveredItemPosition.right}px` } : {}),
           }}
           onMouseEnter={handleDropdownMouseEnter}
           onMouseLeave={handleDropdownMouseLeave}
@@ -431,7 +436,7 @@ export function Sidebar({ isOpen, isExpanded = true, onClose, onToggleExpand: _o
             <div className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800/60">
               <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <hoveredNavItem.icon className="h-4 w-4 text-primary-600 dark:text-accent-400" />
-                <span className="text-left">{hoveredNavItem.label}</span>
+                <span className="text-start">{hoveredNavItem.label}</span>
               </p>
             </div>
                   <div className="py-1.5">

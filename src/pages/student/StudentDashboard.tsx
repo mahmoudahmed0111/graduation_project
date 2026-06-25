@@ -251,7 +251,7 @@ export function StudentDashboard() {
 
       {/* Progress + Achievements row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-primary-600" />
@@ -262,8 +262,8 @@ export function StudentDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.gpaProgress')}</span>
-                  <span className="text-sm font-bold text-gray-900">{STATS.gpa.toFixed(2)} / 4.00</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('student.studentDashboard.gpaProgress')}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">{STATS.gpa.toFixed(2)} / 4.00</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                   <div
@@ -271,12 +271,12 @@ export function StudentDashboard() {
                     style={{ width: `${gpaProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{t('student.studentDashboard.percentOfPerfect', { pct: gpaProgress.toFixed(0) })}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('student.studentDashboard.percentOfPerfect', { pct: gpaProgress.toFixed(0) })}</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.creditsToGraduation')}</span>
-                  <span className="text-sm font-bold text-gray-900">{STATS.creditsEarned} / {STATS.creditsRequired}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('student.studentDashboard.creditsToGraduation')}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">{STATS.creditsEarned} / {STATS.creditsRequired}</span>
                 </div>
                 <div className="h-3 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                   <div
@@ -284,12 +284,12 @@ export function StudentDashboard() {
                     style={{ width: `${creditsProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{t('student.studentDashboard.creditsRemaining', { count: STATS.creditsRequired - STATS.creditsEarned })}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('student.studentDashboard.creditsRemaining', { count: STATS.creditsRequired - STATS.creditsEarned })}</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.assignments')}</span>
-                  <span className="text-sm font-bold text-gray-900">{t('student.studentDashboard.doneCount', { count: STATS.completedAssignments })}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('student.studentDashboard.assignments')}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">{t('student.studentDashboard.doneCount', { count: STATS.completedAssignments })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
@@ -303,19 +303,19 @@ export function StudentDashboard() {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.currentLoad')}</span>
-                  <span className="text-sm font-bold text-gray-900">{t('student.studentDashboard.creditsCount', { count: STATS.currentCredits })}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('student.studentDashboard.currentLoad')}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">{t('student.studentDashboard.creditsCount', { count: STATS.currentCredits })}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <Zap className="h-4 w-4 text-amber-500" />
-                  <span className="text-xs text-gray-600">{t('student.studentDashboard.activeCoursesThisSemester', { count: MY_COURSES.length })}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{t('student.studentDashboard.activeCoursesThisSemester', { count: MY_COURSES.length })}</span>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary-600" />
@@ -327,12 +327,12 @@ export function StudentDashboard() {
               {ACHIEVEMENTS.map((a) => {
                 const Icon = a.icon;
                 return (
-                  <div key={a.label} className="rounded-xl border border-gray-100 p-3 text-center hover:shadow-md transition-all">
+                  <div key={a.label} className="rounded-xl border border-gray-100 dark:border-dark-border p-3 text-center hover:shadow-md transition-all">
                     <div className={`mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${a.color} text-white shadow-sm`}>
                       <Icon className="h-5 w-5" />
                     </div>
-                    <p className="text-xs font-semibold text-gray-900">{a.label}</p>
-                    <p className="text-[10px] text-gray-500">{a.sub}</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white">{a.label}</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">{a.sub}</p>
                   </div>
                 );
               })}
@@ -343,13 +343,13 @@ export function StudentDashboard() {
 
       {/* Today's schedule + announcements */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="lg:col-span-2 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary-600" />
               {t('student.studentDashboard.todaysSchedule')}
             </CardTitle>
-            <span className="text-xs text-gray-500">{currentTime.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{currentTime.toLocaleDateString('en-US', { weekday: 'long' })}</span>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -372,11 +372,11 @@ export function StudentDashboard() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">{s.course}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-white dark:text-white">{s.course}</h4>
                         <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-slate-300">{s.type}</span>
                         {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 animate-pulse">{t('student.studentDashboard.liveNow')}</span>}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">{s.time} - {s.end} • {s.room}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-slate-400">{s.time} - {s.end} • {s.room}</p>
                     </div>
                     {isDone && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
                   </div>
@@ -386,7 +386,7 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary-600" />
@@ -401,17 +401,17 @@ export function StudentDashboard() {
               {ANNOUNCEMENTS.map((a) => {
                 const priorityStyles =
                   a.priority === 'high'
-                    ? 'border-l-red-500 bg-red-50/50'
+                    ? 'border-l-red-500 bg-red-50/50 dark:bg-red-500/10'
                     : a.priority === 'medium'
-                    ? 'border-l-amber-500 bg-amber-50/50'
+                    ? 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-500/10'
                     : 'border-l-gray-300 bg-gray-50/50 dark:border-l-dark-border dark:bg-dark-surface-2/40';
                 return (
                   <div
                     key={a.id}
                     className={`border-l-4 ${priorityStyles} pl-3 py-2 pr-2 rounded-r-lg`}
                   >
-                    <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-2">{a.title}</h4>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <h4 className="font-medium text-sm text-gray-900 dark:text-white mb-1 line-clamp-2">{a.title}</h4>
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>{a.author}</span>
                       <span>{a.time}</span>
                     </div>
@@ -474,7 +474,7 @@ export function StudentDashboard() {
 
       {/* My Courses + Upcoming Assessments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-primary-600" />
@@ -489,7 +489,7 @@ export function StudentDashboard() {
               {MY_COURSES.map((c) => (
                 <div
                   key={c.code}
-                  className="group relative overflow-hidden rounded-xl border border-gray-200 p-4 hover:border-primary-300 hover:shadow-md transition-all"
+                  className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-dark-border p-4 hover:border-primary-300 hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -498,25 +498,25 @@ export function StudentDashboard() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-gray-900">{c.code}</h4>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{c.code}</h4>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 font-medium">
                             {t('student.studentDashboard.hrsCount', { count: c.credits })}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">{c.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{c.doctor}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{c.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{c.doctor}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-primary-600">{c.grade}</div>
-                      <div className="text-xs text-gray-500">{c.gradePct}%</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{c.gradePct}%</div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
                     <span className="flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" /> {t('student.studentDashboard.pctAttendance', { pct: c.attendance })}
                     </span>
-                    <span className="font-medium text-gray-700">{t('student.studentDashboard.pctComplete', { pct: c.progress })}</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{t('student.studentDashboard.pctComplete', { pct: c.progress })}</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                     <div
@@ -530,7 +530,7 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="flex items-center justify-between pb-3">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary-600" />
@@ -548,13 +548,13 @@ export function StudentDashboard() {
                   <div
                     key={a.id}
                     className={`rounded-xl border p-4 transition-all ${
-                      isUrgent ? 'border-red-200 bg-red-50/50' : 'border-gray-200 hover:border-gray-300'
+                      isUrgent ? 'border-red-200 bg-red-50/50 dark:border-red-500/30 dark:bg-red-500/10' : 'border-gray-200 dark:border-dark-border hover:border-gray-300 dark:hover:border-dark-border-strong'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">{a.title}</h4>
+                          <h4 className="font-semibold text-gray-900 dark:text-white dark:text-white">{a.title}</h4>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-slate-300 font-medium">
                             {a.course}
                           </span>
@@ -562,7 +562,7 @@ export function StudentDashboard() {
                             {a.type}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {t('student.studentDashboard.daysLeft', { count: a.daysLeft })}
@@ -587,7 +587,7 @@ export function StudentDashboard() {
       </div>
 
       {/* Quick activity / motivation footer */}
-      <Card className="rounded-2xl border border-gray-100 bg-gradient-to-br from-primary-50 via-white to-amber-50 shadow-sm">
+      <Card className="rounded-2xl border border-gray-100 dark:border-dark-border bg-gradient-to-br from-primary-50 via-white to-amber-50 dark:from-primary-500/10 dark:via-dark-surface dark:to-accent-500/10 shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
@@ -595,8 +595,8 @@ export function StudentDashboard() {
                 <Activity className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{t('student.studentDashboard.streakMessage', { count: STATS.streak })}</p>
-                <p className="text-sm text-gray-600">{t('student.studentDashboard.topPercentMessage', { pct: Math.round((STATS.rank / STATS.rankTotal) * 100) })}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('student.studentDashboard.streakMessage', { count: STATS.streak })}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('student.studentDashboard.topPercentMessage', { pct: Math.round((STATS.rank / STATS.rankTotal) * 100) })}</p>
               </div>
             </div>
             <Link to="/dashboard/courses/my-courses">

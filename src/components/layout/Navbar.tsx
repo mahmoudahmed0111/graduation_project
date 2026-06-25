@@ -154,7 +154,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 flex items-center justify-center h-4 min-w-[1rem] px-1 bg-gradient-to-br from-accent-500 to-accent-600 text-primary-900 text-[10px] font-bold rounded-full ring-2 ring-white dark:ring-slate-900">
+                <span className="absolute top-0.5 end-0.5 flex items-center justify-center h-4 min-w-[1rem] px-1 bg-gradient-to-br from-accent-500 to-accent-600 text-primary-900 text-[10px] font-bold rounded-full ring-2 ring-white dark:ring-slate-900">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -168,8 +168,9 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                 // Mobile: pin below the navbar, full-width with side margins (avoids
                 // the fixed 320px panel overflowing the viewport, incl. in RTL).
                 'fixed inset-x-3 top-16',
-                // ≥ sm: classic anchored dropdown under the bell.
-                'sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
+                // ≥ sm: classic anchored dropdown under the bell. Logical `end-0`
+                // so it flips to the correct side in RTL (Arabic).
+                'sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-80'
               )}>
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60">
@@ -267,7 +268,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {showLanguageDropdown && (
               <div className={cn(
                 'absolute top-full mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 py-2 min-w-[160px] z-50',
-                'animate-fade-in right-0'
+                'animate-fade-in end-0'
               )}>
                 {languages.map((language) => (
                   <button
@@ -330,7 +331,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               {showUserDropdown && (
                 <div className={cn(
                   'absolute top-full mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 py-2 min-w-[220px] z-50',
-                  'animate-fade-in right-0'
+                  'animate-fade-in end-0'
                 )}>
                   {/* User Info */}
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
