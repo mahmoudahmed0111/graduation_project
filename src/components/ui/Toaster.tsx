@@ -8,11 +8,9 @@ export function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none w-full max-w-md">
+    <div className="pointer-events-none fixed top-4 right-4 z-[9999] flex w-fit max-w-[calc(100vw-2rem)] flex-col items-end gap-2.5 sm:max-w-md">
       {toasts.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto animate-fade-in-up">
-          <ToastComponent toast={toast} onClose={removeToast} />
-        </div>
+        <ToastComponent key={toast.id} toast={toast} onClose={removeToast} />
       ))}
     </div>
   );
