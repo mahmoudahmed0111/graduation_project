@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { AlertTriangle, Trash2, Info } from 'lucide-react';
@@ -22,11 +23,16 @@ export function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   variant = 'danger',
   isLoading = false,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  // Default to the shared i18n labels so the buttons follow the active language
+  // (previously hardcoded English "Confirm"/"Cancel").
+  const confirmLabel = confirmText ?? t('common.confirm');
+  const cancelLabel = cancelText ?? t('common.cancel');
   const variantStyles = {
     danger: {
       Icon: Trash2,
@@ -62,7 +68,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            {cancelText}
+            {cancelLabel}
           </Button>
           <Button
             variant="primary"
@@ -70,7 +76,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             isLoading={isLoading}
           >
-            {confirmText}
+            {confirmLabel}
           </Button>
         </>
       }

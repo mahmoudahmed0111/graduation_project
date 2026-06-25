@@ -219,7 +219,7 @@ export function GradeSubmissions() {
                           <span className="text-sm text-gray-500">{q.points !== 1 ? t('doctor.gradeSubmissions.pts', { pts: q.points }) : t('doctor.gradeSubmissions.pt', { pts: q.points })}</span>
                         </div>
 
-                        <div className="text-sm bg-gray-50 rounded p-3">
+                        <div className="text-sm bg-gray-50 dark:bg-dark-surface-2 dark:text-slate-200 rounded p-3">
                           {a.answerText ??
                             a.fileUrl ??
                             (a.selectedOptionIds?.length ? a.selectedOptionIds.join(', ') : a.selectedOptionId ?? '—')}

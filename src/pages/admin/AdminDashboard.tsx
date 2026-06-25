@@ -111,7 +111,7 @@ const RECENT_ACTIVITY = [
   { icon: Shield, color: 'text-amber-600 bg-amber-50', text: 'Security audit completed - no issues', time: '3h ago' },
   { icon: Database, color: 'text-purple-600 bg-purple-50', text: 'Daily backup completed successfully', time: '5h ago' },
   { icon: AlertTriangle, color: 'text-red-600 bg-red-50', text: '3 failed login attempts blocked', time: '6h ago' },
-  { icon: Settings, color: 'text-gray-600 bg-gray-100', text: 'Semester settings updated by admin', time: '1d ago' },
+  { icon: Settings, color: 'text-gray-600 bg-gray-100 dark:text-slate-300 dark:bg-white/10', text: 'Semester settings updated by admin', time: '1d ago' },
 ];
 
 const SYSTEM_HEALTH = [
@@ -272,7 +272,7 @@ export function AdminDashboard() {
           {kpiCards.map((k) => {
             const Icon = k.icon;
             return (
-              <div key={k.label} className="flex items-center gap-3 rounded-xl bg-white border border-gray-100 p-4 shadow-sm">
+              <div key={k.label} className="flex items-center gap-3 rounded-xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border p-4 shadow-sm">
                 <div className={`p-2.5 rounded-lg ${k.bg}`}>
                   <Icon className={`h-5 w-5 ${k.color}`} />
                 </div>
@@ -415,7 +415,7 @@ export function AdminDashboard() {
                       <span className="text-gray-600">{t('admin.adminDashboard.avgGpa')}</span>
                       <span className="font-semibold text-primary-600">{c.avgGpa.toFixed(2)}</span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden mt-1">
+                    <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden mt-1">
                       <div
                         className={`h-full rounded-full bg-gradient-to-r ${c.color}`}
                         style={{ width: `${(c.avgGpa / 4) * 100}%` }}
@@ -513,7 +513,7 @@ export function AdminDashboard() {
                   {restoring ? t('admin.adminDashboard.restoring') : t('admin.adminDashboard.restore')}
                 </Button>
               </div>
-              <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-white border border-amber-100 text-xs text-gray-600">
+              <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-white dark:bg-dark-surface border border-amber-100 dark:border-amber-500/30 text-xs text-gray-600 dark:text-slate-300">
                 <Lock className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                 <p>{t('admin.adminDashboard.restoreNote')}</p>
               </div>

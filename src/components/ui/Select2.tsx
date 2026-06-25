@@ -21,7 +21,16 @@ interface Select2Props {
   searchable?: boolean;
 }
 
-type MenuRect = { top: number; left: number; width: number };
+type MenuRect = {
+  left: number;
+  width: number;
+  /** Set when the menu opens downward (anchored to the button's bottom). */
+  top?: number;
+  /** Set when the menu opens upward (anchored to the button's top). */
+  bottom?: number;
+  /** Available vertical space so the list scrolls instead of overflowing the viewport. */
+  maxHeight: number;
+};
 
 export function Select2({
   label,
@@ -57,7 +66,20 @@ export function Select2({
     const sync = () => {
       if (!buttonRef.current) return;
       const r = buttonRef.current.getBoundingClientRect();
-      setMenuRect({ top: r.bottom + 8, left: r.left, width: r.width });
+      const margin = 8;
+      const viewportH = window.innerHeight;
+      const spaceBelow = viewportH - r.bottom - margin;
+      const spaceAbove = r.top - margin;
+      // Flip up only when there genuinely isn't room below and there's more above —
+      // this keeps the menu (and its other options) on-screen near the page bottom.
+      const openUp = spaceBelow < 260 && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(160, Math.min(320, openUp ? spaceAbove : spaceBelow));
+      setMenuRect({
+        left: r.left,
+        width: r.width,
+        maxHeight,
+        ...(openUp ? { bottom: viewportH - r.top + margin } : { top: r.bottom + margin }),
+      });
     };
     sync();
     window.addEventListener('resize', sync);
@@ -102,17 +124,23 @@ export function Select2({
       <div
         ref={menuRef}
         className={cn(
-          'fixed z-[200] overflow-hidden rounded-xl border bg-white shadow-xl animate-fade-in',
+          'fixed z-[200] flex flex-col overflow-hidden rounded-xl border bg-white shadow-xl animate-fade-in',
           'border-gray-200',
           'dark:border-dark-border-strong dark:bg-dark-surface dark:shadow-black/50'
         )}
-        style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}
+        style={{
+          top: menuRect.top,
+          bottom: menuRect.bottom,
+          left: menuRect.left,
+          width: menuRect.width,
+          maxHeight: menuRect.maxHeight,
+        }}
         role="listbox"
       >
         {searchable && (
           <div
             className={cn(
-              'border-b p-2',
+              'shrink-0 border-b p-2',
               'border-gray-100 bg-gray-50',
               'dark:border-dark-border dark:bg-dark-surface-2'
             )}
@@ -132,6 +160,19 @@ export function Select2({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                // Enter selects the first match (never submits an ancestor form /
+                // reloads the page); Escape closes the menu.
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (filteredOptions.length > 0) handleSelect(filteredOptions[0].value);
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setIsOpen(false);
+                    setSearchTerm('');
+                  }
+                }}
                 placeholder={t('chrome.select.searchPlaceholder')}
                 className={cn(
                   'w-full min-w-0 border-0 bg-transparent py-2 text-sm outline-none',
@@ -143,7 +184,7 @@ export function Select2({
             </div>
           </div>
         )}
-        <div className="max-h-60 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto">
           {filteredOptions.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">{t('chrome.select.noOptionsFound')}</div>
           ) : (

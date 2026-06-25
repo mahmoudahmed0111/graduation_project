@@ -171,7 +171,7 @@ export function AllCourses() {
                         </TableCell>
                         <TableCell className="text-end">
                           <Link to={`/dashboard/courses/enroll?offering=${offering.id}`}>
-                            <Button variant="secondary" size="sm" className="rounded-xl">
+                            <Button variant="ghost" size="sm" className="rounded-xl">
                               {t('shared.allCourses.viewDetails')}
                             </Button>
                           </Link>

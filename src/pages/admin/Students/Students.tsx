@@ -185,7 +185,7 @@ export function Students() {
                         {r.active ? (
                           <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">{t('admin.students.active')}</span>
                         ) : (
-                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">{t('admin.students.inactive')}</span>
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-slate-300">{t('admin.students.inactive')}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -197,7 +197,7 @@ export function Students() {
                           </Link>
                           {canManage && (
                             <Link to={`/dashboard/students/${r.id}/edit`}>
-                              <Button variant="secondary" size="sm">
+                              <Button variant="ghost" size="sm">
                                 {t('admin.students.edit')}
                               </Button>
                             </Link>
@@ -213,7 +213,7 @@ export function Students() {
         </CardContent>
       </Card>
 
-      <Card className="border-dashed border-gray-200 bg-gray-50/50">
+      <Card className="border-dashed border-gray-200 bg-gray-50/50 dark:border-dark-border dark:bg-dark-surface-2/40">
         <CardContent className="p-5 flex gap-3">
           <GraduationCap className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
           <p className="text-sm text-gray-600">

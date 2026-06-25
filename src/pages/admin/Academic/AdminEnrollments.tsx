@@ -194,7 +194,7 @@ export function AdminEnrollments() {
                           {rec.status === 'enrolled' && (
                             <Button
                               type="button"
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               title={t('admin.adminEnrollments.withdraw')}
                               className="inline-flex items-center gap-1 rounded-xl"

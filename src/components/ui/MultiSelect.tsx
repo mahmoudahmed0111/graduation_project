@@ -71,7 +71,7 @@ export function MultiSelect({
         </button>
 
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-dark-surface dark:text-gray-100 border border-gray-300 dark:border-dark-border-strong rounded-lg shadow-lg max-h-60 overflow-auto">
             {options.map(option => {
               const isSelected = value.includes(option.value);
               return (
@@ -79,8 +79,8 @@ export function MultiSelect({
                   key={option.value}
                   onClick={() => toggleOption(option.value)}
                   className={cn(
-                    'px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center justify-between',
-                    isSelected && 'bg-primary-50'
+                    'px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-surface-2 flex items-center justify-between',
+                    isSelected && 'bg-primary-50 dark:bg-primary-500/15'
                   )}
                 >
                   <span>{option.label}</span>

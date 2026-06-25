@@ -265,7 +265,7 @@ export function StudentDashboard() {
                   <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.gpaProgress')}</span>
                   <span className="text-sm font-bold text-gray-900">{STATS.gpa.toFixed(2)} / 4.00</span>
                 </div>
-                <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+                <div className="h-3 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
                     style={{ width: `${gpaProgress}%` }}
@@ -278,7 +278,7 @@ export function StudentDashboard() {
                   <span className="text-sm font-medium text-gray-700">{t('student.studentDashboard.creditsToGraduation')}</span>
                   <span className="text-sm font-bold text-gray-900">{STATS.creditsEarned} / {STATS.creditsRequired}</span>
                 </div>
-                <div className="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+                <div className="h-3 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"
                     style={{ width: `${creditsProgress}%` }}
@@ -292,7 +292,7 @@ export function StudentDashboard() {
                   <span className="text-sm font-bold text-gray-900">{t('student.studentDashboard.doneCount', { count: STATS.completedAssignments })}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
                       style={{ width: `${(STATS.completedAssignments / (STATS.completedAssignments + STATS.pendingAssignments)) * 100}%` }}
@@ -361,22 +361,22 @@ export function StudentDashboard() {
                     key={i}
                     className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${
                       isNow
-                        ? 'border-primary-300 bg-primary-50 ring-2 ring-primary-200'
+                        ? 'border-primary-300 bg-primary-50 ring-2 ring-primary-200 dark:border-primary-500/40 dark:bg-primary-500/15 dark:ring-primary-500/30'
                         : isDone
-                        ? 'border-gray-100 bg-gray-50 opacity-70'
-                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                        ? 'border-gray-100 bg-gray-50 opacity-70 dark:border-dark-border dark:bg-dark-surface-2'
+                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50 dark:border-dark-border dark:hover:border-dark-border-strong dark:hover:bg-dark-surface-2'
                     }`}
                   >
-                    <div className={`flex flex-col items-center justify-center min-w-[60px] py-1 rounded-lg ${isNow ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                    <div className={`flex flex-col items-center justify-center min-w-[60px] py-1 rounded-lg ${isNow ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-700 dark:bg-dark-surface-2 dark:border-dark-border dark:text-slate-200'}`}>
                       <span className="text-[10px] uppercase tracking-wide">{s.time}</span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <h4 className="font-semibold text-gray-900">{s.course}</h4>
-                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{s.type}</span>
-                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 animate-pulse">{t('student.studentDashboard.liveNow')}</span>}
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{s.course}</h4>
+                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-slate-300">{s.type}</span>
+                        {isNow && <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 animate-pulse">{t('student.studentDashboard.liveNow')}</span>}
                       </div>
-                      <p className="text-xs text-gray-500">{s.time} - {s.end} • {s.room}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">{s.time} - {s.end} • {s.room}</p>
                     </div>
                     {isDone && <CheckCircle2 className="h-5 w-5 text-emerald-500" />}
                   </div>
@@ -404,7 +404,7 @@ export function StudentDashboard() {
                     ? 'border-l-red-500 bg-red-50/50'
                     : a.priority === 'medium'
                     ? 'border-l-amber-500 bg-amber-50/50'
-                    : 'border-l-gray-300 bg-gray-50/50';
+                    : 'border-l-gray-300 bg-gray-50/50 dark:border-l-dark-border dark:bg-dark-surface-2/40';
                 return (
                   <div
                     key={a.id}
@@ -518,7 +518,7 @@ export function StudentDashboard() {
                     </span>
                     <span className="font-medium text-gray-700">{t('student.studentDashboard.pctComplete', { pct: c.progress })}</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${c.color}`}
                       style={{ width: `${c.progress}%` }}
@@ -554,8 +554,8 @@ export function StudentDashboard() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h4 className="font-semibold text-gray-900">{a.title}</h4>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium">
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{a.title}</h4>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-slate-300 font-medium">
                             {a.course}
                           </span>
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">

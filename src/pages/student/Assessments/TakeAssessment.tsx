@@ -171,7 +171,7 @@ export function TakeAssessment() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur p-4 -m-4 z-10 border-b border-gray-100">
+      <div className="flex items-center justify-between sticky top-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur p-4 -m-4 z-10 border-b border-gray-100 dark:border-dark-border">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{assessment.title}</h1>
           <p className="text-sm text-gray-500">{t('student.takeAssessment.ptsCount', { count: assessment.totalPoints })}</p>
@@ -179,7 +179,7 @@ export function TakeAssessment() {
         {remainingLabel && (
           <div
             className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-              (remainingMs ?? 0) < 60_000 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+              (remainingMs ?? 0) < 60_000 ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300' : 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-slate-300'
             }`}
           >
             <Clock className="h-4 w-4" />
@@ -204,7 +204,7 @@ export function TakeAssessment() {
               {q.questionType === 'MCQ-Single' && q.options && (
                 <div className="space-y-2">
                   {q.options.map((o) => (
-                    <label key={o._id} className="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-gray-50">
+                    <label key={o._id} className="flex items-center gap-2 p-3 border dark:border-dark-border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-surface-2">
                       <input
                         type="radio"
                         name={`q-${q._id}`}
@@ -221,7 +221,7 @@ export function TakeAssessment() {
                   {q.options.map((o) => {
                     const selected = (a.selectedOptionIds ?? []).includes(o._id ?? '');
                     return (
-                      <label key={o._id} className="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-gray-50">
+                      <label key={o._id} className="flex items-center gap-2 p-3 border dark:border-dark-border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-surface-2">
                         <input
                           type="checkbox"
                           checked={selected}
@@ -241,7 +241,7 @@ export function TakeAssessment() {
               {q.questionType === 'TrueFalse' && q.options && (
                 <div className="space-y-2">
                   {q.options.map((o) => (
-                    <label key={o._id} className="flex items-center gap-2 p-3 border rounded cursor-pointer hover:bg-gray-50">
+                    <label key={o._id} className="flex items-center gap-2 p-3 border dark:border-dark-border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-surface-2">
                       <input
                         type="radio"
                         name={`q-${q._id}`}
@@ -284,7 +284,7 @@ export function TakeAssessment() {
         );
       })}
 
-      <div className="flex gap-4 sticky bottom-0 bg-white/80 backdrop-blur p-4 -m-4 border-t border-gray-100">
+      <div className="flex gap-4 sticky bottom-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur p-4 -m-4 border-t border-gray-100 dark:border-dark-border">
         <Button
           type="button"
           variant="secondary"

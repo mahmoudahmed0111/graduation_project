@@ -370,8 +370,8 @@ export function CollegeDetails() {
                   className={cn(
                     'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                     activeTab === tab.id
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300'
+                      : 'text-gray-600 hover:bg-gray-50 dark:text-slate-300 dark:hover:bg-dark-surface-2'
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -394,7 +394,7 @@ export function CollegeDetails() {
               </div>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/80">
+                  <TableRow className="bg-gray-50/80 dark:bg-dark-surface-2/60">
                     <TableHead>{t('admin.collegeDetails.code')}</TableHead>
                     <TableHead>{t('admin.collegeDetails.name')}</TableHead>
                     <TableHead className="text-right">{t('admin.collegeDetails.actions')}</TableHead>
@@ -433,7 +433,7 @@ export function CollegeDetails() {
               </div>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/80">
+                  <TableRow className="bg-gray-50/80 dark:bg-dark-surface-2/60">
                     <TableHead>{t('admin.collegeDetails.name')}</TableHead>
                     <TableHead>{t('admin.collegeDetails.building')}</TableHead>
                     <TableHead>{t('admin.collegeDetails.floor')}</TableHead>

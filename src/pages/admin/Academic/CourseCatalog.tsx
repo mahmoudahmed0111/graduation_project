@@ -234,7 +234,7 @@ export function CourseCatalog() {
                               <>
                                 <Button
                                   type="button"
-                                  variant="secondary"
+                                  variant="ghost"
                                   size="sm"
                                   title={t('admin.courseCatalog.edit')}
                                   className="inline-flex items-center gap-1 rounded-xl"
@@ -245,7 +245,7 @@ export function CourseCatalog() {
                                 {!archived ? (
                                   <Button
                                     type="button"
-                                    variant="secondary"
+                                    variant="ghost"
                                     size="sm"
                                     title={t('admin.courseCatalog.archive')}
                                     className="inline-flex items-center gap-1 rounded-xl"
@@ -256,7 +256,7 @@ export function CourseCatalog() {
                                 ) : (
                                   <Button
                                     type="button"
-                                    variant="secondary"
+                                    variant="ghost"
                                     size="sm"
                                     title={t('admin.courseCatalog.restore')}
                                     className="inline-flex items-center gap-1 rounded-xl"

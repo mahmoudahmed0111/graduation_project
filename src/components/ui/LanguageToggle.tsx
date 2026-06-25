@@ -28,7 +28,7 @@ export function LanguageToggle({ className, variant = 'dark' }: LanguageTogglePr
         'inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
         variant === 'dark'
           ? 'bg-transparent text-white hover:bg-white/10'
-          : 'bg-white text-primary-700 hover:bg-gray-50 border border-gray-200 shadow-sm',
+          : 'bg-white text-primary-700 hover:bg-gray-50 border border-gray-200 shadow-sm dark:bg-dark-surface-2 dark:text-accent-300 dark:border-dark-border dark:hover:bg-dark-surface',
         className
       )}
     >

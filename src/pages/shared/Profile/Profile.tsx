@@ -136,7 +136,7 @@ export function Profile() {
       case 'honors':
         return 'text-blue-600 bg-blue-50';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-gray-600 bg-gray-50 dark:text-slate-300 dark:bg-white/10';
     }
   };
 

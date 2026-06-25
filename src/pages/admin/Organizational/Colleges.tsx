@@ -232,12 +232,12 @@ export function Colleges() {
                       <TableCell className="text-end">
                         <div className="flex items-center justify-end gap-2">
                           <Link to={`/dashboard/organizational/colleges/${college.id}`}>
-                            <Button variant="secondary" size="sm" title={t('admin.organizationalColleges.view')}>
+                            <Button variant="ghost" size="sm" title={t('admin.organizationalColleges.view')}>
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
                           <Link to={`/dashboard/organizational/colleges/${college.id}/edit`}>
-                            <Button variant="secondary" size="sm" title={t('admin.organizationalColleges.edit')}>
+                            <Button variant="ghost" size="sm" title={t('admin.organizationalColleges.edit')}>
                               <Edit className="h-4 w-4" />
                             </Button>
                           </Link>

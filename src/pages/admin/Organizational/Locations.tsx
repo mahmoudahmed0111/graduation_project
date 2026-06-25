@@ -279,14 +279,14 @@ export function Locations() {
                         <div className="flex flex-wrap justify-end gap-1">
                           {canMutate && (
                             <Link to={`/dashboard/organizational/locations/${loc.id}/edit`}>
-                              <Button variant="secondary" size="sm" title={t('admin.organizationalLocations.edit')}>
+                              <Button variant="ghost" size="sm" title={t('admin.organizationalLocations.edit')}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
                           )}
                           {canMutate && !loc.isArchived && (
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               title={t('admin.organizationalLocations.toggleStatus')}
                               onClick={() => void toggleStatus(loc)}
@@ -296,7 +296,7 @@ export function Locations() {
                           )}
                           {canArchive && !loc.isArchived && (
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               title={t('admin.organizationalLocations.archiveTitle')}
                               onClick={() => setArchiveOpen({ open: true, loc })}
@@ -306,7 +306,7 @@ export function Locations() {
                           )}
                           {canMutate && loc.isArchived && (
                             <Button
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               title={t('admin.organizationalLocations.restore')}
                               onClick={() => void doRestore(loc)}

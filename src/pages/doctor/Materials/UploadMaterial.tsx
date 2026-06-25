@@ -237,7 +237,7 @@ export function UploadMaterial() {
                     <p className="text-xs text-gray-500">{t('doctor.uploadMaterial.fileTypes')}</p>
                   </label>
                   {selectedFile && (
-                    <div className="mt-4 flex items-center justify-center gap-2 p-2 bg-gray-50 rounded">
+                    <div className="mt-4 flex items-center justify-center gap-2 p-2 bg-gray-50 dark:bg-dark-surface-2 rounded">
                       <FileText className="h-4 w-4 text-gray-600" />
                       <span className="text-sm text-gray-700">
                         {selectedFile.name} · {(selectedFile.size / 1024 / 1024).toFixed(2)} MB

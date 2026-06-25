@@ -84,7 +84,7 @@ export function MyCourses() {
         );
       case 'withdrawn':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-slate-300">
             {t('student.myCourses.withdrawn')}
           </span>
         );

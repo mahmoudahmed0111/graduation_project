@@ -345,13 +345,13 @@ export function Departments() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link to={`/dashboard/organizational/departments/${dept.id}/edit`}>
-                          <Button variant="secondary" size="sm">
+                          <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
                         {!dept.isArchived && (
                           <Button
-                            variant="secondary"
+                            variant="ghost"
                             size="sm"
                             onClick={() => setArchiveDialog({ open: true, department: dept })}
                           >
@@ -360,7 +360,7 @@ export function Departments() {
                         )}
                         {dept.isArchived && isUniversityAdmin && (
                           <Button
-                            variant="secondary"
+                            variant="ghost"
                             size="sm"
                             title={t('admin.organizationalDepartments.restoreTitle')}
                             onClick={() => setRestoreDialog({ open: true, department: dept })}

@@ -425,7 +425,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                         </TableCell>
                         <TableCell className="text-end">
                           <Link to={`${listBase}/${id}`}>
-                            <Button variant="secondary" size="sm" title={t('admin.usersDirectory.view')} className="inline-flex items-center gap-1 rounded-xl">
+                            <Button variant="ghost" size="sm" title={t('admin.usersDirectory.view')} className="inline-flex items-center gap-1 rounded-xl">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>

@@ -85,7 +85,7 @@ export function AuditLogs() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50/80">
+                <TableRow className="bg-gray-50/80 dark:bg-dark-surface-2/60">
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.actor')}</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.action')}</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('admin.auditLogs.target')}</TableHead>
@@ -101,7 +101,7 @@ export function AuditLogs() {
                   </TableRow>
                 ) : (
                   filteredLogs.map((log) => (
-                    <TableRow key={log.id} className="hover:bg-gray-50">
+                    <TableRow key={log.id} className="hover:bg-gray-50 dark:hover:bg-dark-surface-2/50">
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-400" />

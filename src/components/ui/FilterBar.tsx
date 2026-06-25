@@ -57,6 +57,11 @@ export function FilterBar({
               type="text"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
+              // Search is live (filters on change). Stop Enter from submitting any
+              // ancestor <form>, which would otherwise reload the page.
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.preventDefault();
+              }}
               placeholder={searchPlaceholder ?? t('common.search')}
               className="w-full min-w-0 border-0 bg-transparent py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:ring-0 dark:text-white dark:placeholder:text-slate-500"
               style={{ boxShadow: 'none', backgroundColor: 'transparent' }}

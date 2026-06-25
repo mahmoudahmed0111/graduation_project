@@ -157,7 +157,7 @@ export function CourseOfferings() {
                           <div className="flex justify-end gap-2">
                             <Button
                               type="button"
-                              variant="secondary"
+                              variant="ghost"
                               size="sm"
                               title={t('admin.courseOfferings.roster')}
                               className="inline-flex items-center gap-1 rounded-xl"
@@ -170,7 +170,7 @@ export function CourseOfferings() {
                                 <Link to={`/dashboard/academic/offerings/${id}/edit`}>
                                   <Button
                                     type="button"
-                                    variant="secondary"
+                                    variant="ghost"
                                     size="sm"
                                     title={t('admin.courseOfferings.edit')}
                                     className="inline-flex items-center gap-1 rounded-xl"
@@ -180,7 +180,7 @@ export function CourseOfferings() {
                                 </Link>
                                 <Button
                                   type="button"
-                                  variant="secondary"
+                                  variant="ghost"
                                   size="sm"
                                   title={t('admin.courseOfferings.archive')}
                                   className="inline-flex items-center gap-1 rounded-xl"

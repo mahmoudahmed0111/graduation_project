@@ -241,7 +241,7 @@ export function ShowStudent() {
                                       ? 'bg-blue-100 text-blue-700'
                                       : enrollment.status === 'failed'
                                         ? 'bg-red-100 text-red-700'
-                                        : 'bg-gray-100 text-gray-700'
+                                        : 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-slate-300'
                                 }`}
                               >
                                 {enrollment.status}

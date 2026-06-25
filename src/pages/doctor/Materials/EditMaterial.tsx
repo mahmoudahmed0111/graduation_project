@@ -214,7 +214,7 @@ export function EditMaterial() {
                     <p className="text-xs text-gray-500">{t('doctor.editMaterial.fileTypes')}</p>
                   </label>
                   {selectedFile && (
-                    <div className="mt-3 flex items-center justify-center gap-2 p-2 bg-gray-50 rounded">
+                    <div className="mt-3 flex items-center justify-center gap-2 p-2 bg-gray-50 dark:bg-dark-surface-2 rounded">
                       <FileText className="h-4 w-4 text-gray-600" />
                       <span className="text-sm">{selectedFile.name}</span>
                       <button type="button" onClick={() => setSelectedFile(null)} className="text-red-600">
