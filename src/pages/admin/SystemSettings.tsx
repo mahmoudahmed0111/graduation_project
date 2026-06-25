@@ -97,6 +97,9 @@ export function SystemSettings() {
         currentAcademicYear: settings.currentAcademicYear,
         currentSemester: settings.currentSemester,
         isEnrollmentOpen: settings.isEnrollmentOpen,
+        enrollmentStartDate: settings.enrollmentStartDate,
+        enrollmentEndDate: settings.enrollmentEndDate,
+        maxEnrollmentsPerStudent: settings.maxEnrollmentsPerStudent,
         gradePoints: settings.gradePoints,
         defaultCreditLimit: settings.defaultCreditLimit,
         chatHistoryLimit: settings.chatHistoryLimit,
@@ -206,6 +209,43 @@ export function SystemSettings() {
                   <label htmlFor="enrollmentOpen" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t('admin.systemSettings.enrollmentOpen')}
                   </label>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('admin.systemSettings.enrollmentStartDate')}
+                    </label>
+                    <Input
+                      type="date"
+                      value={settings.enrollmentStartDate}
+                      onChange={(e) => setSettings({ ...settings, enrollmentStartDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('admin.systemSettings.enrollmentEndDate')}
+                    </label>
+                    <Input
+                      type="date"
+                      value={settings.enrollmentEndDate}
+                      onChange={(e) => setSettings({ ...settings, enrollmentEndDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('admin.systemSettings.maxEnrollmentsPerStudent')}
+                  </label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={settings.maxEnrollmentsPerStudent}
+                    onChange={(e) =>
+                      setSettings({ ...settings, maxEnrollmentsPerStudent: parseInt(e.target.value, 10) || 0 })
+                    }
+                  />
                 </div>
               </CardContent>
             </Card>

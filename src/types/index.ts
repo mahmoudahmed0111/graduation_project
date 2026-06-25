@@ -509,6 +509,12 @@ export interface ISystemSettings {
   /** API values: fall | spring */
   currentSemester: 'fall' | 'spring';
   isEnrollmentOpen: boolean;
+  /** Postman Update Settings — ISO 8601 date the enrollment window opens (empty when unset). */
+  enrollmentStartDate: string;
+  /** Postman Update Settings — ISO 8601 date the enrollment window closes (empty when unset). */
+  enrollmentEndDate: string;
+  /** Postman Update Settings — max courses a student may enroll in (0 when unset). */
+  maxEnrollmentsPerStudent: number;
   /** Phase 1 doc: A+, A, B+, B, C+, C, D, F */
   gradePoints: {
     'A+': number;

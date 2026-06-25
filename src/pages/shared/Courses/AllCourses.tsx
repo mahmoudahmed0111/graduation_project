@@ -9,8 +9,10 @@ import { FilterBar } from '@/components/ui/FilterBar';
 import { Select2 } from '@/components/ui/Select2';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Spinner } from '@/components/ui/Spinner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
 import { AdminPageShell } from '@/components/admin/AdminPageShell';
-import { BookOpen, Users, Clock, MapPin, Calendar, User } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToastStore } from '@/store/toastStore';
 import { logger } from '@/lib/logger';
@@ -108,79 +110,77 @@ export function AllCourses() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {filteredOfferings.map((offering) => (
-                  <div
-                    key={offering.id}
-                    className="flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition-shadow hover:shadow-card-hover dark:border-dark-border dark:bg-dark-surface"
-                  >
-                    <div className="mb-3 flex items-center gap-2">
-                      <span className="rounded-lg bg-primary-50 px-2 py-1 text-sm font-semibold text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
-                        {offering.course.code}
-                      </span>
-                      <span className="rounded-lg bg-gray-100 px-2 py-1 text-xs text-gray-500 dark:bg-dark-surface-2 dark:text-slate-400">
-                        {t('shared.allCourses.credits', { count: offering.course.creditHours })}
-                      </span>
-                    </div>
-                    <h3 className="mb-1 text-lg font-bold text-gray-900 dark:text-white">
-                      {offering.course.title}
-                    </h3>
-                    <p className="mb-4 text-sm text-gray-600 dark:text-slate-400">
-                      {offering.course.department.name}
-                    </p>
-
-                    <div className="space-y-3 text-sm">
-                      {offering.doctors.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <User className="mt-0.5 h-4 w-4 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500 dark:text-slate-500">
-                              {t('shared.allCourses.instructors')}
-                            </p>
-                            <p className="text-gray-700 dark:text-slate-300">
-                              {offering.doctors.map((d) => d.name).join(', ')}
-                            </p>
+              <AdminDataTableShell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('shared.allCourses.colCode')}</TableHead>
+                      <TableHead>{t('shared.allCourses.colCourse')}</TableHead>
+                      <TableHead className="text-center">{t('shared.allCourses.colCredits')}</TableHead>
+                      <TableHead>{t('shared.allCourses.colInstructors')}</TableHead>
+                      <TableHead>{t('shared.allCourses.colSchedule')}</TableHead>
+                      <TableHead className="text-center">{t('shared.allCourses.colSeats')}</TableHead>
+                      <TableHead className="text-end">{t('shared.allCourses.colActions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOfferings.map((offering) => (
+                      <TableRow key={offering.id}>
+                        <TableCell>
+                          <span className="rounded-lg bg-primary-50 px-2 py-1 text-sm font-semibold text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
+                            {offering.course.code}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {offering.course.title}
                           </div>
-                        </div>
-                      )}
-
-                      {offering.schedule.length > 0 && (
-                        <div className="space-y-1">
-                          {offering.schedule.map((session, idx) => (
-                            <div
-                              key={idx}
-                              className="flex flex-wrap items-center gap-x-2 gap-y-1 text-gray-600 dark:text-slate-400"
-                            >
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              <span className="capitalize">{session.day}</span>
-                              <Clock className="ms-1 h-4 w-4 text-gray-400" />
-                              <span>
-                                {session.startTime}
-                                {session.endTime ? ` - ${session.endTime}` : ''}
-                              </span>
-                              <MapPin className="ms-1 h-4 w-4 text-gray-400" />
-                              <span>{session.location}</span>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">
+                            {offering.course.department.name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center text-gray-700 dark:text-slate-300">
+                          {offering.course.creditHours}
+                        </TableCell>
+                        <TableCell className="text-gray-700 dark:text-slate-300">
+                          {offering.doctors.length > 0
+                            ? offering.doctors.map((d) => d.name).join(', ')
+                            : t('shared.allCourses.none')}
+                        </TableCell>
+                        <TableCell className="text-gray-600 dark:text-slate-400">
+                          {offering.schedule.length > 0 ? (
+                            <div className="space-y-0.5">
+                              {offering.schedule.map((session, idx) => (
+                                <div key={idx} className="whitespace-nowrap text-xs">
+                                  <span className="capitalize">{session.day}</span>
+                                  {' · '}
+                                  <span>
+                                    {session.startTime}
+                                    {session.endTime ? ` - ${session.endTime}` : ''}
+                                  </span>
+                                  {session.location ? ` · ${session.location}` : ''}
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3 text-sm dark:border-dark-border">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600 dark:text-slate-400">
-                        {t('shared.allCourses.seatsAvailable', { count: offering.maxSeats })}
-                      </span>
-                    </div>
-
-                    <Link to={`/dashboard/courses/enroll?offering=${offering.id}`} className="mt-4 block">
-                      <Button variant="primary" size="sm" className="w-full">
-                        {t('shared.allCourses.viewDetails')}
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
+                          ) : (
+                            t('shared.allCourses.none')
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center text-gray-700 dark:text-slate-300">
+                          {t('shared.allCourses.seatsCount', { count: offering.maxSeats })}
+                        </TableCell>
+                        <TableCell className="text-end">
+                          <Link to={`/dashboard/courses/enroll?offering=${offering.id}`}>
+                            <Button variant="secondary" size="sm" className="rounded-xl">
+                              {t('shared.allCourses.viewDetails')}
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </AdminDataTableShell>
 
               <p className="text-center text-sm text-gray-500 dark:text-slate-400">
                 {t('shared.allCourses.showingOf', {

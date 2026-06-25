@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/Input';
 import { Select2 } from '@/components/ui/Select2';
 import { Spinner } from '@/components/ui/Spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
 import { AdminPageShell } from '@/components/admin/AdminPageShell';
 import {
   BookOpen,
@@ -21,7 +23,6 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Info,
   ArrowLeft
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -31,7 +32,7 @@ import { logger } from '@/lib/logger';
 export function EnrollCourse() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const { error: showError, success: showSuccess } = useToastStore();
+  const { error: showError, success: showSuccess, info: showInfo } = useToastStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const offeringId = searchParams.get('offering');
@@ -115,6 +116,21 @@ export function EnrollCourse() {
   };
 
   const creditLimit = getCreditLimit();
+
+  // Show remaining credit hours as a small, auto-dismissing toast once data loads
+  // (replaces the large inline banner that took too much space).
+  const remainingToastShown = useRef(false);
+  useEffect(() => {
+    if (loading || remainingToastShown.current) return;
+    remainingToastShown.current = true;
+    showInfo(
+      t('student.enrollCourse.remainingToast', {
+        remaining: creditLimit - currentCredits,
+        limit: creditLimit,
+      })
+    );
+  }, [loading, currentCredits, creditLimit, showInfo, t]);
+
   const canEnroll = (offering: ICourseOffering) => {
     const newCredits = currentCredits + offering.course.creditHours;
     return newCredits <= creditLimit;
@@ -210,29 +226,6 @@ export function EnrollCourse() {
         </Link>
       }
     >
-      {/* Credit Limit Info */}
-      <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/40">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Info className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-200">{t('student.enrollCourse.creditHourLimit')}</p>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  {t('student.enrollCourse.currentHours', { current: currentCredits, limit: creditLimit })}
-                  {student?.academicStatus ? ` (${t('student.enrollCourse.status')}: ${student.academicStatus.replace('_', ' ')})` : ''}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
-                {t('student.enrollCourse.hoursRemaining', { count: creditLimit - currentCredits })}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Available Courses List */}
         <div className="lg:col-span-2">
@@ -270,65 +263,65 @@ export function EnrollCourse() {
               title={t('student.enrollCourse.noCoursesFound')}
             />
           ) : (
-            <div className="space-y-4">
-              {filteredOfferings.map((offering) => {
-                const prereqCheck = checkPrerequisites(offering);
-                const canEnrollInThis = canEnroll(offering);
-                
-                return (
-                  <Card 
-                    key={offering.id} 
-                    className={`cursor-pointer hover:shadow-lg transition-shadow ${
-                      selectedOffering?.id === offering.id ? 'ring-2 ring-primary-500' : ''
-                    }`}
-                    onClick={() => setSelectedOffering(offering)}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded">
-                              {offering.course.code}
-                            </span>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded dark:bg-dark-surface-2 dark:text-slate-400">
-                              {t('student.enrollCourse.creditsCount', { count: offering.course.creditHours })}
-                            </span>
+            <AdminDataTableShell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('student.enrollCourse.colCode')}</TableHead>
+                    <TableHead>{t('student.enrollCourse.colCourse')}</TableHead>
+                    <TableHead className="text-center">{t('student.enrollCourse.colCredits')}</TableHead>
+                    <TableHead>{t('student.enrollCourse.colInstructor')}</TableHead>
+                    <TableHead>{t('student.enrollCourse.colStatus')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOfferings.map((offering) => {
+                    const prereqCheck = checkPrerequisites(offering);
+                    const canEnrollInThis = canEnroll(offering);
+
+                    return (
+                      <TableRow
+                        key={offering.id}
+                        onClick={() => setSelectedOffering(offering)}
+                        className={selectedOffering?.id === offering.id ? 'bg-primary-50/60 dark:bg-primary-900/20' : undefined}
+                      >
+                        <TableCell>
+                          <span className="rounded-lg bg-primary-50 px-2 py-1 text-sm font-semibold text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
+                            {offering.course.code}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium text-gray-900 dark:text-white">{offering.course.title}</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">{offering.course.department.name}</div>
+                        </TableCell>
+                        <TableCell className="text-center text-gray-700 dark:text-slate-300">
+                          {offering.course.creditHours}
+                        </TableCell>
+                        <TableCell className="text-gray-700 dark:text-slate-300">
+                          {offering.doctors.length > 0
+                            ? offering.doctors.map((d) => d.name).join(', ')
+                            : t('student.enrollCourse.none')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
                             {!canEnrollInThis && (
-                              <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                              <span className="rounded bg-red-50 px-2 py-1 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-300">
                                 {t('student.enrollCourse.creditLimitBadge')}
                               </span>
                             )}
                             {!prereqCheck.met && (
-                              <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                              <span className="rounded bg-orange-50 px-2 py-1 text-xs text-orange-600 dark:bg-orange-900/20 dark:text-orange-300">
                                 {t('student.enrollCourse.prerequisitesBadge')}
                               </span>
                             )}
                           </div>
-                          <CardTitle className="text-lg">{offering.course.title}</CardTitle>
-                          <p className="text-sm text-gray-600 dark:text-slate-400">{offering.course.department.name}</p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {offering.doctors.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2 dark:text-slate-400">
-                          <User className="h-4 w-4" />
-                          <span>{offering.doctors.map(d => d.name).join(', ')}</span>
-                        </div>
-                      )}
-                      {offering.schedule.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
-                          <Calendar className="h-4 w-4" />
-                          <span>{offering.schedule[0]?.day} {offering.schedule[0]?.startTime}</span>
-                          <MapPin className="h-4 w-4 ml-2" />
-                          <span>{offering.schedule[0]?.location}</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </AdminDataTableShell>
           )}
             </CardContent>
           </Card>

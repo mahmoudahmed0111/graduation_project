@@ -41,9 +41,14 @@ export function semesterApiToUi(raw: unknown): SettingsSemesterUi {
   return 'fall';
 }
 
-/** Value sent to `PATCH /settings` — the documented lowercase enum. */
-export function semesterUiToApi(sem: SettingsSemesterUi): 'fall' | 'spring' {
-  return sem === 'spring' ? 'spring' : 'fall';
+/**
+ * Value sent to `PATCH /settings`. The live backend's Mongoose enum accepts
+ * `First` / `Second` (Pascal case) and rejects `fall` / `spring` with
+ * "`fall` is not a valid enum value for path `currentSemester`", despite the
+ * phase1 doc's lowercase examples. The read mapping above accepts both forms.
+ */
+export function semesterUiToApi(sem: SettingsSemesterUi): 'First' | 'Second' {
+  return sem === 'spring' ? 'Second' : 'First';
 }
 
 export function mapSettingsFromApi(s: Record<string, unknown>): ISystemSettings {
@@ -54,6 +59,10 @@ export function mapSettingsFromApi(s: Record<string, unknown>): ISystemSettings 
     currentAcademicYear: String(s.currentAcademicYear ?? ''),
     currentSemester: semesterApiToUi(s.currentSemester),
     isEnrollmentOpen: Boolean(s.isEnrollmentOpen),
+    // Date inputs need `YYYY-MM-DD`; the API may return a full ISO datetime, so slice.
+    enrollmentStartDate: String(s.enrollmentStartDate ?? '').slice(0, 10),
+    enrollmentEndDate: String(s.enrollmentEndDate ?? '').slice(0, 10),
+    maxEnrollmentsPerStudent: toNumber(s.maxEnrollmentsPerStudent, 0),
     gradePoints: {
       'A+': gp['A+'] ?? 4.0,
       'A': gp['A'] ?? 3.7,
@@ -72,7 +81,8 @@ export function mapSettingsFromApi(s: Record<string, unknown>): ISystemSettings 
     chatHistoryLimit: toNumber(s.chatHistoryLimit, 20),
     chatMaxContextTokens: toNumber(s.chatMaxContextTokens, 8000),
     chatMaxSummarizationCycles: toNumber(s.chatMaxSummarizationCycles, 3),
-    chatTokenBudgets: mapChatTokenBudgets(s.chatTokenBudgets),
+    // Backend field is `chatTokenLimitByRole`; the UI type calls it `chatTokenBudgets`.
+    chatTokenBudgets: mapChatTokenBudgets(s.chatTokenLimitByRole),
   };
 }
 
@@ -81,6 +91,9 @@ export const FALLBACK_SYSTEM_SETTINGS: ISystemSettings = {
   currentAcademicYear: '2025-2026',
   currentSemester: 'fall',
   isEnrollmentOpen: false,
+  enrollmentStartDate: '',
+  enrollmentEndDate: '',
+  maxEnrollmentsPerStudent: 0,
   gradePoints: {
     'A+': 4.0,
     'A': 3.7,

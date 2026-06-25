@@ -23,6 +23,10 @@ export async function updateSettings(data: {
   currentAcademicYear?: string;
   currentSemester?: 'fall' | 'spring';
   isEnrollmentOpen?: boolean;
+  // Postman Update Settings fields
+  enrollmentStartDate?: string;
+  enrollmentEndDate?: string;
+  maxEnrollmentsPerStudent?: number;
   gradePoints?: Record<string, number>;
   defaultCreditLimit?: {
     good_standing?: number;
@@ -35,11 +39,18 @@ export async function updateSettings(data: {
   chatMaxSummarizationCycles?: number;
   chatTokenBudgets?: Partial<ChatTokenBudgets>;
 }): Promise<Record<string, unknown>> {
-  const { currentSemester, ...rest } = data;
+  const { currentSemester, enrollmentStartDate, enrollmentEndDate, chatTokenBudgets, ...rest } = data;
   const body: Record<string, unknown> = { ...rest };
   if (currentSemester !== undefined) {
     body.currentSemester = semesterUiToApi(currentSemester);
   }
+  // Omit empty date strings — the API rejects "" as an invalid ISO date.
+  if (enrollmentStartDate) body.enrollmentStartDate = enrollmentStartDate;
+  if (enrollmentEndDate) body.enrollmentEndDate = enrollmentEndDate;
+  // The backend stores per-role chat budgets under `chatTokenLimitByRole`
+  // (the UI/type name is `chatTokenBudgets`); sending the UI name is silently
+  // dropped, so map it to the real schema field here.
+  if (chatTokenBudgets !== undefined) body.chatTokenLimitByRole = chatTokenBudgets;
   const response = await apiClient.patch('/settings', body);
   return normalizeSingleResponse<Record<string, unknown>>(response, 'settings');
 }

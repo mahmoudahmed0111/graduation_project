@@ -4,9 +4,11 @@ import { useQueries } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Download, ExternalLink, FileText } from 'lucide-react';
 import { AdminPageShell } from '@/components/admin';
+import { AdminDataTableShell } from '@/components/admin/AdminDataTableShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { FilterBar } from '@/components/ui/FilterBar';
 import { Select2 } from '@/components/ui/Select2';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { useToastStore } from '@/store/toastStore';
 import { useAuthStore } from '@/store/authStore';
 import { categoryColors, categoryIcons } from '@/constants/ui';
@@ -209,21 +211,34 @@ export function Materials() {
               <p className="text-sm text-gray-500 mb-4">
                 {t('shared.materials.uaHint')}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {offeringsForBrowse.map((o) => (
-                  <Link
-                    key={o.id}
-                    to={`/dashboard/course-offerings/${o.id}/materials`}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-primary-400 hover:shadow-md transition-all flex items-center justify-between gap-2"
-                  >
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">{o.code}</div>
-                      <div className="text-sm text-gray-600 line-clamp-2">{o.title}</div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-primary-600 flex-shrink-0" />
-                  </Link>
-                ))}
-              </div>
+              <AdminDataTableShell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('shared.materials.colCode')}</TableHead>
+                      <TableHead>{t('shared.materials.colCourse')}</TableHead>
+                      <TableHead className="text-end">{t('shared.materials.colActions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {offeringsForBrowse.map((o) => (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-semibold text-gray-900 dark:text-white">{o.code}</TableCell>
+                        <TableCell className="text-gray-700 dark:text-slate-300">{o.title}</TableCell>
+                        <TableCell className="text-end">
+                          <Link
+                            to={`/dashboard/course-offerings/${o.id}/materials`}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline"
+                          >
+                            {t('shared.materials.openMaterials')}
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </AdminDataTableShell>
             </CardContent>
           </Card>
         )
@@ -245,44 +260,58 @@ export function Materials() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {materials.map((m) => {
-                    const Icon = categoryIcons[m.category];
-                    return (
-                      <Link
-                        key={m._id}
-                        to={`/dashboard/course-offerings/${offering.id}/materials/${m._id}`}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow block"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-2 rounded-lg ${categoryColors[m.category]}`}>
-                              <Icon className="h-4 w-4" />
-                            </div>
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${categoryColors[m.category]}`}>
-                              {m.category}
-                            </span>
-                          </div>
-                        </div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{m.title}</h3>
-                        {m.description && <p className="text-sm text-gray-600 mb-3 line-clamp-2">{m.description}</p>}
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                            <span>{m.isExternalLink ? t('shared.materials.link') : (m.fileType ?? t('shared.materials.fileFallback')).toUpperCase()}</span>
-                          </div>
-                          <span className="flex items-center gap-1 text-sm text-primary-600 font-medium">
-                            {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
-                            {m.isExternalLink ? t('shared.materials.open') : t('shared.materials.download')}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-xs text-gray-400">
-                          {new Date(m.createdAt).toLocaleDateString()}
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+                <AdminDataTableShell>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('shared.materials.colCategory')}</TableHead>
+                        <TableHead>{t('shared.materials.colTitle')}</TableHead>
+                        <TableHead>{t('shared.materials.colType')}</TableHead>
+                        <TableHead>{t('shared.materials.colDate')}</TableHead>
+                        <TableHead className="text-end">{t('shared.materials.colActions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {materials.map((m) => {
+                        const Icon = categoryIcons[m.category];
+                        return (
+                          <TableRow key={m._id}>
+                            <TableCell>
+                              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded ${categoryColors[m.category]}`}>
+                                <Icon className="h-3.5 w-3.5" />
+                                {m.category}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium text-gray-900 dark:text-white">{m.title}</div>
+                              {m.description && (
+                                <div className="text-xs text-gray-500 dark:text-slate-400 line-clamp-1">{m.description}</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-gray-600 dark:text-slate-400">
+                              <span className="inline-flex items-center gap-1 text-xs">
+                                {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                                {m.isExternalLink ? t('shared.materials.link') : (m.fileType ?? t('shared.materials.fileFallback')).toUpperCase()}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-500 dark:text-slate-400">
+                              {new Date(m.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell className="text-end">
+                              <Link
+                                to={`/dashboard/course-offerings/${offering.id}/materials/${m._id}`}
+                                className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:underline"
+                              >
+                                {m.isExternalLink ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+                                {m.isExternalLink ? t('shared.materials.open') : t('shared.materials.download')}
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </AdminDataTableShell>
               </CardContent>
             </Card>
           ))}
