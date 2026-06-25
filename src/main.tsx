@@ -4,6 +4,22 @@ import App from './App.tsx'
 import { QueryProvider } from './providers/QueryProvider'
 import { ThemeProvider } from './providers/ThemeProvider'
 
+/**
+ * Collapse duplicate slashes in the URL path before React Router reads it.
+ * Some backend emails build links by joining a base that ends in `/` with a
+ * path that starts with `/` — e.g. `https://host//resetPassword/<token>`. The
+ * leading `//` matches no route and the catch-all bounces the user to home.
+ * Normalizing here (before <BrowserRouter> mounts) makes such links resolve.
+ */
+function normalizePathSlashes() {
+  const { pathname, search, hash } = window.location
+  if (/\/{2,}/.test(pathname)) {
+    const fixed = pathname.replace(/\/{2,}/g, '/')
+    window.history.replaceState(null, '', fixed + search + hash)
+  }
+}
+normalizePathSlashes()
+
 // MSW only when VITE_USE_MSW=true (default: use real backend at VITE_API_URL)
 async function enableMocking() {
   if (import.meta.env.MODE !== 'development') {
