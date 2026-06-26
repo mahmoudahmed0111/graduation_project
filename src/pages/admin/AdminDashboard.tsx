@@ -30,6 +30,9 @@ import {
 } from 'lucide-react';
 import { IUser } from '@/types';
 import { useToastStore } from '@/store/toastStore';
+import { useLookupUser, useRestoreUser } from '@/hooks/queries/useUsers';
+import { phase2UserId, phase2UserIsActive } from '@/lib/phase2UserUi';
+import { getApiErrorMessage } from '@/lib/http/client';
 import { PieChart } from '@/components/charts/PieChart';
 import { BarChart } from '@/components/charts/BarChart';
 import { LineChart } from '@/components/charts/LineChart';
@@ -135,7 +138,11 @@ export function AdminDashboard() {
   const [currentSemester, setCurrentSemester] = useState<'fall' | 'spring'>('fall');
   const [systemConfigModalOpen, setSystemConfigModalOpen] = useState(false);
   const [restoreNationalId, setRestoreNationalId] = useState('');
-  const [restoring, setRestoring] = useState(false);
+
+  const isUA = user?.role === 'universityAdmin';
+  const lookup = useLookupUser();
+  const restore = useRestoreUser();
+  const restoring = lookup.isPending || restore.isPending;
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -143,15 +150,36 @@ export function AdminDashboard() {
   }, []);
 
   const handleRestoreUser = async () => {
-    if (!restoreNationalId.trim()) {
+    const nationalID = restoreNationalId.replace(/\D/g, '');
+    if (!nationalID) {
       showError(t('admin.adminDashboard.enterNationalId'));
       return;
     }
-    setRestoring(true);
-    await new Promise((r) => setTimeout(r, 800));
-    success(t('admin.adminDashboard.userRestored', { id: restoreNationalId.trim() }));
-    setRestoreNationalId('');
-    setRestoring(false);
+    if (nationalID.length !== 14) {
+      showError(t('admin.adminDashboard.nationalIdInvalid'));
+      return;
+    }
+
+    let target;
+    try {
+      target = await lookup.mutateAsync(nationalID);
+    } catch (e) {
+      showError(getApiErrorMessage(e, t('admin.adminDashboard.userNotFound')));
+      return;
+    }
+
+    if (phase2UserIsActive(target)) {
+      showError(t('admin.adminDashboard.alreadyActive', { name: target.name }));
+      return;
+    }
+
+    try {
+      await restore.mutateAsync(phase2UserId(target));
+      success(t('admin.adminDashboard.userRestored', { id: nationalID }));
+      setRestoreNationalId('');
+    } catch (e) {
+      showError(getApiErrorMessage(e, t('admin.adminDashboard.restoreFailed')));
+    }
   };
 
   const statCards: Array<{
@@ -493,6 +521,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
+          {isUA && (
           <Card className="rounded-2xl border-2 border-amber-200 bg-amber-50/30 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -519,6 +548,7 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+          )}
         </div>
 
         {/* Modal */}
