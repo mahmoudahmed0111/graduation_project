@@ -1,23 +1,58 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Avatar } from '@/components/ui/Avatar';
-import { 
-  User,
-  CreditCard,
-  GraduationCap,
-  Edit2,
-  Lock,
-  Eye,
-  EyeOff
-} from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 import { useToastStore } from '@/store/toastStore';
 import { IStudent } from '@/types';
 import { logger } from '@/lib/logger';
+
+/** Semantic key-value table: each row is `<th scope="row">` label + `<td>` value. */
+function InfoTable({ children }: { children: ReactNode }) {
+  return (
+    <table className="w-full border-collapse text-sm">
+      <tbody className="divide-y divide-gray-100 dark:divide-dark-border">{children}</tbody>
+    </table>
+  );
+}
+
+function InfoRow({
+  label,
+  children,
+  hint,
+  mono,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: string;
+  mono?: boolean;
+}) {
+  return (
+    <tr className="align-top">
+      <th
+        scope="row"
+        className="w-2/5 whitespace-nowrap py-3 pe-4 text-start align-top text-sm font-medium text-gray-500 dark:text-slate-400"
+      >
+        {label}
+      </th>
+      <td className="py-3 text-start align-top">
+        <div
+          className={
+            mono
+              ? 'break-all font-mono text-[13px] text-gray-900 dark:text-white'
+              : 'font-medium text-gray-900 dark:text-white'
+          }
+        >
+          {children}
+        </div>
+        {hint && <p className="mt-1 text-xs font-normal text-gray-400 dark:text-slate-500">{hint}</p>}
+      </td>
+    </tr>
+  );
+}
 
 export function Profile() {
   const { t } = useTranslation();
@@ -26,7 +61,6 @@ export function Profile() {
   const student = user as IStudent;
 
   // Password change states
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -42,7 +76,6 @@ export function Profile() {
   const [loading, setLoading] = useState(false);
 
   const resetPasswordForm = () => {
-    setIsChangingPassword(false);
     setOtpStep(false);
     setOtp('');
     setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -142,355 +175,242 @@ export function Profile() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <p className="text-gray-600 dark:text-gray-400">{t('shared.profile.loading')}</p>
       </div>
     );
   }
 
+  const avatarInitials =
+    user.name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || '?';
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('nav.profile')}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">{t('shared.profile.subtitle')}</p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {t('nav.profile')}
+        </h1>
+        <p className="mt-1 text-gray-600 dark:text-gray-400">{t('shared.profile.subtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Profile Information */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Info table — rendered after the image & password columns */}
+        <div className="order-last space-y-6 lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                {t('shared.profile.personalInfo')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Avatar */}
-              <div className="flex items-center gap-4">
-                <Avatar
-                  src={user.avatarUrl}
-                  name={user.name}
-                  size="xl"
-                />
-                <div>
-                  <p className="font-semibold text-lg">{user.name}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {user.role === 'student' ? t('shared.profile.student') : user.role}
-                  </p>
-                </div>
-              </div>
+            <CardContent>
+              {/* All info rows in one continuous table */}
+              <InfoTable>
+                <InfoRow label={t('shared.profile.fullName')}>{user.name}</InfoRow>
+                <InfoRow label={t('shared.profile.role')}>
+                  <span className="capitalize">{user.role}</span>
+                </InfoRow>
+                <InfoRow label={t('shared.profile.emailAddress')}>{user.email}</InfoRow>
+                {user.nationalId && (
+                  <InfoRow label={t('shared.profile.nationalId')} hint={t('shared.profile.cannotChange')} mono>
+                    {user.nationalId}
+                  </InfoRow>
+                )}
 
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('shared.profile.fullName')}
-                </label>
-                <p className="text-gray-900 dark:text-white py-2">{user.name}</p>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('shared.profile.emailAddress')}
-                </label>
-                <p className="text-gray-900 dark:text-white py-2">{user.email}</p>
-              </div>
-
-              {/* National ID */}
-              {user.nationalId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {t('shared.profile.nationalId')}
-                  </label>
-                  <p className="text-gray-900 dark:text-white py-2">{user.nationalId}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('shared.profile.cannotChange')}</p>
-                </div>
-              )}
-
-            </CardContent>
-          </Card>
-
-          {/* Academic Information (Read-only for students) */}
-          {student && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5" />
-                  {t('shared.profile.academicInfo')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.year')}
-                    </label>
-                    <p className="text-gray-900 dark:text-white py-2">{t('shared.profile.yearValue', { year: student.year })}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.semester')}
-                    </label>
-                    <p className="text-gray-900 dark:text-white py-2">{t('shared.profile.semesterValue', { semester: student.semester })}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.creditsEarned')}
-                    </label>
-                    <p className="text-gray-900 dark:text-white py-2">{t('shared.profile.creditsValue', { credits: student.creditsEarned })}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.gpa')}
-                    </label>
-                    <p className="text-gray-900 dark:text-white py-2 font-semibold">
-                      {student.gpa > 0 ? student.gpa.toFixed(2) : t('shared.profile.notAvailable')}
-                    </p>
-                  </div>
-                </div>
-
-                {student.department && (
+                {student && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {t('shared.profile.department')}
-                      </label>
-                      <p className="text-gray-900 dark:text-white py-2">
+                    <InfoRow label={t('shared.profile.year')}>
+                      {t('shared.profile.yearValue', { year: student.year })}
+                    </InfoRow>
+                    <InfoRow label={t('shared.profile.semester')}>
+                      {t('shared.profile.semesterValue', { semester: student.semester })}
+                    </InfoRow>
+                    <InfoRow label={t('shared.profile.creditsEarned')}>
+                      {t('shared.profile.creditsValue', { credits: student.creditsEarned })}
+                    </InfoRow>
+                    <InfoRow label={t('shared.profile.gpa')}>
+                      {student.gpa > 0 ? student.gpa.toFixed(2) : t('shared.profile.notAvailable')}
+                    </InfoRow>
+                    {student.department && (
+                      <InfoRow label={t('shared.profile.department')}>
                         {student.department.name} ({student.department.code})
-                      </p>
-                    </div>
-                    {student.department.college && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {t('shared.profile.college')}
-                        </label>
-                        <p className="text-gray-900 dark:text-white py-2">
-                          {student.department.college.name} ({student.department.college.code})
-                        </p>
-                      </div>
+                      </InfoRow>
+                    )}
+                    {student.department?.college && (
+                      <InfoRow label={t('shared.profile.college')}>
+                        {student.department.college.name} ({student.department.college.code})
+                      </InfoRow>
+                    )}
+                    {student.academicStatus && (
+                      <InfoRow label={t('shared.profile.academicStatus')}>
+                        <span
+                          className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${getAcademicStatusColor(
+                            student.academicStatus
+                          )}`}
+                        >
+                          {getAcademicStatusLabel(student.academicStatus)}
+                        </span>
+                      </InfoRow>
                     )}
                   </>
                 )}
 
-                {student.academicStatus && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.academicStatus')}
-                    </label>
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getAcademicStatusColor(
-                        student.academicStatus
-                      )}`}
-                    >
-                      {getAcademicStatusLabel(student.academicStatus)}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                <InfoRow label={t('shared.profile.userId')} mono>
+                  {user.id}
+                </InfoRow>
+                <InfoRow label={t('shared.profile.universityId')} mono>
+                  {user.universityId}
+                </InfoRow>
+              </InfoTable>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Column - Security */}
-        <div className="space-y-6">
-          {/* Change Password */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
-                  {t('shared.profile.security')}
-                </CardTitle>
-                {!isChangingPassword && (
-                  <Button variant="ghost" size="sm" onClick={() => setIsChangingPassword(true)}>
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    {t('shared.profile.change')}
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isChangingPassword ? (
-                otpStep ? (
-                <div className="space-y-4">
-                  <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200">
-                    {t('shared.profile.otpSent')}
-                  </p>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.otpLabel')}
-                    </label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <Button variant="outline" onClick={handleCancelPassword} disabled={loading} className="flex-1">
-                      {t('shared.profile.cancel')}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleConfirmPasswordChange}
-                      isLoading={loading}
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {t('shared.profile.confirmChange')}
-                    </Button>
-                  </div>
-                </div>
-                ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.currentPassword')}
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type={showCurrentPassword ? 'text' : 'password'}
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                        }
-                        placeholder={t('shared.profile.enterCurrentPassword')}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      >
-                        {showCurrentPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.newPassword')}
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type={showNewPassword ? 'text' : 'password'}
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, newPassword: e.target.value })
-                        }
-                        placeholder={t('shared.profile.enterNewPassword')}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                      >
-                        {showNewPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {t('shared.profile.minCharsHint')}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {t('shared.profile.confirmNewPassword')}
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) =>
-                          setPasswordData({ ...passwordData, confirmPassword: e.target.value })
-                        }
-                        placeholder={t('shared.profile.confirmNewPlaceholder')}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleCancelPassword}
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {t('shared.profile.cancel')}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleChangePassword}
-                      isLoading={loading}
-                      disabled={loading}
-                      className="flex-1"
-                    >
-                      {t('shared.profile.changePassword')}
-                    </Button>
-                  </div>
-                </div>
-                )
+        {/* Image & password — at the start of the page */}
+        <div className="order-first space-y-6">
+          {/* Profile picture — fills the whole container */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="aspect-square w-full object-cover"
+                />
               ) : (
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('shared.profile.securityNote')}
-                  </p>
+                <div className="flex aspect-square w-full items-center justify-center bg-primary-500 text-5xl font-medium text-white">
+                  {avatarInitials}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Account Information */}
+          {/* Change Password */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                {t('shared.profile.accountInfo')}
+                <Lock className="h-5 w-5 text-primary-600 dark:text-accent-300" />
+                {t('shared.profile.security')}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('shared.profile.userId')}
-                </label>
-                <p className="text-gray-900 dark:text-white text-sm font-mono">{user.id}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('shared.profile.universityId')}
-                </label>
-                <p className="text-gray-900 dark:text-white text-sm font-mono">{user.universityId}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('shared.profile.role')}
-                </label>
-                <p className="text-gray-900 dark:text-white text-sm capitalize">{user.role}</p>
-              </div>
+            <CardContent>
+              {otpStep ? (
+                <div className="space-y-4">
+                    <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200">
+                      {t('shared.profile.otpSent')}
+                    </p>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('shared.profile.otpLabel')}
+                      </label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <Button variant="outline" onClick={handleCancelPassword} disabled={loading} className="flex-1">
+                        {t('shared.profile.cancel')}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={handleConfirmPasswordChange}
+                        isLoading={loading}
+                        disabled={loading}
+                        className="flex-1"
+                      >
+                        {t('shared.profile.confirmChange')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('shared.profile.currentPassword')}
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          placeholder={t('shared.profile.enterCurrentPassword')}
+                        />
+                        <button
+                          type="button"
+                          className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        >
+                          {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('shared.profile.newPassword')}
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder={t('shared.profile.enterNewPassword')}
+                        />
+                        <button
+                          type="button"
+                          className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                        >
+                          {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {t('shared.profile.minCharsHint')}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t('shared.profile.confirmNewPassword')}
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          placeholder={t('shared.profile.confirmNewPlaceholder')}
+                        />
+                        <button
+                          type="button"
+                          className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button variant="outline" onClick={handleCancelPassword} disabled={loading} className="flex-1">
+                        {t('shared.profile.cancel')}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={handleChangePassword}
+                        isLoading={loading}
+                        disabled={loading}
+                        className="flex-1"
+                      >
+                        {t('shared.profile.changePassword')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
             </CardContent>
           </Card>
         </div>
@@ -498,4 +418,3 @@ export function Profile() {
     </div>
   );
 }
-

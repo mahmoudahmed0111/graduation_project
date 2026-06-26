@@ -78,6 +78,22 @@ export function useCreateUser() {
   });
 }
 
+export function useBulkImportUsers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (fd: FormData) => usersService.bulkImportUsers(fd),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: root });
+    },
+  });
+}
+
+export function useResendCredentials() {
+  return useMutation({
+    mutationFn: (logId: string) => usersService.resendCredentials(logId),
+  });
+}
+
 export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({

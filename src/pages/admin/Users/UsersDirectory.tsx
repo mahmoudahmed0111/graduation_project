@@ -11,6 +11,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { Select2 } from '@/components/ui/Select2';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { NationalIdLookupModal } from '@/components/users/NationalIdLookupModal';
+import { BulkImportModal } from '@/components/users/BulkImportModal';
 import { useColleges } from '@/hooks/queries/useColleges';
 import { useDepartments } from '@/hooks/queries/useDepartments';
 import { useUsers } from '@/hooks/queries/useUsers';
@@ -18,7 +19,7 @@ import { phase2DepartmentDisplayName, phase2UserId, phase2UserIsActive } from '@
 import { apiRoleForSegment, listPathForSegment, type UserListSegment } from '@/lib/userListPaths';
 import { useAuthStore } from '@/store/authStore';
 import type { Phase2ApiUser } from '@/types/phase2-user';
-import { Eye, Fingerprint, Plus, Users } from 'lucide-react';
+import { Eye, Fingerprint, Plus, Upload, Users } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: 'false', labelKey: 'admin.usersDirectory.statusActive' },
@@ -103,6 +104,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
 
   const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') ?? '');
   const [lookupOpen, setLookupOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const patchParams = useCallback(
     (updates: Record<string, string | null | undefined>) => {
@@ -262,6 +264,7 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
   return (
     <AdminPageShell titleStack={{ section: t('admin.usersDirectory.userManagement'), page: pageTitle }}>
       <NationalIdLookupModal isOpen={lookupOpen} onClose={() => setLookupOpen(false)} />
+      <BulkImportModal isOpen={bulkOpen} onClose={() => setBulkOpen(false)} segment={segment} />
 
       <Card bare>
         <CardContent className="space-y-6">
@@ -279,6 +282,15 @@ export function UsersDirectory({ segment }: UsersDirectoryProps) {
                 >
                   <Fingerprint className="h-4 w-4" />
                   {t('admin.usersDirectory.lookup')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="inline-flex items-center gap-2 rounded-xl"
+                  onClick={() => setBulkOpen(true)}
+                >
+                  <Upload className="h-4 w-4" />
+                  {t('admin.usersDirectory.bulkImport')}
                 </Button>
                 <Link to={createPath}>
                   <Button type="button" variant="primary" className="inline-flex items-center gap-2 rounded-xl">

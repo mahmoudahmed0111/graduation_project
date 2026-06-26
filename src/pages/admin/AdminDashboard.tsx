@@ -301,12 +301,12 @@ export function AdminDashboard() {
             const Icon = k.icon;
             return (
               <div key={k.label} className="flex items-center gap-3 rounded-xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border p-4 shadow-sm">
-                <div className={`p-2.5 rounded-lg ${k.bg}`}>
+                <div className={`p-2.5 rounded-lg ${k.bg} dark:bg-white/10`}>
                   <Icon className={`h-5 w-5 ${k.color}`} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">{k.label}</p>
-                  <p className="text-lg font-bold text-gray-900">{k.value}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{k.label}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{k.value}</p>
                 </div>
               </div>
             );
@@ -314,7 +314,7 @@ export function AdminDashboard() {
         </div>
 
         {/* System Health Status */}
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary-600" />
@@ -330,18 +330,20 @@ export function AdminDashboard() {
                   <div
                     key={s.label}
                     className={`flex items-center gap-3 p-3 rounded-xl border ${
-                      isOk ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/40'
+                      isOk
+                        ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-500/30 dark:bg-emerald-500/10'
+                        : 'border-amber-200 bg-amber-50/40 dark:border-amber-500/30 dark:bg-amber-500/10'
                     }`}
                   >
-                    <div className={`p-2 rounded-lg ${isOk ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <div className={`p-2 rounded-lg ${isOk ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'}`}>
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-semibold text-gray-900">{s.label}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{s.label}</p>
                         <span className={`h-1.5 w-1.5 rounded-full ${isOk ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
                       </div>
-                      <p className="text-xs text-gray-600">{s.value}</p>
+                      <p className="text-xs text-gray-600 dark:text-slate-300">{s.value}</p>
                     </div>
                     {isOk ? (
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -410,7 +412,7 @@ export function AdminDashboard() {
 
         {/* Top Colleges + Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 rounded-2xl border border-gray-100 shadow-sm">
+          <Card className="lg:col-span-2 rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary-600" />
@@ -422,7 +424,7 @@ export function AdminDashboard() {
                 {TOP_COLLEGES.map((c) => (
                   <div
                     key={c.name}
-                    className="rounded-xl border border-gray-200 p-4 hover:border-primary-300 hover:shadow-sm transition-all"
+                    className="rounded-xl border border-gray-200 dark:border-dark-border p-4 hover:border-primary-300 dark:hover:border-primary-500/50 hover:shadow-sm transition-all"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -430,17 +432,17 @@ export function AdminDashboard() {
                           <Building2 className="h-5 w-5" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900">{c.name}</h4>
-                          <p className="text-xs text-gray-500">{t('admin.adminDashboard.departmentsCount', { count: c.departments })}</p>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">{c.name}</h4>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">{t('admin.adminDashboard.departmentsCount', { count: c.departments })}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-gray-900">{c.students.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">{t('admin.adminDashboard.studentsLabel')}</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">{c.students.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">{t('admin.adminDashboard.studentsLabel')}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">{t('admin.adminDashboard.avgGpa')}</span>
+                      <span className="text-gray-600 dark:text-slate-400">{t('admin.adminDashboard.avgGpa')}</span>
                       <span className="font-semibold text-primary-600">{c.avgGpa.toFixed(2)}</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden mt-1">
@@ -455,7 +457,7 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary-600" />
@@ -472,8 +474,8 @@ export function AdminDashboard() {
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800 leading-snug">{a.text}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{a.time}</p>
+                        <p className="text-sm text-gray-800 dark:text-slate-200 leading-snug">{a.text}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{a.time}</p>
                       </div>
                     </div>
                   );
@@ -485,7 +487,7 @@ export function AdminDashboard() {
 
         {/* Admin Actions: System Config + Quick Restore */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="rounded-2xl border border-gray-100 shadow-sm">
+          <Card className="rounded-2xl border border-gray-100 dark:border-dark-border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary-600" />
@@ -493,23 +495,23 @@ export function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex justify-between items-center text-sm py-2 border-b border-gray-100">
-                <span className="text-gray-600">{t('admin.adminDashboard.registrationStatus')}</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${registrationOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+              <div className="flex justify-between items-center text-sm py-2 border-b border-gray-100 dark:border-dark-border">
+                <span className="text-gray-600 dark:text-slate-400">{t('admin.adminDashboard.registrationStatus')}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${registrationOpen ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'}`}>
                   {registrationOpen ? t('admin.adminDashboard.open') : t('admin.adminDashboard.closed')}
                 </span>
               </div>
-              <div className="flex justify-between text-sm py-2 border-b border-gray-100">
-                <span className="text-gray-600">{t('admin.adminDashboard.academicYear')}</span>
-                <span className="font-semibold text-gray-900">{academicYear}</span>
+              <div className="flex justify-between text-sm py-2 border-b border-gray-100 dark:border-dark-border">
+                <span className="text-gray-600 dark:text-slate-400">{t('admin.adminDashboard.academicYear')}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{academicYear}</span>
               </div>
-              <div className="flex justify-between text-sm py-2 border-b border-gray-100">
-                <span className="text-gray-600">{t('admin.adminDashboard.currentSemester')}</span>
-                <span className="font-semibold text-gray-900">{currentSemester === 'spring' ? t('admin.adminDashboard.spring') : t('admin.adminDashboard.fall')}</span>
+              <div className="flex justify-between text-sm py-2 border-b border-gray-100 dark:border-dark-border">
+                <span className="text-gray-600 dark:text-slate-400">{t('admin.adminDashboard.currentSemester')}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{currentSemester === 'spring' ? t('admin.adminDashboard.spring') : t('admin.adminDashboard.fall')}</span>
               </div>
               <div className="flex justify-between text-sm py-2">
-                <span className="text-gray-600">{t('admin.adminDashboard.tuitionFeeStatus')}</span>
-                <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                <span className="text-gray-600 dark:text-slate-400">{t('admin.adminDashboard.tuitionFeeStatus')}</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
                   {t('admin.adminDashboard.collecting')}
                 </span>
@@ -522,20 +524,25 @@ export function AdminDashboard() {
           </Card>
 
           {isUA && (
-          <Card className="rounded-2xl border-2 border-amber-200 bg-amber-50/30 shadow-sm">
+          <Card className="rounded-2xl border-2 border-amber-200 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-500/5 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <RotateCcw className="h-5 w-5 text-amber-600" />
+                <RotateCcw className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 {t('admin.adminDashboard.quickRestore')}
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">{t('admin.adminDashboard.quickRestoreDesc')}</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{t('admin.adminDashboard.quickRestoreDesc')}</p>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
                 <Input
                   placeholder={t('admin.adminDashboard.nationalIdPlaceholder')}
                   value={restoreNationalId}
-                  onChange={(e) => setRestoreNationalId(e.target.value)}
+                  onChange={(e) => setRestoreNationalId(e.target.value.replace(/\D/g, '').slice(0, 14))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !restoring) void handleRestoreUser();
+                  }}
+                  inputMode="numeric"
+                  maxLength={14}
                   className="flex-1"
                 />
                 <Button onClick={handleRestoreUser} disabled={restoring}>
@@ -559,7 +566,7 @@ export function AdminDashboard() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.adminDashboard.registrationStatus')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('admin.adminDashboard.registrationStatus')}</label>
               <div className="flex gap-2">
                 <Button variant={registrationOpen ? 'primary' : 'secondary'} size="sm" onClick={() => setRegistrationOpen(true)}>
                   {t('admin.adminDashboard.open')}
@@ -570,11 +577,11 @@ export function AdminDashboard() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.adminDashboard.academicYear')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('admin.adminDashboard.academicYear')}</label>
               <Input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder={t('admin.adminDashboard.yearPlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.adminDashboard.currentSemester')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('admin.adminDashboard.currentSemester')}</label>
               <div className="flex gap-2">
                 <Button variant={currentSemester === 'fall' ? 'primary' : 'secondary'} size="sm" onClick={() => setCurrentSemester('fall')}>
                   {t('admin.adminDashboard.fall')}
